@@ -11,24 +11,28 @@
  * Defines for system
  */
 //CPU Speed
-#define	F_CPU		168000000UL
+#define	F_CPU			168000000UL
 
 //PLL variables
-#define PLL_M		25
-#define PLL_N		336
-#define PLL_P		2
-#define PLL_Q		7
+#define PLL_M			25
+#define PLL_N			336
+#define PLL_P			2
+#define PLL_Q			7
 
 //Port numbers of GPIOs
-#define	A			0
-#define	B			1
-//#define	C			2
-#define	D			3
-#define	E			4
-#define	F			5
-#define	G			6
-#define	H			7
-#define	I			8
+#define	GPIO_A			0
+#define	GPIO_B			1
+#define GPIO_C			2
+#define	GPIO_D			3
+#define	GPIO_E			4
+#define	GPIO_F			5
+#define	GPIO_G			6
+#define	GPIO_H			7
+#define	GPIO_I			8
+
+//state defines
+#define ON				1
+#define OFF				0
 
 
 

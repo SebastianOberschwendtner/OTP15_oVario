@@ -5397,7 +5397,7 @@ Discarded input sections
  .bss           0x0000000000000000        0x0 src/oVario_Framework.o
  .text.en_gpio  0x0000000000000000       0x2c src/oVario_Framework.o
  .debug_macro   0x0000000000000000      0x8a4 src/oVario_Framework.o
- .debug_macro   0x0000000000000000       0x58 src/oVario_Framework.o
+ .debug_macro   0x0000000000000000       0x5e src/oVario_Framework.o
  .debug_macro   0x0000000000000000       0x65 src/oVario_Framework.o
  .debug_macro   0x0000000000000000       0x3b src/oVario_Framework.o
  .debug_macro   0x0000000000000000       0x22 src/oVario_Framework.o
@@ -5999,11 +5999,11 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_ranges  0x0000000000000038       0x20 src/system_stm32f4xx.o
  .debug_ranges  0x0000000000000058       0x20 startup/startup_stm32.o
 
-.debug_macro    0x0000000000000000      0x40f
+.debug_macro    0x0000000000000000      0x415
  .debug_macro   0x0000000000000000       0x24 src/main.o
- .debug_macro   0x0000000000000024       0x58 src/main.o
- .debug_macro   0x000000000000007c      0x1c1 src/oVario_Framework.o
- .debug_macro   0x000000000000023d      0x1d2 src/system_stm32f4xx.o
+ .debug_macro   0x0000000000000024       0x5e src/main.o
+ .debug_macro   0x0000000000000082      0x1c1 src/oVario_Framework.o
+ .debug_macro   0x0000000000000243      0x1d2 src/system_stm32f4xx.o
 
 .debug_line     0x0000000000000000      0xe9a
  .debug_line    0x0000000000000000       0xd8 src/main.o
@@ -6011,11 +6011,11 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_line    0x0000000000000792      0x68f src/system_stm32f4xx.o
  .debug_line    0x0000000000000e21       0x79 startup/startup_stm32.o
 
-.debug_str      0x0000000000000000    0x5e819
- .debug_str     0x0000000000000000     0x257d src/main.o
- .debug_str     0x000000000000257d    0x5c15a src/oVario_Framework.o
-                                      0x5e863 (size before relaxing)
- .debug_str     0x000000000005e6d7      0x142 src/system_stm32f4xx.o
+.debug_str      0x0000000000000000    0x5e86a
+ .debug_str     0x0000000000000000     0x25ce src/main.o
+ .debug_str     0x00000000000025ce    0x5c15a src/oVario_Framework.o
+                                      0x5e8b4 (size before relaxing)
+ .debug_str     0x000000000005e728      0x142 src/system_stm32f4xx.o
                                       0x5e3be (size before relaxing)
 
 .comment        0x0000000000000000       0x6e

@@ -14,10 +14,35 @@
  */
 void init_clock(void)
 {
-	RCC->CR = RCC_CR_HSION;										//Use internal High Speed clock, 16 MHz
-	while(!(RCC->CR & RCC_CR_HSIRDY));
-	RCC->CFGR = RCC_CFGR_SW_HSI;
-	while(!(RCC->CFGR & RCC_CFGR_SWS_HSI));
+	RCC->CR |= RCC_CR_HSEON;
+	while(!(RCC->CR & RCC_CR_HSERDY));
+	RCC->CFGR = RCC_CFGR_SW_HSE;
+	while(!(RCC->CFGR & RCC_CFGR_SWS_HSE));
+	RCC->CR = RCC_CR_HSEON;
+	FLASH->ACR |= FLASH_ACR_LATENCY_1WS;
+	/*
+	 * PLL mit HSE  25MHz
+	 * PLLM = 25	1MHz
+	 * PLLN = 336	336MHz
+	 * PLLP = 2		168MHz
+	 * PLLQ = 7		48MHz
+	 */
+	RCC->PLLCFGR = 0x20000000 | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q<<24) | (PLL_P<<16) | (PLL_N<<6) | (PLL_M<<0);
+	//Clocks aktivieren
+	RCC->CR |= RCC_CR_PLLON;
+	while(!(RCC->CR & RCC_CR_PLLRDY));
+	RCC->CFGR = RCC_CFGR_SW_PLL;
+	while(!(RCC->CFGR & RCC_CFGR_SWS_PLL));
+
+	/*
+	 * set prescalers for peripherals:
+	 * Peripheral	Speed	Prescaler
+	 * APB2:		84 MHz	2  (PRE2)
+	 * APB1:		42 MHz  4  (PRE1)
+	 * RTC clock:	 1 MHz  5  (RTCPRE)
+	 */
+	//           RTCPRE     PRE2      PRE1
+	RCC->CFGR |= (5<<16) | (2<<13) | (4<<10);
 };
 
 /*
