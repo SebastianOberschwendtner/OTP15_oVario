@@ -1,20 +1,21 @@
 /**
   ******************************************************************************
   * @file    main.c
-  * @author  Ac6
+  * @author  SO
   * @version V1.0
-  * @date    01-December-2013
+  * @date    25-Februar-2018
   * @brief   Default main function.
   ******************************************************************************
 */
 
-
-#include "stm32f4xx.h"
+#include "oVario_Framework.h"
 #include "i2c.h"
 			
 
 int main(void)
 {
+	init_clock();
+	init_systick_ms(100);
 
 	for(;;);
 }
