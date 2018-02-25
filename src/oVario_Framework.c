@@ -6,8 +6,6 @@
  */
 
 #include "oVario_Framework.h"
-#include "stm32f4xx.h"
-#include "Variables.h"
 
 /*
  * Init Clock

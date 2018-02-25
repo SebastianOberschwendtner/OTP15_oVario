@@ -9,5 +9,7 @@
 #define I2C_H_
 
 
+void i2c_init(void);
+void i2c_send_char(unsigned char ch_address, unsigned char ch_data);
 
 #endif /* I2C_H_ */

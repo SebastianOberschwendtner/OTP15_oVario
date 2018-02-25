@@ -7,11 +7,16 @@
 
 #ifndef OVARIO_FRAMEWORK_H_
 #define OVARIO_FRAMEWORK_H_
+
+#include "stm32f4xx.h"
+#include "Variables.h"
 /*
  * Defines for system
  */
 //CPU Speed
 #define	F_CPU			168000000UL
+//I2C clock speed
+#define I2C_CLOCK		400000UL
 
 //PLL variables
 #define PLL_M			25
