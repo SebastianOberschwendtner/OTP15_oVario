@@ -1,0 +1,33 @@
+/*
+ * spi.c
+ *
+ *  Created on: 27.02.2018
+ *      Author: Sebastian
+ */
+
+#include "oVario_Framework.h"
+
+/*
+ * Initialize necessary peripherals
+ */
+void spi_init(void)
+{
+	//Init clocks
+	gpio_en(GPIO_B);
+	RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+
+	/*
+	 * Set GPIO
+	 * PB12: SPI2_NSS (AF5)
+	 * PB13: SPI2_SCK  (AF5)
+	 * PB15: SPI2_MOSI (AF5)
+	 */
+	GPIOB->MODER |= GPIO_MODER_MODER15_1 | GPIO_MODER_MODER13_1 | GPIO_MODER_MODER12_1;
+	GPIOB->AFR[1] |= (5<<28) | (5<<20) | (5<<16);
+
+	//Init SPI2, SCK = 1.3125 MHz
+	//Set baudrate, Master mode and frameformat (clock high idle, sample on rising edge)
+	SPI2->CR1 = (0b100<<3) | SPI_CR1_MSTR | SPI_CR1_CPOL | SPI_CR1_CPHA;
+	SPI2->CR2 = SPI_CR2_SSOE;	//Hardware NSS
+	SPI2->CR1 |= SPI_CR1_SPE;   //Enable SPI
+}
