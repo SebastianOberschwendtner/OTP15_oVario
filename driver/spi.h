@@ -10,5 +10,6 @@
 
 
 void spi_init(void);
+void spi_send_char(unsigned char ch_data);
 
 #endif /* SPI_H_ */

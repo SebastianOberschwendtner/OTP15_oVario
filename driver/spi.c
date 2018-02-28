@@ -27,7 +27,19 @@ void spi_init(void)
 
 	//Init SPI2, SCK = 1.3125 MHz
 	//Set baudrate, Master mode and frameformat (clock high idle, sample on rising edge)
+	//TODO Increase Baudrate
 	SPI2->CR1 = (0b100<<3) | SPI_CR1_MSTR | SPI_CR1_CPOL | SPI_CR1_CPHA;
 	SPI2->CR2 = SPI_CR2_SSOE;	//Hardware NSS
 	SPI2->CR1 |= SPI_CR1_SPE;   //Enable SPI
+
+	//TODO Setup DMA (maybe in display framework?)
+}
+
+/*
+ * send char with wait state until transfer complete
+ */
+void spi_send_char(unsigned char ch_data)
+{
+	SPI2->DR = ch_data;
+	while((SPI5->SR & (SPI_SR_BSY)));
 }
