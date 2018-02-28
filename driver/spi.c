@@ -5,7 +5,7 @@
  *      Author: Sebastian
  */
 
-#include "oVario_Framework.h"
+#include "spi.h"
 
 /*
  * Initialize necessary peripherals
