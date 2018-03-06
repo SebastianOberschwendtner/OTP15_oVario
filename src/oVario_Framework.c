@@ -46,7 +46,7 @@ void init_clock(void)
 /*
  * Enable Clock for GPIO
  */
-void en_gpio(unsigned char ch_port)
+void gpio_en(unsigned char ch_port)
 {
 	RCC->AHB1ENR |= (1<<ch_port);
 }
@@ -74,4 +74,37 @@ void init_systick_ms(unsigned int i_ticktime)
 
 	//Enable interrupt
 	NVIC_EnableIRQ(SysTick_IRQn);
+}
+/*
+ * Init LED ports
+ * PB1: OUT LED_RED
+ * PB0: OUT LED_GREEN
+ */
+void init_led(void)
+{
+	//Enable clock
+	gpio_en(GPIO_B);
+
+	//Set output
+	GPIOB->MODER |= GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0;
+}
+/*
+ * Set green LED
+ */
+void set_led_green(unsigned char ch_state)
+{
+	if(ch_state)
+		GPIOB->BSRRL = GPIO_BSRR_BS_0;
+	else
+		GPIOB->BSRRH = (GPIO_BSRR_BR_0>>16);
+}
+/*
+ * Set red LED
+ */
+void set_led_red(unsigned char ch_state)
+{
+	if(ch_state)
+		GPIOB->BSRRL = GPIO_BSRR_BS_1;
+	else
+		GPIOB->BSRRH = (GPIO_BSRR_BR_1>>16);
 }

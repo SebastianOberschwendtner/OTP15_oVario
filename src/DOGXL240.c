@@ -24,8 +24,14 @@ void lcd_init(void)
 	 * Initialize display
 	 */
 	lcd_set_cd(COMMAND);
-	spi_send_char(SET_COM_END);		//Set last COM electrode to 127
+	spi_send_char(SET_COM_END);			//Set last COM electrode to 127
 	spi_send_char(127);
+	spi_send_char(SET_PART_DISP_START);	//Set display start line to 0
+	spi_send_char(0);
+	spi_send_char(SET_PART_DISP_END);	//Set display end line to 127
+	spi_send_char(127);
+	spi_send_char(SET_POTI);			//Set Contrast
+	spi_send_char(100);
 
 }
 
@@ -37,5 +43,5 @@ void lcd_set_cd(unsigned char ch_state)
 	if(ch_state)
 		GPIOB->BSRRL = GPIO_BSRR_BS_14;
 	else
-		GPIOB->BSRRH = GPIO_BSRR_BR_14;
+		GPIOB->BSRRH = (GPIO_BSRR_BR_14>>16);
 }

@@ -42,7 +42,10 @@
 
 
 void init_clock(void);
-void en_gpio(unsigned char ch_port);
+void gpio_en(unsigned char ch_port);
 void init_systick_ms(unsigned int i_ticktime);
+void init_led(void);
+void set_led_green(unsigned char ch_state);
+void set_led_red(unsigned char ch_state);
 
 #endif /* OVARIO_FRAMEWORK_H_ */

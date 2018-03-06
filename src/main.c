@@ -16,6 +16,10 @@ int main(void)
 {
 	init_clock();
 	init_systick_ms(100);
+	init_led();
+
+	set_led_green(ON);
+	set_led_red(OFF);
 
 	for(;;);
 }
