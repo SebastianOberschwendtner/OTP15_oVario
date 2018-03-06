@@ -9,7 +9,8 @@
 #define OVARIO_FRAMEWORK_H_
 
 #include "stm32f4xx.h"
-#include "Variables.h"
+
+
 /*
  * Defines for system
  */

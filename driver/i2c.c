@@ -5,7 +5,7 @@
  *      Author: Sebastian
  */
 
-#include "oVario_Framework.h"
+#include "i2c.h"
 
 /*
  * Initialize necessary peripherals

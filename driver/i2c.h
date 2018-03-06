@@ -7,6 +7,7 @@
 
 #ifndef I2C_H_
 #define I2C_H_
+#include "oVario_Framework.h"
 
 
 void i2c_init(void);
