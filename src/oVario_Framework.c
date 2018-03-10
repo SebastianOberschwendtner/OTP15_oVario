@@ -70,10 +70,7 @@ void init_systick_ms(unsigned int i_ticktime)
 		SysTick->LOAD = 0x1000000;
 	SysTick->VAL = 0x00;
 	// Systick from AHB
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
-
-	//Enable interrupt
-	NVIC_EnableIRQ(SysTick_IRQn);
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
 }
 /*
  * Init LED ports

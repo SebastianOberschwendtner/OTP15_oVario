@@ -22,13 +22,14 @@ void spi_init(void)
 	 * PB13: SPI2_SCK  (AF5)
 	 * PB15: SPI2_MOSI (AF5)
 	 */
-	GPIOB->MODER |= GPIO_MODER_MODER15_1 | GPIO_MODER_MODER13_1 | GPIO_MODER_MODER12_1;
+	GPIOB->MODER |= GPIO_MODER_MODER15_1 | GPIO_MODER_MODER13_1 | GPIO_MODER_MODER12_0;
 	GPIOB->AFR[1] |= (5<<28) | (5<<20) | (5<<16);
 
+	GPIOB->BSRRL  = GPIO_BSRR_BS_12;
 	//Init SPI2, SCK = 1.3125 MHz
 	//Set baudrate, Master mode and frameformat (clock high idle, sample on rising edge)
 	//TODO Increase Baudrate
-	SPI2->CR1 = (0b100<<3) | SPI_CR1_MSTR | SPI_CR1_CPOL | SPI_CR1_CPHA;
+	SPI2->CR1 = (0b110<<3) | SPI_CR1_MSTR | SPI_CR1_CPOL | SPI_CR1_CPHA;
 	SPI2->CR2 = SPI_CR2_SSOE;	//Hardware NSS
 	SPI2->CR1 |= SPI_CR1_SPE;   //Enable SPI
 
@@ -40,6 +41,8 @@ void spi_init(void)
  */
 void spi_send_char(unsigned char ch_data)
 {
+	GPIOB->BSRRH = GPIO_BSRR_BS_12;
 	SPI2->DR = ch_data;
-	while((SPI5->SR & (SPI_SR_BSY)));
+	while((SPI2->SR & (SPI_SR_BSY)));
+	GPIOB->BSRRL  = GPIO_BSRR_BS_12;
 }
