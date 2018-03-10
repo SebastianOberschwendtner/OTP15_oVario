@@ -10,7 +10,7 @@
 /*
  * Initialize necessary peripherals
  */
-void spi_init(void)
+void init_spi(void)
 {
 	//Init clocks
 	gpio_en(GPIO_B);

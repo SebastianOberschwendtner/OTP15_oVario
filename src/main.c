@@ -18,34 +18,21 @@ unsigned long l_count_tick = 0;
 int main(void)
 {
 	init_clock();
-	init_systick_ms(50);
+	init_systick_ms(100);
 	init_led();
-	spi_init();
+	init_spi();
 
 	set_led_red(ON);
-	for(l_count_tick = 0;l_count_tick<=400000;l_count_tick++);
-	//spi_send_char(0xE2);		//Reset
-	for(l_count_tick = 0;l_count_tick<=40000;l_count_tick++);
-	spi_send_char(0xF1);		//Set com end
-	spi_send_char(0x7F);
-	spi_send_char(0x25);		//Set Temp comp
-	spi_send_char(0xC0);		//LCD Mapping
-	spi_send_char(0x02);
-	spi_send_char(0x81);		//Set Contrast
-	spi_send_char(0x8F);
-	spi_send_char(0xA9);		//Display enable
-	spi_send_char(0xA5);		//All pixel on
-
-
-
-	set_led_green(ON);
+	set_led_green(OFF);
+	wait_ms(100);
+	set_led_red(ON);
+	set_led_green(OFF);
 
 	while(1)
 	{
-
-		if(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+		if(TICK_PASSED)
 		{
-			set_led_green(ON);
+			set_led_green(TOGGLE);
 			l_count_tick++;
 			if(l_count_tick == 5)
 			{

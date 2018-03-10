@@ -37,7 +37,6 @@ void init_clock(void)
 	 * Peripheral	Speed	Prescaler
 	 * APB2:		84 MHz	2  (PRE2)
 	 * APB1:		42 MHz  4  (PRE1)
-	 * RTC clock:	 1 MHz  5  (RTCPRE)
 	 */
 	//           RTCPRE     PRE2      PRE1
 	RCC->CFGR |= (5<<16) | (2<<13) | (4<<10);
@@ -55,13 +54,13 @@ void gpio_en(unsigned char ch_port)
  * Init systick timer
  * i_ticktime: time the flag_tick is set in ms
  */
-void init_systick_ms(unsigned int i_ticktime)
+void init_systick_ms(unsigned long l_ticktime)
 {
 #ifndef F_CPU
 # warning "F_CPU has to be defined"
 # define F_CPU 1000000UL
 #endif
-	unsigned long l_temp = (F_CPU/1000)*i_ticktime;
+	unsigned long l_temp = (F_CPU/8000)*l_ticktime;
 
 	//Check whether the desired timespan is possible with the 24bit SysTick timer
 	if(l_temp <= 0x1000000)
@@ -70,7 +69,7 @@ void init_systick_ms(unsigned int i_ticktime)
 		SysTick->LOAD = 0x1000000;
 	SysTick->VAL = 0x00;
 	// Systick from AHB
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
+	SysTick->CTRL = SysTick_CTRL_ENABLE_Msk;
 }
 /*
  * Init LED ports
@@ -90,8 +89,10 @@ void init_led(void)
  */
 void set_led_green(unsigned char ch_state)
 {
-	if(ch_state)
+	if(ch_state == ON)
 		GPIOB->BSRRL = GPIO_BSRR_BS_0;
+	else if(ch_state == TOGGLE)
+		GPIOB->ODR ^= GPIO_ODR_ODR_0;
 	else
 		GPIOB->BSRRH = (GPIO_BSRR_BR_0>>16);
 }
@@ -100,8 +101,27 @@ void set_led_green(unsigned char ch_state)
  */
 void set_led_red(unsigned char ch_state)
 {
-	if(ch_state)
+	if(ch_state == ON)
 		GPIOB->BSRRL = GPIO_BSRR_BS_1;
+	else if(ch_state == TOGGLE)
+		GPIOB->ODR ^= GPIO_ODR_ODR_1;
 	else
 		GPIOB->BSRRH = (GPIO_BSRR_BR_1>>16);
+}
+/*
+ * Wait for a certain time in ms
+ * The function counts up to a specific value to reach the desired wait time.
+ * The coutn value is calculated using the system cock speed F_CPU.
+ */
+void wait_ms(unsigned long l_time)
+{
+	for(unsigned long l_count = 0;l_count<((F_CPU/1000)*l_time); l_count++);
+}
+/*
+ * Wait for a certain amount of SysTicks
+ */
+void wait_systick(unsigned long l_ticks)
+{
+	for(unsigned long l_count = 0;l_count<l_ticks; l_count++)
+		while(!TICK_PASSED);
 }

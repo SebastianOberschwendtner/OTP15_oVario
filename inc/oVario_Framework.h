@@ -19,6 +19,9 @@
 //I2C clock speed
 #define I2C_CLOCK		400000UL
 
+//Makro for SysTick status
+#define TICK_PASSED		(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+
 //PLL variables
 #define PLL_M			25
 #define PLL_N			336
@@ -39,14 +42,17 @@
 //state defines
 #define ON				1
 #define OFF				0
+#define TOGGLE			3
 
 
 
 void init_clock(void);
 void gpio_en(unsigned char ch_port);
-void init_systick_ms(unsigned int i_ticktime);
+void init_systick_ms(unsigned long l_ticktime);
 void init_led(void);
 void set_led_green(unsigned char ch_state);
 void set_led_red(unsigned char ch_state);
+void wait_ms(unsigned long l_time);
+void wait_systick(unsigned long l_ticks);
 
 #endif /* OVARIO_FRAMEWORK_H_ */

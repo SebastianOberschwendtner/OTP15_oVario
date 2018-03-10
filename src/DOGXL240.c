@@ -11,9 +11,9 @@
  * Initialize necessary peripherals and display
  */
 
-void lcd_init(void)
+void init_lcd(void)
 {
-	spi_init();
+	init_spi();
 
 	/*Set GPIO [Clock already activated in spi_init()]
 	 * PB14:	OUT   (C/D)
@@ -32,6 +32,16 @@ void lcd_init(void)
 	spi_send_char(127);
 	spi_send_char(SET_POTI);			//Set Contrast
 	spi_send_char(100);
+
+	spi_send_char(0xF1);		//Set com end
+	spi_send_char(0x7F);
+	spi_send_char(0x25);		//Set Temp comp
+	spi_send_char(0xC0);		//LCD Mapping
+	spi_send_char(0x02);
+	spi_send_char(0x81);		//Set Contrast
+	spi_send_char(0x8F);
+	spi_send_char(0xA9);		//Display enable
+	spi_send_char(0xA5);		//All pixel on
 
 }
 

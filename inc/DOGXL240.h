@@ -31,7 +31,7 @@
 #define SET_PART_DISP_END	0b11110011
 
 
-void lcd_init(void);
+void init_lcd(void);
 void lcd_set_cd(unsigned char ch_state);
 
 

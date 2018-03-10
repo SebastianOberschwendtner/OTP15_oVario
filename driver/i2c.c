@@ -10,7 +10,7 @@
 /*
  * Initialize necessary peripherals
  */
-void i2c_init(void)
+void init_i2c(void)
 {
 	//Init clocks
 	gpio_en(GPIO_B);
