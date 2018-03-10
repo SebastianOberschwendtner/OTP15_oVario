@@ -20,7 +20,7 @@ enum states
 };
 
 // Functions
-void set_gui 		(void);
+void gui_set 		(void);
 
 void fkt_Initscreen (void);
 void fkt_Vario 		(void);

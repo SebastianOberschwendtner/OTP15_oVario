@@ -14,7 +14,7 @@ uint8_t menu = 0;
 uint8_t submenu = 0;
 
 //*********** Functions **************
-void set_gui (void)
+void gui_set (void)
 {
 	switch(menu)
 	{
