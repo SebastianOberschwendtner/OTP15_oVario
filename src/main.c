@@ -9,7 +9,7 @@
  */
 
 #include "oVario_Framework.h"
-#include "spi.h"
+#include "DOGXL240.h"
 
 
 unsigned long l_count_tick = 0;
@@ -18,16 +18,24 @@ unsigned long l_count_tick = 0;
 int main(void)
 {
 	init_clock();
-	init_systick_ms(100);
+	init_systick_ms(SYSTICK);
 	init_led();
-	init_spi();
+
 
 	set_led_red(ON);
-	set_led_green(OFF);
-	wait_ms(100);
-	set_led_red(ON);
-	set_led_green(OFF);
+	init_lcd();
 
+	lcd_set_cd(DATA);
+	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
+		spi_send_char(0);
+	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
+		spi_send_char(255);
+	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
+		spi_send_char(128);
+	set_led_red(OFF);
+	set_led_green(ON);
+
+	l_count_tick = 0;
 	while(1)
 	{
 		if(TICK_PASSED)
