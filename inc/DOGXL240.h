@@ -38,6 +38,11 @@
 #define SET_RAM_ADDR_CTRL	0b10001000
 #define SYS_RESET			0b11100010
 #define SET_DISP_INV		0b10100110
+#define SET_WPC0			0b11110100
+#define SET_WPP0			0b11110101
+#define SET_WPC1			0b11110110
+#define SET_WPP1			0b11110111
+#define SET_WPP_EN			0b11111000
 
 /*
  * Control bits

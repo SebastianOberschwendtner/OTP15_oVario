@@ -45,11 +45,21 @@ void init_lcd(void)
 	spi_send_char(SET_DISP_EN | DISP_EN_DC2);		//Display enable
 	spi_send_char(SET_DISP_PAT | DISP_PAT_DC5);		//Set 1bit per pixel in RAM
 	spi_send_char(SET_RAM_ADDR_CTRL | RAM_ADDR_CTRL_AC1 | RAM_ADDR_CTRL_AC0); //Automatic wrap around in RAM
+	spi_send_char(SET_WPC0);						//Set window programm starting column address
+	spi_send_char(0);
+	spi_send_char(SET_WPP0);						//Set window programm starting page address
+	spi_send_char(0);
+	spi_send_char(SET_WPC1);						//Set window programm end column address
+	spi_send_char(239);
+	spi_send_char(SET_WPP1);						//Set window programm end page address
+	spi_send_char(15);
+	spi_send_char(SET_WPP_EN);						//Enable window programming
 	//spi_send_char(SET_ALL_ON | ALL_ON_DC1);			//All pixel on
 
-	lcd_set_col_addr(0);
-	lcd_set_page_addr(0);
-	lcd_set_write_pattern(0);
+
+	lcd_set_page_addr(15);
+	lcd_set_col_addr(239);
+	lcd_set_write_pattern(PAGE_PATTERN0);
 }
 /*
  * Reset display
@@ -58,7 +68,7 @@ void lcd_reset(void)
 {
 	lcd_set_cd(COMMAND);
 	spi_send_char(SYS_RESET);
-	wait_ms(50);
+	wait_ms(5);
 }
 /*
  * Set C/D pin according to send data
@@ -81,7 +91,7 @@ void lcd_set_col_addr(unsigned char ch_col)
 }
 /*
  * Set the page address of RAM
- * note: ch_page must be smaller than 32!
+ * note: ch_page must be smaller than 16!
  */
 void lcd_set_page_addr(unsigned char ch_page)
 {

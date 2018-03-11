@@ -27,11 +27,14 @@ int main(void)
 
 	lcd_set_cd(DATA);
 	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
+		spi_send_char(255);
+	for(l_count_tick = 0;l_count_tick < 16;l_count_tick++)
 		spi_send_char(0);
 	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
 		spi_send_char(255);
-	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
+	for(l_count_tick = 0;l_count_tick < 1600;l_count_tick++)
 		spi_send_char(128);
+
 	set_led_red(OFF);
 	set_led_green(ON);
 

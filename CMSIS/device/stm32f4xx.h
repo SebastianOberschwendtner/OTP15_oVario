@@ -12,15 +12,15 @@
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The device used in the target application
-  *              - To use or not the peripheral’s drivers in application code(i.e. 
-  *                code will be based on direct access to peripheral’s registers 
+  *              - To use or not the peripheralï¿½s drivers in application code(i.e. 
+  *                code will be based on direct access to peripheralï¿½s registers 
   *                rather than drivers API), this option is controlled by 
   *                "#define USE_STDPERIPH_DRIVER"
   *              - To change few application-specific parameters such as the HSE 
   *                crystal frequency
   *           - Data structures and the address mapping for all peripherals
   *           - Peripherals registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheralï¿½s registers hardware
   *  
   ******************************************************************************
   * @attention
@@ -7000,7 +7000,7 @@ typedef struct
 #define GPIO_OTYPER_OT_14                    ((uint32_t)0x00004000)
 #define GPIO_OTYPER_OT_15                    ((uint32_t)0x00008000)
 
-/******************  Bits definition for GPIO_OSPEEDR register  ***************/
+/******************  Bits definition for GPIO_ register  ***************/
 #define GPIO_OSPEEDER_OSPEEDR0               ((uint32_t)0x00000003)
 #define GPIO_OSPEEDER_OSPEEDR0_0             ((uint32_t)0x00000001)
 #define GPIO_OSPEEDER_OSPEEDR0_1             ((uint32_t)0x00000002)
