@@ -16,6 +16,8 @@
  */
 //CPU Speed
 #define	F_CPU			168021840UL //Measured with osci
+//Define SysTick time in ms
+#define SYSTICK			100
 //I2C clock speed
 #define I2C_CLOCK		400000UL
 

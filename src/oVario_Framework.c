@@ -119,7 +119,17 @@ void set_led_red(unsigned char ch_state)
  */
 void wait_ms(unsigned long l_time)
 {
-	for(unsigned long l_count = 0;l_count<((F_CPU/1000)*l_time); l_count++);
+	unsigned long l_temp=SysTick->VAL;
+	signed long l_target = l_temp-((F_CPU/8000)*l_time);
+	if(l_target<0)
+	{
+		wait_systick(1);
+		while(SysTick->VAL>(((F_CPU/8000)*SYSTICK)+l_target));
+	}
+	else
+	{
+		while(SysTick->VAL>l_target);
+	}
 }
 /*
  * Wait for a certain amount of SysTicks
