@@ -14,10 +14,14 @@ void init_clock(void)
 {
 	RCC->CR |= RCC_CR_HSEON;
 	while(!(RCC->CR & RCC_CR_HSERDY));
-	RCC->CFGR = RCC_CFGR_SW_HSE;
+	RCC->CFGR = RCC_CFGR_MCO2_1 | RCC_CFGR_MCO2_0 | RCC_CFGR_MCO2PRE_2 | RCC_CFGR_SW_HSE;
 	while(!(RCC->CFGR & RCC_CFGR_SWS_HSE));
 	RCC->CR = RCC_CR_HSEON;
-	FLASH->ACR |= FLASH_ACR_LATENCY_1WS;
+	/*
+	 * Set FLASH wait states according to datasheet
+	 * -> very important, do not forget!!!
+	 */
+	FLASH->ACR |= FLASH_ACR_LATENCY_5WS;
 	/*
 	 * PLL mit HSE  25MHz
 	 * PLLM = 25	1MHz
@@ -25,7 +29,7 @@ void init_clock(void)
 	 * PLLP = 2		168MHz
 	 * PLLQ = 7		48MHz
 	 */
-	RCC->PLLCFGR = 0x20000000 | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q<<24) | (PLL_P<<16) | (PLL_N<<6) | (PLL_M<<0);
+	RCC->PLLCFGR = (1<<29) | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q<<24) | (PLL_P<<16) | (PLL_N<<6) | (PLL_M<<0);
 	//Clocks aktivieren
 	RCC->CR |= RCC_CR_PLLON;
 	while(!(RCC->CR & RCC_CR_PLLRDY));

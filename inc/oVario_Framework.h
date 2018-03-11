@@ -15,7 +15,7 @@
  * Defines for system
  */
 //CPU Speed
-#define	F_CPU			168000000UL
+#define	F_CPU			168021840UL //Measured with osci
 //I2C clock speed
 #define I2C_CLOCK		400000UL
 
@@ -25,7 +25,7 @@
 //PLL variables
 #define PLL_M			25
 #define PLL_N			336
-#define PLL_P			2
+#define PLL_P			0	//Equals P=2, see datasheet of stm32
 #define PLL_Q			7
 
 //Port numbers of GPIOs
