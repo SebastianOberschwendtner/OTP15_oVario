@@ -11,7 +11,7 @@
 #include "oVario_Framework.h"
 #include "DOGXL240.h"
 
-
+uint8_t error = 0;
 unsigned long l_count_tick = 0;
 
 
