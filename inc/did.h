@@ -11,8 +11,8 @@
 
 // ***** DeviceIDs for IPC
 
-#define did_ms5611 0
-
+#define did_MS5611 	0
+#define did_LCD		1
 
 
 #endif /* DID_H_ */

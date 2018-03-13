@@ -6,6 +6,18 @@
  */
 
 #include "DOGXL240.h"
+#include "font.h"
+
+typedef struct
+{
+	unsigned char cursor_x;
+	unsigned char cursor_y;
+	unsigned char buffer[LCD_PIXEL_X*LCD_PIXEL_Y/8];
+} lcd;
+
+lcd* plcd_DOGXL = 0;
+
+extern const unsigned char font[256][12];
 
 /*
  * Initialize necessary peripherals and display
@@ -56,10 +68,15 @@ void init_lcd(void)
 	spi_send_char(SET_WPP_EN);						//Enable window programming
 	//spi_send_char(SET_ALL_ON | ALL_ON_DC1);			//All pixel on
 
-
-	lcd_set_page_addr(15);
-	lcd_set_col_addr(239);
+	//Set column, page and pattern which sould be written
+	lcd_set_page_addr(0);
+	lcd_set_col_addr(0);
 	lcd_set_write_pattern(PAGE_PATTERN0);
+
+	//register buffer
+	plcd_DOGXL = ipc_memory_register(LCD_PIXEL_X*LCD_PIXEL_Y/8,did_LCD);
+
+	lcd_set_cursor(0,0);
 }
 /*
  * Reset display
@@ -99,6 +116,7 @@ void lcd_set_page_addr(unsigned char ch_page)
 	spi_send_char(SET_PAGE_LSB | (ch_page & 0b1111));
 	spi_send_char(SET_PAGE_MSB | (ch_page>>4));
 }
+
 /*
  * Set the pattern number which is written into RAM
  */
@@ -106,4 +124,77 @@ void lcd_set_write_pattern(unsigned char ch_pat)
 {
 	lcd_set_cd(COMMAND);
 	spi_send_char(SET_PAGE_MSB | ch_pat);
+}
+/*
+ * Set which pattern is displayed.
+ * Range of ch_pat: [0 3]!
+ */
+void lcd_set_pattern(unsigned char ch_pat)
+{
+	lcd_set_cd(COMMAND);
+	spi_send_char(SET_DISP_PAT | DISP_PAT_DC5 | (ch_pat<<1));
+}
+/*
+ * Switch display on and off
+ */
+void lcd_set_enable(unsigned char ch_state)
+{
+	lcd_set_cd(COMMAND);
+	spi_send_char(SET_DISP_EN | ch_state);
+}
+/*
+ * Set cursor in buffer
+ */
+void lcd_set_cursor(unsigned char ch_x, unsigned char ch_y)
+{
+	plcd_DOGXL->cursor_x = ch_x;
+	plcd_DOGXL->cursor_y = ch_y;
+}
+
+/*
+ * Send the lcd buffer to display
+ * This function assumens that the RAM cursor is at the beginning of display RAM
+ */
+void lcd_send_buffer(void)
+{
+	lcd_set_cd(DATA);
+	for(unsigned long l_count=0;l_count<(LCD_PIXEL_X*LCD_PIXEL_Y/8);l_count++)
+	{
+		spi_send_char(plcd_DOGXL->buffer[l_count]);
+	}
+}
+/*
+ * Write specific pixel to buffer. Also clears pixel
+ */
+void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_val)
+{
+	unsigned char ch_shift = ch_y % 8;
+	if(ch_val)
+		plcd_DOGXL->buffer[ch_x*(LCD_PIXEL_Y/8)+(ch_y/8)] |= (1<<ch_shift);
+	else
+		plcd_DOGXL->buffer[ch_x*(ch_y/8)] &= ~(1<<ch_shift);
+}
+/*
+ * Write pixel data to buffer at cursor position.
+ * Cursors aren't incremented after each access.
+ */
+void lcd_char2buffer(unsigned char ch_data)
+{
+	for (unsigned char ch_fonty = 0; ch_fonty<FONT_Y;ch_fonty++)
+	{
+		for (unsigned char ch_fontx = 0; ch_fontx<FONT_X;ch_fontx++)
+		{
+			lcd_pixel2buffer(,,font[ch_data][ch_fonty]);
+		}
+	}
+}
+/*
+ * Clear buffer
+ */
+void lcd_clear_buffer(void)
+{
+	for(unsigned long l_count=0;l_count<(LCD_PIXEL_X*LCD_PIXEL_Y/8);l_count++)
+	{
+		plcd_DOGXL->buffer[l_count]=0;
+	}
 }

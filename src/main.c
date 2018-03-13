@@ -10,10 +10,10 @@
 
 #include "oVario_Framework.h"
 #include "DOGXL240.h"
+#include "ipc.h"
 
 uint8_t error = 0;
 unsigned long l_count_tick = 0;
-
 
 int main(void)
 {
@@ -25,15 +25,12 @@ int main(void)
 	set_led_red(ON);
 	init_lcd();
 
-	lcd_set_cd(DATA);
-	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
-		spi_send_char(255);
-	for(l_count_tick = 0;l_count_tick < 16;l_count_tick++)
-		spi_send_char(0);
-	for(l_count_tick = 0;l_count_tick < 64;l_count_tick++)
-		spi_send_char(255);
-	for(l_count_tick = 0;l_count_tick < 1600;l_count_tick++)
-		spi_send_char(128);
+	lcd_clear_buffer();
+
+	lcd_set_cursor(239,0);
+	lcd_char2buffer(0xFF);
+	lcd_pixel2buffer(239,127,1);
+	lcd_send_buffer();
 
 	set_led_red(OFF);
 	set_led_green(ON);

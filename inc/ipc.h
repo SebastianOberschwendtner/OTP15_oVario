@@ -14,7 +14,7 @@
 #include "error.h"
 
 //*********** Defines **************
-#define memory_size 1000
+#define memory_size 10000
 #define did_size 	20
 
 
