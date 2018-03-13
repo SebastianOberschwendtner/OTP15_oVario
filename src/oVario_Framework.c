@@ -39,11 +39,11 @@ void init_clock(void)
 	/*
 	 * set prescalers for peripherals:
 	 * Peripheral	Speed	Prescaler
-	 * APB2:		84 MHz	2  (PRE2)
-	 * APB1:		42 MHz  4  (PRE1)
+	 * APB2:			84 MHz	2  (PRE2)
+	 * APB1:			42 MHz  4  (PRE1)
+	 * RTC:	   		 1 MHz 25  (RTCPRE)
 	 */
-	//           RTCPRE     PRE2      PRE1
-	RCC->CFGR |= (5<<16) | (2<<13) | (4<<10);
+	RCC->CFGR |= RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV4 | (25<<16);
 };
 
 /*
