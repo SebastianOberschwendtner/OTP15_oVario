@@ -10,6 +10,7 @@
 
 #include "oVario_Framework.h"
 #include "DOGXL240.h"
+#include "exti.h"
 
 uint8_t error = 0;
 unsigned long l_count_tick = 0;
@@ -20,7 +21,7 @@ int main(void)
 	init_clock();
 	init_systick_ms(SYSTICK);
 	init_led();
-
+	exti_init();
 
 	set_led_red(ON);
 	init_lcd();
@@ -47,11 +48,11 @@ int main(void)
 			l_count_tick++;
 			if(l_count_tick == 5)
 			{
-				set_led_red(OFF);
+				//set_led_red(OFF);
 			}
 			else if (l_count_tick == 10)
 			{
-				set_led_red(ON);
+				//set_led_red(ON);
 				l_count_tick = 0;
 			}
 		}
