@@ -128,8 +128,13 @@
 //In SET_DISP_INV
 #define DISP_INV_DC0			1
 
+//In SET_LCD_MAP
+#define LCD_MAP_MX			(1<<1)
+#define LCD_MAP_MY			(1<<2)
+
 void init_lcd(void);
- void lcd_reset(void);
+void lcd_dma_enable(void);
+void lcd_reset(void);
 void lcd_set_cd(unsigned char ch_state);
 void lcd_set_col_addr(unsigned char ch_col);
 void lcd_set_page_addr(unsigned char ch_page);
@@ -141,6 +146,11 @@ void lcd_send_buffer(void);
 void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_val);
 void lcd_char2buffer(unsigned char ch_data);
 void lcd_clear_buffer(void);
+void lcd_string2buffer(char* pch_string);
+void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal);
+void lcd_digit2buffer(unsigned long l_number, unsigned char ch_predecimal);
+void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned char ch_x_end,unsigned char ch_y_end);
+void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius);
 
 
 #endif /* DOGXL240_H_ */
