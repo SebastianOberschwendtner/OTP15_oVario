@@ -10,7 +10,8 @@
 
 
 //*********** Errors **************
-#define err_no_memory_left 1u
+#define err_no_memory_left  1u
+#define err_queue_overrun	2u
 
 
 

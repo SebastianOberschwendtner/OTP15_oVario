@@ -63,25 +63,43 @@ void exti_init(void)
 	// Config EXTI3 NVIC
 	NVIC_InitStructure.NVIC_IRQChannel 						= EXTI3_IRQn;
 	NVIC_Init(&NVIC_InitStructure);
+
+
+	ipc_register_queue(80,did_KEYPAD);
 }
 
 void EXTI0_IRQHandler (void)
 {
-	set_led_red(TOGGLE);
+	T_keypad temp;
+	temp.pad = 0;
+	temp.timestamp = TIM5->CNT;
+	ipc_queue_push(&temp, 5, did_KEYPAD);
 	EXTI_ClearITPendingBit(EXTI_Line0);
 }
 
 void EXTI1_IRQHandler (void)
 {
+	T_keypad temp;
+	temp.pad = 1;
+	temp.timestamp = TIM5->CNT;
+	ipc_queue_push(&temp, 5, did_KEYPAD);
 	EXTI_ClearITPendingBit(EXTI_Line1);
 }
 
 void EXTI2_IRQHandler (void)
 {
+	T_keypad temp;
+	temp.pad = 2;
+	temp.timestamp = TIM5->CNT;
+	ipc_queue_push(&temp, 5, did_KEYPAD);
 	EXTI_ClearITPendingBit(EXTI_Line2);
 }
 
 void EXTI3_IRQHandler (void)
 {
+	T_keypad temp;
+	temp.pad = 3;
+	temp.timestamp = TIM5->CNT;
+	ipc_queue_push(&temp, 5, did_KEYPAD);
 	EXTI_ClearITPendingBit(EXTI_Line3);
 }
