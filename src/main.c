@@ -12,7 +12,7 @@
 #include "DOGXL240.h"
 #include "ipc.h"
 
-uint8_t error = 0;
+uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
 
 int main(void)
@@ -36,6 +36,8 @@ int main(void)
 	set_led_green(ON);
 
 	l_count_tick = 0;
+
+
 	while(1)
 	{
 		if(TICK_PASSED)
