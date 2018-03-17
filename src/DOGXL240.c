@@ -17,7 +17,9 @@ typedef struct
 
 lcd* plcd_DOGXL = 0;
 
-extern const unsigned char font[256][12];
+extern const unsigned char font12x16[256][32];
+const unsigned char font6x8[256][8];
+unsigned char ch_fontsize = 1;		//Sets the fontsize as multiples pixel per bit of the font
 
 /*
  * Initialize necessary peripherals and display
@@ -178,6 +180,13 @@ void lcd_set_cursor(unsigned char ch_x, unsigned char ch_y)
 }
 
 /*
+ * set the fontsize
+ */
+void lcd_set_fontsize(unsigned char ch_size)
+{
+	ch_fontsize = ch_size;
+}
+/*
  * Send the lcd buffer to display
  * This function assumens that the RAM cursor is at the beginning of display RAM
  */
@@ -201,27 +210,57 @@ void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_v
 		plcd_DOGXL->buffer[ch_x*(LCD_PIXEL_Y/8)+(ch_y/8)] &= ~(1<<ch_shift);
 }
 /*
- * Write pixel data to buffer at cursor position.
+ * Write pixel data of a character to buffer at cursor position.
  * Cursors are incremented after each access.
  * The cursor points to the top left corner of character.
+ * The size is fixed to 12x16, when ch_fontsize is 0.
+ * For other ch_fontsize the size is variable.
  */
 void lcd_char2buffer(unsigned char ch_data)
 {
-	for (unsigned char ch_fonty = 0; ch_fonty<FONT_Y;ch_fonty++)
-	{
-		for (unsigned char ch_fontx = 0; ch_fontx<FONT_X;ch_fontx++)
+	if(ch_fontsize){
+		for (unsigned char ch_fonty = 0; ch_fonty<(FONT_Y*ch_fontsize);ch_fonty=ch_fonty+ch_fontsize)
 		{
-			lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx,plcd_DOGXL->cursor_y+ch_fonty,(font[ch_data][ch_fonty] & (1<<ch_fontx)));
+			for (unsigned char ch_fontx = 0; ch_fontx<(FONT_X*ch_fontsize);ch_fontx=ch_fontx+ch_fontsize)
+			{
+				for(unsigned char ch_addpixelx = 0;ch_addpixelx<ch_fontsize;ch_addpixelx++)
+				{
+					for(unsigned char ch_addpixely = 0;ch_addpixely<ch_fontsize;ch_addpixely++)
+					{
+						lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx+ch_addpixelx,plcd_DOGXL->cursor_y+ch_fonty+ch_addpixely,(font6x8[ch_data][(ch_fonty/ch_fontsize)] & (0x20>>((ch_fontx/ch_fontsize)))));
+					}
+				}
+			}
+		}
+		plcd_DOGXL->cursor_x += (FONT_X*ch_fontsize);
+		if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
+		{
+			plcd_DOGXL->cursor_x = 0;
+			plcd_DOGXL->cursor_y += (FONT_Y*ch_fontsize);
+			if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
+			{
+				plcd_DOGXL->cursor_y = 0;
+			}
 		}
 	}
-	plcd_DOGXL->cursor_x += FONT_X;
-	if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
+	else
 	{
-		plcd_DOGXL->cursor_x = 0;
-		plcd_DOGXL->cursor_y += FONT_Y;
-		if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
+		for (unsigned char ch_fonty = 0; ch_fonty<16;ch_fonty++)
 		{
-			plcd_DOGXL->cursor_y = 0;
+			for (unsigned char ch_fontx = 0; ch_fontx<12;ch_fontx++)
+			{
+				lcd_pixel2buffer(plcd_DOGXL->cursor_x+11-ch_fontx,plcd_DOGXL->cursor_y+ch_fonty,(font12x16[ch_data][(2*ch_fonty)+(ch_fontx/8)] & (0x80>>(ch_fontx%8))));
+			}
+		}
+		plcd_DOGXL->cursor_x += 12;
+		if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
+		{
+			plcd_DOGXL->cursor_x = 0;
+			plcd_DOGXL->cursor_y += 16;
+			if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
+			{
+				plcd_DOGXL->cursor_y = 0;
+			}
 		}
 	}
 }
@@ -268,7 +307,7 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 }
 
 /*
- * Write number with special font.
+ * Write number with special number font.
  */
 void lcd_digit2buffer(unsigned long l_number, unsigned char ch_predecimal)
 {

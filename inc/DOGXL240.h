@@ -18,8 +18,8 @@
 #define LCD_PIXEL_X		240
 #define LCD_PIXEL_Y		128
 //Define font size
-#define FONT_X			8
-#define FONT_Y			12
+#define FONT_X			6
+#define FONT_Y			8
 /*
  * Defines for registers and commands
  */
@@ -142,6 +142,7 @@ void lcd_set_write_pattern(unsigned char ch_pat);
 void lcd_set_pattern(unsigned char ch_pat);
 void lcd_set_enable(unsigned char ch_state);
 void lcd_set_cursor(unsigned char ch_x, unsigned char ch_y);
+void lcd_set_fontsize(unsigned char ch_size);
 void lcd_send_buffer(void);
 void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_val);
 void lcd_char2buffer(unsigned char ch_data);
