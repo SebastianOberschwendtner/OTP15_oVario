@@ -22,7 +22,7 @@ extern uint8_t error;
 //*********** Functions **************
 
 // register Data Memory and return pointer
-void* ipc_memory_register(uint16_t no_bytes, uint8_t did)
+void* ipc_memory_register(uint32_t no_bytes, uint8_t did)
 {
 	uint16_t temp 	= memory_data_idx;
 	memory_data_idx += no_bytes;
