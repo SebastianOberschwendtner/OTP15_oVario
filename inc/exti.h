@@ -21,13 +21,7 @@
 
 // ***** Prototypes *****
 
-#pragma pack(push, 1)
-typedef struct
-{
-	uint8_t	 pad;
-	uint32_t timestamp;
-}T_keypad;
-#pragma pack(pop)
+
 // ***** Functions *****
 void exti_init(void);
 
