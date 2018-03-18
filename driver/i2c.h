@@ -9,8 +9,13 @@
 #define I2C_H_
 #include "oVario_Framework.h"
 
+// ***** Defines *****
+#define i2c_addr_MS5611 0b11101110
 
+
+// ***** Functions *****
 void init_i2c(void);
 void i2c_send_char(unsigned char ch_address, unsigned char ch_data);
+
 
 #endif /* I2C_H_ */

@@ -14,7 +14,7 @@
 #include "error.h"
 
 //*********** Defines **************
-#define memory_data_size 1000
+#define memory_data_size 5000
 #define memory_queue_size 1000
 #define did_size 	20
 
@@ -30,7 +30,7 @@ typedef struct
 }T_queue;
 
 //*********** Functions **************
-void* ipc_memory_register	(uint16_t no_bytes, uint8_t did);
+void* ipc_memory_register	(uint32_t no_bytes, uint8_t did);
 void* ipc_memory_get		(uint8_t did);
 void  ipc_queue_register	(uint16_t no_bytes, uint8_t did);
 

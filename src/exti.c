@@ -9,6 +9,8 @@
 // ***** Includes *****
 #include "exti.h"
 #include "oVario_Framework.h"
+#include "sound.h"
+#include "Variables.h"
 
 // ***** Functions *****
 volatile uint8_t testvar = 0;

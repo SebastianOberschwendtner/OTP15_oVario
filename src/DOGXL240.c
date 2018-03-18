@@ -8,6 +8,7 @@
 #include "DOGXL240.h"
 #include "font.h"
 
+#pragma pack(push, 1)
 typedef struct
 {
 	unsigned char cursor_x;
@@ -16,6 +17,8 @@ typedef struct
 	unsigned char ch_inverted;		//Inverts the written charcter
 	unsigned char buffer[LCD_PIXEL_X*LCD_PIXEL_Y/8];
 } lcd;
+#pragma pack(pop)
+
 
 lcd* plcd_DOGXL = 0;
 
@@ -79,7 +82,8 @@ void init_lcd(void)
 	lcd_set_write_pattern(PAGE_PATTERN0);
 
 	//register buffer
-	plcd_DOGXL = ipc_memory_register((LCD_PIXEL_X*LCD_PIXEL_Y/8)+4,did_LCD);
+	plcd_DOGXL = ipc_memory_register(LCD_PIXEL_X*LCD_PIXEL_Y/8,did_LCD);
+
 	lcd_set_cursor(0,0);
 	lcd_set_inverted(0);
 	lcd_set_fontsize(0);
