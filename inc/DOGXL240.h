@@ -142,14 +142,17 @@ void lcd_set_write_pattern(unsigned char ch_pat);
 void lcd_set_pattern(unsigned char ch_pat);
 void lcd_set_enable(unsigned char ch_state);
 void lcd_set_cursor(unsigned char ch_x, unsigned char ch_y);
+void lcd_shift_cursor(signed char ch_pos_x, signed char ch_pos_y);
 void lcd_set_fontsize(unsigned char ch_size);
+void lcd_set_inverted(unsigned char ch_stat);
 void lcd_send_buffer(void);
 void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_val);
 void lcd_char2buffer(unsigned char ch_data);
 void lcd_clear_buffer(void);
 void lcd_string2buffer(char* pch_string);
 void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal);
-void lcd_digit2buffer(unsigned long l_number, unsigned char ch_predecimal);
+void lcd_digit2buffer(unsigned char ch_data);
+void lcd_bat2buffer(unsigned char ch_stat);
 void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned char ch_x_end,unsigned char ch_y_end);
 void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius);
 

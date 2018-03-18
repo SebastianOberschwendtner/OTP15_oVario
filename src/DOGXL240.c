@@ -12,14 +12,17 @@ typedef struct
 {
 	unsigned char cursor_x;
 	unsigned char cursor_y;
+	unsigned char ch_fontsize;		//Sets the fontsize as multiples pixel per bit of the font
+	unsigned char ch_inverted;		//Inverts the written charcter
 	unsigned char buffer[LCD_PIXEL_X*LCD_PIXEL_Y/8];
 } lcd;
 
 lcd* plcd_DOGXL = 0;
 
 extern const unsigned char font12x16[256][32];
-const unsigned char font6x8[256][8];
-unsigned char ch_fontsize = 1;		//Sets the fontsize as multiples pixel per bit of the font
+extern const unsigned char font6x8[256][8];
+extern const unsigned char battery16x12[6][24];
+extern const unsigned char number16x20[11][40];
 
 /*
  * Initialize necessary peripherals and display
@@ -76,24 +79,26 @@ void init_lcd(void)
 	lcd_set_write_pattern(PAGE_PATTERN0);
 
 	//register buffer
-	plcd_DOGXL = ipc_memory_register(LCD_PIXEL_X*LCD_PIXEL_Y/8,did_LCD);
-
+	plcd_DOGXL = ipc_memory_register((LCD_PIXEL_X*LCD_PIXEL_Y/8)+4,did_LCD);
 	lcd_set_cursor(0,0);
+	lcd_set_inverted(0);
+	lcd_set_fontsize(0);
 
 	/*
 	 * Initialize DMA
 	 */
+	//Enable Clocks
 	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 
+	//Wait for DMA to be finished and write settings
 	while(DMA1_Stream4->CR & DMA_SxCR_EN);
-	DMA1_Stream4->CR = DMA_SxCR_MINC | DMA_SxCR_DIR_0;
-	DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;
+	DMA1_Stream4->CR = DMA_SxCR_MINC | DMA_SxCR_DIR_0;			//Memory: 8bit to Peripheral: 16bit
+	DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;				//Number of transfers for the buffer
+	DMA1_Stream4->PAR = (unsigned long)&SPI2->DR;				//Set SPI2 as target peripheral address
+	DMA1_Stream4->M0AR = (unsigned long)&plcd_DOGXL->buffer[0];	//Set display buffer as start address
+	DMA1_Stream4->FCR = DMA_SxFCR_DMDIS;							//Enable FIFO with 4 bytes
 
-	DMA1_Stream4->PAR = (unsigned long)&SPI2->DR;
-	DMA1_Stream4->M0AR = (unsigned long)&plcd_DOGXL->buffer[0];
-	DMA1_Stream4->FCR = DMA_SxFCR_DMDIS;
-
-	SPI2->CR2 |= SPI_CR2_TXDMAEN;
+	SPI2->CR2 |= SPI_CR2_TXDMAEN;								//Enable DMA request in SPI2
 }
 /*
  * Enable DMA transfer
@@ -109,9 +114,12 @@ void lcd_dma_enable(void)
  */
 void lcd_reset(void)
 {
-	lcd_set_cd(COMMAND);
-	spi_send_char(SYS_RESET);
-	wait_ms(5);
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN)) //Wait for DMA transfer to finish
+	{
+		lcd_set_cd(COMMAND);
+		spi_send_char(SYS_RESET);
+		wait_ms(5);
+	}
 }
 /*
  * Set C/D pin according to send data
@@ -128,9 +136,12 @@ void lcd_set_cd(unsigned char ch_state)
  */
 void lcd_set_col_addr(unsigned char ch_col)
 {
-	lcd_set_cd(COMMAND);
-	spi_send_char(SET_COL_LSB | (ch_col & 0b1111));
-	spi_send_char(SET_COL_MSB | (ch_col>>4));
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN)) //Wait for DMA transfer to finish
+	{
+		lcd_set_cd(COMMAND);
+		spi_send_char(SET_COL_LSB | (ch_col & 0b1111));
+		spi_send_char(SET_COL_MSB | (ch_col>>4));
+	}
 }
 /*
  * Set the page address of RAM
@@ -138,9 +149,12 @@ void lcd_set_col_addr(unsigned char ch_col)
  */
 void lcd_set_page_addr(unsigned char ch_page)
 {
-	lcd_set_cd(COMMAND);
-	spi_send_char(SET_PAGE_LSB | (ch_page & 0b1111));
-	spi_send_char(SET_PAGE_MSB | (ch_page>>4));
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN)) //Wait for DMA transfer to finish
+	{
+		lcd_set_cd(COMMAND);
+		spi_send_char(SET_PAGE_LSB | (ch_page & 0b1111));
+		spi_send_char(SET_PAGE_MSB | (ch_page>>4));
+	}
 }
 
 /*
@@ -148,8 +162,11 @@ void lcd_set_page_addr(unsigned char ch_page)
  */
 void lcd_set_write_pattern(unsigned char ch_pat)
 {
-	lcd_set_cd(COMMAND);
-	spi_send_char(SET_PAGE_MSB | ch_pat);
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN)) //Wait for DMA transfer to finish
+	{
+		lcd_set_cd(COMMAND);
+		spi_send_char(SET_PAGE_MSB | ch_pat);
+	}
 }
 /*
  * Set which pattern is displayed.
@@ -157,17 +174,24 @@ void lcd_set_write_pattern(unsigned char ch_pat)
  */
 void lcd_set_pattern(unsigned char ch_pat)
 {
-	lcd_set_cd(COMMAND);
-	spi_send_char(SET_DISP_PAT | DISP_PAT_DC5 | (ch_pat<<1));
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN)) //Wait for DMA transfer to finish
+	{
+		lcd_set_cd(COMMAND);
+		spi_send_char(SET_DISP_PAT | DISP_PAT_DC5 | (ch_pat<<1));
+	}
 }
 /*
  * Switch display on and off
  */
 void lcd_set_enable(unsigned char ch_state)
 {
-	lcd_set_cd(COMMAND);
-	spi_send_char(SET_DISP_EN | ch_state);
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN)) //Wait for DMA transfer to finish
+	{
+		lcd_set_cd(COMMAND);
+		spi_send_char(SET_DISP_EN | ch_state);
+	}
 }
+
 /*
  * Set cursor in buffer
  * Range:	ch_x: [0 239]
@@ -180,12 +204,36 @@ void lcd_set_cursor(unsigned char ch_x, unsigned char ch_y)
 }
 
 /*
+ * Shift the cursor according to ch_pos_x and ch_pos_y.
+ * Both directions can be negativ.
+ */
+void lcd_shift_cursor(signed char ch_pos_x, signed char ch_pos_y)
+{
+	plcd_DOGXL->cursor_x += ch_pos_x;
+	plcd_DOGXL->cursor_y += ch_pos_y;
+
+	if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
+		plcd_DOGXL->cursor_x = 0;
+	if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
+		plcd_DOGXL->cursor_y = 0;
+}
+
+/*
  * set the fontsize
  */
 void lcd_set_fontsize(unsigned char ch_size)
 {
-	ch_fontsize = ch_size;
+	plcd_DOGXL->ch_fontsize = ch_size;
 }
+
+/*
+ * Set the invertion
+ */
+void lcd_set_inverted(unsigned char ch_stat)
+{
+	plcd_DOGXL->ch_inverted = ch_stat;
+}
+
 /*
  * Send the lcd buffer to display
  * This function assumens that the RAM cursor is at the beginning of display RAM
@@ -204,6 +252,7 @@ void lcd_send_buffer(void)
 void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_val)
 {
 	unsigned char ch_shift = ch_y % 8;
+	ch_val= (ch_val && 1) ^ plcd_DOGXL->ch_inverted;
 	if(ch_val)
 		plcd_DOGXL->buffer[ch_x*(LCD_PIXEL_Y/8)+(ch_y/8)] |= (1<<ch_shift);
 	else
@@ -212,31 +261,34 @@ void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_v
 /*
  * Write pixel data of a character to buffer at cursor position.
  * Cursors are incremented after each access.
- * The cursor points to the top left corner of character.
+ * The cursor points to the bottom left corner of character.
  * The size is fixed to 12x16, when ch_fontsize is 0.
- * For other ch_fontsize the size is variable.
+ * For other ch_fontsize the size is variable as a multiple of 6x8.
  */
 void lcd_char2buffer(unsigned char ch_data)
 {
-	if(ch_fontsize){
-		for (unsigned char ch_fonty = 0; ch_fonty<(FONT_Y*ch_fontsize);ch_fonty=ch_fonty+ch_fontsize)
+	if(plcd_DOGXL->ch_fontsize){
+		plcd_DOGXL->cursor_y -= plcd_DOGXL->ch_fontsize*FONT_Y;
+		for (unsigned char ch_fonty = 0; ch_fonty<(FONT_Y*plcd_DOGXL->ch_fontsize);ch_fonty=ch_fonty+plcd_DOGXL->ch_fontsize)
 		{
-			for (unsigned char ch_fontx = 0; ch_fontx<(FONT_X*ch_fontsize);ch_fontx=ch_fontx+ch_fontsize)
+			for (unsigned char ch_fontx = 0; ch_fontx<(FONT_X*plcd_DOGXL->ch_fontsize);ch_fontx=ch_fontx+plcd_DOGXL->ch_fontsize)
 			{
-				for(unsigned char ch_addpixelx = 0;ch_addpixelx<ch_fontsize;ch_addpixelx++)
+				for(unsigned char ch_addpixelx = 0;ch_addpixelx<plcd_DOGXL->ch_fontsize;ch_addpixelx++)
 				{
-					for(unsigned char ch_addpixely = 0;ch_addpixely<ch_fontsize;ch_addpixely++)
+					for(unsigned char ch_addpixely = 0;ch_addpixely<plcd_DOGXL->ch_fontsize;ch_addpixely++)
 					{
-						lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx+ch_addpixelx,plcd_DOGXL->cursor_y+ch_fonty+ch_addpixely,(font6x8[ch_data][(ch_fonty/ch_fontsize)] & (0x20>>((ch_fontx/ch_fontsize)))));
+						lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx+ch_addpixelx,plcd_DOGXL->cursor_y+ch_fonty+ch_addpixely,
+								(font6x8[ch_data][(ch_fonty/plcd_DOGXL->ch_fontsize)] & (0x20>>((ch_fontx/plcd_DOGXL->ch_fontsize)))));
 					}
 				}
 			}
 		}
-		plcd_DOGXL->cursor_x += (FONT_X*ch_fontsize);
+		plcd_DOGXL->cursor_x += (FONT_X*plcd_DOGXL->ch_fontsize);
+		plcd_DOGXL->cursor_y += plcd_DOGXL->ch_fontsize*FONT_Y;
 		if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
 		{
 			plcd_DOGXL->cursor_x = 0;
-			plcd_DOGXL->cursor_y += (FONT_Y*ch_fontsize);
+			plcd_DOGXL->cursor_y += (FONT_Y*plcd_DOGXL->ch_fontsize);
 			if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
 			{
 				plcd_DOGXL->cursor_y = 0;
@@ -245,6 +297,7 @@ void lcd_char2buffer(unsigned char ch_data)
 	}
 	else
 	{
+		plcd_DOGXL->cursor_y -= 16;
 		for (unsigned char ch_fonty = 0; ch_fonty<16;ch_fonty++)
 		{
 			for (unsigned char ch_fontx = 0; ch_fontx<12;ch_fontx++)
@@ -253,6 +306,7 @@ void lcd_char2buffer(unsigned char ch_data)
 			}
 		}
 		plcd_DOGXL->cursor_x += 12;
+		plcd_DOGXL->cursor_y += 16;
 		if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
 		{
 			plcd_DOGXL->cursor_x = 0;
@@ -309,9 +363,62 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 /*
  * Write number with special number font.
  */
-void lcd_digit2buffer(unsigned long l_number, unsigned char ch_predecimal)
+void lcd_digit2buffer(unsigned char ch_data)
 {
+	unsigned char ch_digitsize = 1;
+	if(plcd_DOGXL->ch_fontsize > 1)
+		ch_digitsize = plcd_DOGXL->ch_fontsize;
+	plcd_DOGXL->cursor_y -= 20;
+	for (unsigned char ch_fonty = 0; ch_fonty<(20*ch_digitsize);ch_fonty=ch_fonty+ch_digitsize)
+	{
+		for (unsigned char ch_fontx = 0; ch_fontx<(16*ch_digitsize);ch_fontx=ch_fontx+ch_digitsize)
+		{
+			for(unsigned char ch_addpixelx = 0;ch_addpixelx<ch_digitsize;ch_addpixelx++)
+			{
+				for(unsigned char ch_addpixely = 0;ch_addpixely<ch_digitsize;ch_addpixely++)
+				{
+					lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx+ch_addpixelx,plcd_DOGXL->cursor_y+ch_fonty+ch_addpixely,(number16x20[ch_data][(2*ch_fonty/ch_digitsize)+(ch_fontx/(8*ch_digitsize))] & (1<<((ch_fontx/ch_digitsize)%8))));
+				}
+			}
+		}
+	}
+	plcd_DOGXL->cursor_x += (16*ch_digitsize);
+	plcd_DOGXL->cursor_y += 20;
+	if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
+	{
+		plcd_DOGXL->cursor_x = 0;
+		plcd_DOGXL->cursor_y += (20*ch_digitsize);
+		if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
+		{
+			plcd_DOGXL->cursor_y = 0;
+		}
+	}
+}
 
+/*
+ * Write battery symbol to buffer
+ */
+void lcd_bat2buffer(unsigned char ch_stat)
+{
+	plcd_DOGXL->cursor_y -= 12;
+	for (unsigned char ch_fonty = 0; ch_fonty<12;ch_fonty++)
+	{
+		for (unsigned char ch_fontx = 0; ch_fontx<16;ch_fontx++)
+		{
+			lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx,plcd_DOGXL->cursor_y+ch_fonty,(battery16x12[ch_stat][(2*ch_fonty)+(ch_fontx/8)] & (1<<(ch_fontx%8))));
+		}
+	}
+	plcd_DOGXL->cursor_x += 16;
+	plcd_DOGXL->cursor_y += 12;
+	if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
+	{
+		plcd_DOGXL->cursor_x = 0;
+		plcd_DOGXL->cursor_y += 12;
+		if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
+		{
+			plcd_DOGXL->cursor_y = 0;
+		}
+	}
 }
 
 /*
