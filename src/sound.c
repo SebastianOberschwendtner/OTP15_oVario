@@ -11,10 +11,10 @@
 
 // ***** Variables *****
 
-T_keypad* sound_command;
 T_sound_state sound_state;
 uint32_t timet = 0;
-
+T_sound_command sound_command;
+volatile uint32_t temp = 0;
 
 // ***** Functions *****
 
@@ -51,7 +51,7 @@ void sound_init()
 
 	//RCC_GetClocksFreq(&RCC_Clocks);
 
-	// Timer init
+	// Timer for Buzzer Output PWM
 	TIM_TimeBaseStructure.TIM_Period 			= 10500;//20995;
 	TIM_TimeBaseStructure.TIM_Prescaler 		= 7;
 	TIM_TimeBaseStructure.TIM_ClockDivision 	= 0;
@@ -61,7 +61,7 @@ void sound_init()
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
 	TIM_ARRPreloadConfig(TIM2, ENABLE);
 
-
+	// OC Init
 	TIM_OCInitStructure.TIM_OCMode 			= TIM_OCMode_PWM2;
 	TIM_OCInitStructure.TIM_OutputState 	= TIM_OutputState_Enable;
 	TIM_OCInitStructure.TIM_OutputNState 	= TIM_OutputNState_Enable;
@@ -78,10 +78,32 @@ void sound_init()
 	TIM_CtrlPWMOutputs(TIM2, ENABLE);
 	TIM_SetCompare1(TIM2, 0);
 
+	// Timer for Beep Init
+	// Clock enable
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
+	TIM_TimeBaseStructure.TIM_Period 			= 40000;	// 20000 = 1Hz
+	TIM_TimeBaseStructure.TIM_Prescaler 		= 2099;
+	TIM_TimeBaseStructure.TIM_ClockDivision 	= 0;
+	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseStructure.TIM_CounterMode 		= TIM_CounterMode_Up;
+	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+	TIM_Cmd(TIM3, ENABLE);
+	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+
+	// NVIC Init
+	NVIC_InitTypeDef   NVIC_InitStructure;
+	NVIC_InitStructure.NVIC_IRQChannel 						= TIM3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority 	= 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority 			= 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd 					= ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+
+	// Predefine state
 	sound_state.volume 		= 100;
 	sound_state.mute   		= 0;
 	sound_state.frequency 	= 1000;
+	sound_state.mode 		= sound_mode_beep;
 }
 
 
@@ -98,38 +120,61 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume)
 	TIM_SetCompare1(TIM2, compare);
 }
 
-
-
 void sound_task(void)
 {
-	if(ipc_get_queue_bytes(did_KEYPAD) > 4)
+
+	temp = TIM3->CNT;
+
+	if(ipc_get_queue_bytes(did_SOUND) > 4)
 	{
-		sound_command = ipc_queue_get(did_KEYPAD,5);
+		//sound_command = ipc_queue_get(did_SOUND,5);
 
-		if((sound_command->timestamp - timet)>2000)
+
+
+		switch(sound_command.command)
 		{
-			timet = sound_command->timestamp;
-
-			switch(sound_command->pad)
-			{
-			case 0:// mute/ unmute
-				sound_state.mute ^= 1;
-				break;
-			case 1:	// pitch up
-				sound_state.frequency += 500;
-				break;
-			case 2: // pitch down
-				if(sound_state.frequency > 500)
-					sound_state.frequency -= 500;
-				break;
-			case 3:
-				break;
-
-			default:
-				break;
-			}
+		case sound_cmd_set_frequ:
+			sound_state.frequency = (uint16_t)sound_command.data;
+			break;
+		case sound_cmd_set_vol:
+			sound_state.volume = (uint16_t)sound_command.data;
+			break;
+		case sound_cmd_set_louder:
+			if(sound_state.volume >= 100-(uint8_t)sound_command.data)
+				sound_state.volume += (uint8_t)sound_command.data;
+			else
+				sound_state.volume = 100;
+			break;
+		case sound_cmd_set_quieter:
+			if(sound_state.volume >= (uint8_t)sound_command.data)
+				sound_state.volume -= (uint8_t)sound_command.data;
+			else
+				sound_state.volume = 0;
+			break;
+		case sound_cmd_set_mute:
+			sound_state.mute = 1;
+			break;
+		case sound_cmd_set_unmute:
+			sound_state.mute = 0;
+			break;
+		case sound_cmd_set_beep:
+			sound_state.mode = sound_mode_beep;
+			break;
+		case sound_cmd_set_cont:
+			sound_state.mode = sound_mode_cont;
+			break;
+		default:
+			break;
 		}
 	}
-	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * sound_state.mute);
+	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * (sound_state.mute^1));
+}
+
+void TIM3_IRQHandler (void)
+{
+	if(sound_state.mode == sound_mode_beep)
+		sound_state.mute ^= 1;
+
+	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
