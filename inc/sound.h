@@ -19,6 +19,11 @@
 #define sound_cmd_set_quieter 	4
 #define sound_cmd_set_mute		5
 #define sound_cmd_set_unmute	6
+#define sound_cmd_set_beep 		7
+#define sound_cmd_set_cont		8
+
+#define sound_mode_cont			1
+#define sound_mode_beep			2
 
 
 //*********** Functions **************

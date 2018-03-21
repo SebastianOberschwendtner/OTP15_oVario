@@ -9,7 +9,7 @@
 #define VARIABLES_H_
 
 
-
+// Sound
 #pragma pack(push, 1)
 typedef struct
 {
@@ -24,13 +24,14 @@ typedef struct
 	uint8_t	mute;
 	uint8_t volume;
 	uint16_t frequency;
+	uint8_t mode;
 }T_sound_state;
 #pragma pack(pop)
 
 
 
 
-
+// Keypad
 #pragma pack(push, 1)
 typedef struct
 {
