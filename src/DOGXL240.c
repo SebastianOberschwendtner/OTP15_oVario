@@ -354,14 +354,23 @@ void lcd_string2buffer(char* pch_string)
  */
 void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 {
-	plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X;
+	if(plcd_DOGXL->ch_fontsize)
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
+	else
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
 	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
 	{
 		lcd_char2buffer((l_number%10)+48);
 		l_number /=10;
-		plcd_DOGXL->cursor_x -= 2*FONT_X;
+		if(plcd_DOGXL->ch_fontsize)
+			plcd_DOGXL->cursor_x -= 2*FONT_X*plcd_DOGXL->ch_fontsize;
+		else
+			plcd_DOGXL->cursor_x -= 2*12;
 	}
-	plcd_DOGXL->cursor_x += ch_predecimal*FONT_X;
+	if(plcd_DOGXL->ch_fontsize)
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
+	else
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
 }
 
 /*
