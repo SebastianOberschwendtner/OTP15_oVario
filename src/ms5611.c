@@ -55,29 +55,23 @@ uint8_t test = 0;
 
 void MS5611_init()
 {
-	// SPI INIT
-	wait_ms(100ul);
-	//delay_ms(100);
-
 	// Perform Reset
-	//spi_write_pinlow(0x1E);
+	wait_systick(5);
 	i2c_send_char(i2c_addr_MS5611, 0x1E);
 
-	wait_ms(100ul);
-	//delay_ms(100);
+	wait_systick(2);
 
 	// PROM Read
-	C0 =		spi_get_reg16(0xA0);							// Load constants for calculation
-	C1 =		spi_get_reg16(0xA2);
-	C2 =		spi_get_reg16(0xA4);
-	C3 =		spi_get_reg16(0xA6);
-	C4 =		spi_get_reg16(0xA8);
-	C5 =		spi_get_reg16(0xAA);
-	C6 =		spi_get_reg16(0xAC);
-	CRC_MS =	spi_get_reg16(0xAE);
+	C0 =		i2c_read_int(i2c_addr_MS5611,0xA0);							// Load constants for calculation
+	C1 =		i2c_read_int(i2c_addr_MS5611,0xA2);
+	C2 =		i2c_read_int(i2c_addr_MS5611,0xA4);
+	C3 =		i2c_read_int(i2c_addr_MS5611,0xA6);
+	C4 =		i2c_read_int(i2c_addr_MS5611,0xA8);
+	C5 =		i2c_read_int(i2c_addr_MS5611,0xAA);
+	C6 =		i2c_read_int(i2c_addr_MS5611,0xAC);
+	CRC_MS =	i2c_read_int(i2c_addr_MS5611,0xAE);
 
-	//delay_ms(100);
-	wait_ms(100ul);
+	wait_systick(1);
 
 	msdata.climbrate 		= 0;
 	msdata.climbrate_filt 	= 0;
@@ -96,10 +90,10 @@ int32_t get_pressure_MS()
 	i2c_send_char(i2c_addr_MS5611, 0x48);
 
 	//delay_ms(9);
-	wait_ms(9ul);
+	wait_ms(10ul);
 
 	// ADC Read
-	uint32_t D1 = spi_get_reg32(0x00);
+	uint32_t D1 = i2c_read_24bit(i2c_addr_MS5611,0x00);
 	int64_t Off = (long long)C2 * 65536 + ((long long)C4 * dT ) / 128;
 	int64_t Sens = (long long)C1 * 32768 + ((long long)C3 * dT) / 256;
 
@@ -200,13 +194,12 @@ int32_t get_pressure_MS()
 void catch_temp_MS()
 {
 	// Convert D2 OSR = 4096
-	spi_write_pinlow(0x58);
 	i2c_send_char(i2c_addr_MS5611, 0x58);
 	//delay_ms(9);
-	wait_ms(9ul);
-
+	wait_ms(10ul);
+	i2c_send_char(i2c_addr_MS5611, 0x58);
 	// Read ADC
-	D2 = spi_get_reg32(0x00);
+	D2 = i2c_read_24bit(i2c_addr_MS5611,0x00);
 	dT = D2-((long)C5<<8);
 	Temp = 2000 + ((long long)dT * C6)/8388608;
 }

@@ -10,12 +10,16 @@
 #include "oVario_Framework.h"
 
 // ***** Defines *****
-#define i2c_addr_MS5611 0b11101110
+//I2C addresses of sensors
+#define i2c_addr_MS5611 0xEE
 
 
 // ***** Functions *****
 void init_i2c(void);
 void i2c_send_char(unsigned char ch_address, unsigned char ch_data);
-
+unsigned char i2c_read_char(unsigned char ch_address, unsigned char ch_command);
+unsigned int i2c_read_int(unsigned char ch_address, unsigned char ch_command);
+unsigned long i2c_read_24bit(unsigned char ch_address, unsigned char ch_command);
+unsigned long i2c_read_long(unsigned char ch_address, unsigned char ch_command);
 
 #endif /* I2C_H_ */

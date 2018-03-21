@@ -19,7 +19,7 @@
 //Define SysTick time in ms
 #define SYSTICK			100
 //I2C clock speed
-#define I2C_CLOCK		400000UL
+#define I2C_CLOCK		10000UL
 
 //Makro for SysTick status
 #define TICK_PASSED		(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
