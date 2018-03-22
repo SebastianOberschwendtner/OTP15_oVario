@@ -41,4 +41,32 @@ typedef struct
 #pragma pack(pop)
 
 
+// Datafusion
+#pragma pack(push, 1)
+typedef struct{
+	float 		hoehe;
+	float 		climbrate;
+	float 		climbrate_filt;
+	float 		height;
+	int32_t 	pressure;
+	float		Time;
+	float		ui1;
+	float		yi1;
+	float		yi2;
+	float		sub;
+	float		climbrate_av;
+}datafusion_T;
+#pragma pack(pop)
+
+
+// MS5611
+#pragma pack(push, 1)
+typedef struct{
+	int32_t pressure;
+	int32_t temperatur;
+}ms5611_T;
+#pragma pack(pop)
+
+
+
 #endif /* VARIABLES_H_ */

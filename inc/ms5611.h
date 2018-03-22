@@ -13,26 +13,6 @@
 #include "oVario_Framework.h"
 
 
-
-
-
-// ***** Typedefs *****
-
-typedef struct{
-	float 		hoehe;
-	float 		climbrate;
-	float 		climbrate_filt;
-	float 		height;
-	int32_t 	pressure;
-	float		Time;
-	float		ui1;
-	float		yi1;
-	float		yi2;
-	float		sub;
-	float		climbrate_av;
-}ms5611_T;
-
-
 // **** Functions ****
 void MS5611_init();
 
