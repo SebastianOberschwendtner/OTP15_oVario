@@ -44,6 +44,9 @@ void init_clock(void)
 	 * RTC:	   		 1 MHz 25  (RTCPRE)
 	 */
 	RCC->CFGR |= RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV4 | (25<<16);
+
+	//Activate FPU
+	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
 };
 
 /*
