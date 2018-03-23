@@ -94,16 +94,24 @@ uint8_t ipc_queue_push(void* p_data, uint8_t no_bytes, uint8_t did)
 
 
 // fetch data from queue
-void* ipc_queue_get(uint8_t did, uint8_t no_bytes)
+uint8_t ipc_queue_get(uint8_t did, uint8_t no_bytes, void* pData)
 {
-	if(queues[did].cnt < no_bytes)
-		return 0;
+	if(queues[did].cnt >= no_bytes)
+	{
+		uint8_t temp 				= queues[did].queue_rd_idx;
+		queues[did].queue_rd_idx 	= (queues[did].queue_rd_idx + no_bytes) % queues[did].size;
+		queues[did].cnt 		   -= no_bytes;
+
+		for(uint8_t cnt = 0; cnt < no_bytes; cnt++)
+		{
+			uint8_t* ptemp = (pData + cnt);
+			*ptemp = *((uint8_t*)((queues[did].p_memory + ((temp + cnt) % queues[did].size))));
+		}
+		return 1;
+	}
 	else
 	{
-		uint8_t temp = queues[did].queue_rd_idx;
-		queues[did].queue_rd_idx = (queues[did].queue_rd_idx + no_bytes) % queues[did].size;
-		queues[did].cnt -= no_bytes;
-		return (queues[did].p_memory + temp);
+		return 0;
 	}
 }
 

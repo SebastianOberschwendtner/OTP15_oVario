@@ -8,11 +8,13 @@
 // ***** Includes ******
 #include "datafusion.h"
 #include "Variables.h"
-
+#include "ipc.h"
+#include "oVario_Framework.h"
 
 // ***** Variables *****
+ms5611_T* ipc_df_data;
+datafusion_T* df_data;
 
-datafusion_T data;
 float ps = 102500;
 
 float dh = 0;
@@ -21,7 +23,7 @@ float Time = 0;
 float u 	= 0;
 float y 	= 0;
 float T  	= 1;
-float ts 	= 0.02;
+float ts 	= (float)SYSTICK / 1000;
 float d 	= 0.9;
 
 float ui1 = 0;
@@ -40,22 +42,23 @@ uint8_t timeidx = 0;
 
 void datafusion_init(void)
 {
-
-
-
+	ipc_df_data = ipc_memory_get(did_MS5611);
+	df_data		= ipc_memory_register(44,did_DATAFUSION);
 }
 
 
-void datafusion_task (void)
+void datafusion_task(void)
 {
 
 	// calc h
-	float p = (float)data.pressure;
+	float p = (float)ipc_df_data->pressure;
 	float x = p / ps;
+
 	//data.height
-	data.height = 5331.2 * x * x - 18732 * x + 13414;
-	// PT2D Filter
-	u = data.height;
+	df_data->height = 5331.2 * x * x - 18732 * x + 13414;
+
+	// ***** PT2D Filter *****
+	u = df_data->height;
 
 	// Init Filter
 	if (flagfirst)
@@ -68,7 +71,7 @@ void datafusion_task (void)
 		// Init Averager
 		for(uint8_t cntx = 0; cntx < (climbavtime * 10); cntx ++)
 		{
-			timeclimbarray[cntx] = data.height;
+			timeclimbarray[cntx] = df_data->height;
 		}
 
 		flagfirst = 0;
@@ -82,23 +85,23 @@ void datafusion_task (void)
 
 	yi1 += y * ts;
 	yi2 += yi1 * ts;
-
 	Time += ts;
+
 	// Debug
-	data.climbrate_filt 	= y;
-	data.ui1 				= ui1;
-	data.yi1 				= yi1;
-	data.yi2 				= yi2;
-	data.Time 				= Time;
-	data.sub				= sub;
-	//data.pressure 			= (float)pressure;
+	df_data->climbrate_filt 	= y;
+	df_data->ui1 				= ui1;
+	df_data->yi1 				= yi1;
+	df_data->yi2 				= yi2;
+	df_data->Time 				= Time;
+	df_data->sub				= sub;
+	df_data->pressure 			= p;
 
 	// TimeClimb
 	timecnt++;
 	if (timecnt == 5)
 	{
-		timeclimbarray[timeidx] = data.height;
-		data.climbrate_av = (timeclimbarray[timeidx] - timeclimbarray[(timeidx + 1) % (climbavtime * 10)]) / climbavtime;
+		timeclimbarray[timeidx] = df_data->height;
+		df_data->climbrate_av = (timeclimbarray[timeidx] - timeclimbarray[(timeidx + 1) % (climbavtime * 10)]) / climbavtime;
 		timeidx++;
 		if (timeidx == (climbavtime * 10))
 		{

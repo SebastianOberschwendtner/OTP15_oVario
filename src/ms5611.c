@@ -20,7 +20,7 @@ uint64_t Sens2;
 int32_t calib_pressure = 0;
 int32_t ipc_pressure = 1;
 
-datafusion_T msdata;
+ms5611_T* msdata;
 
 
 
@@ -49,9 +49,17 @@ void MS5611_init()
 	wait_systick(1);
 	wait_ms(100ul);
 
-
-	ipc_memory_register(44,did_MS5611); //todo auf realen IPC Datentyp anpassen
+	msdata = ipc_memory_register(12, did_MS5611);
 }
+
+// Task
+void ms5611_task()
+{
+	msdata->pressure 	= get_pressure_MS();
+	msdata->temperature	= Temp;
+	msdata->timestamp 	= TIM5->CNT;
+}
+
 
 // function to read & calculate pressure
 int32_t get_pressure_MS()

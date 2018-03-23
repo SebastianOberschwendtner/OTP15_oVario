@@ -82,7 +82,7 @@ void sound_init()
 	// Clock enable
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
-	TIM_TimeBaseStructure.TIM_Period 			= 40000;	// 20000 = 1Hz
+	TIM_TimeBaseStructure.TIM_Period 			= 20000;	// 20000 = 1Hz
 	TIM_TimeBaseStructure.TIM_Prescaler 		= 2099;
 	TIM_TimeBaseStructure.TIM_ClockDivision 	= 0;
 	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
@@ -104,13 +104,16 @@ void sound_init()
 	sound_state.mute   		= 0;
 	sound_state.frequency 	= 1000;
 	sound_state.mode 		= sound_mode_beep;
+	sound_state.period 		= 200;
+
+	ipc_register_queue(50, did_SOUND);
 }
 
 
 // Set frequency and volume
 // Frequency [Hz]
 // Volume [%]; 0-100%
-void sound_set_frequ_vol(uint16_t frequency, uint8_t volume)
+void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 {
 	// 105 = 0.01ms; 	1000Hz
 	uint32_t reload = 100000/((uint32_t)frequency) * 105;//10500;
@@ -118,62 +121,79 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume)
 
 	TIM_SetAutoreload(TIM2, reload);
 	TIM_SetCompare1(TIM2, compare);
+
+
+	reload = period * 200;			// 20000 = 1Hz
+	TIM_SetAutoreload(TIM3, reload);
+
 }
 
 void sound_task(void)
 {
-
-	temp = TIM3->CNT;
-
-	if(ipc_get_queue_bytes(did_SOUND) > 4)
+	while(ipc_get_queue_bytes(did_SOUND) > 4)
 	{
-		//sound_command = ipc_queue_get(did_SOUND,5);
-
-
-
-		switch(sound_command.command)
+		if(ipc_queue_get(did_SOUND, 5, &sound_command))
 		{
-		case sound_cmd_set_frequ:
-			sound_state.frequency = (uint16_t)sound_command.data;
-			break;
-		case sound_cmd_set_vol:
-			sound_state.volume = (uint16_t)sound_command.data;
-			break;
-		case sound_cmd_set_louder:
-			if(sound_state.volume >= 100-(uint8_t)sound_command.data)
-				sound_state.volume += (uint8_t)sound_command.data;
-			else
-				sound_state.volume = 100;
-			break;
-		case sound_cmd_set_quieter:
-			if(sound_state.volume >= (uint8_t)sound_command.data)
-				sound_state.volume -= (uint8_t)sound_command.data;
-			else
-				sound_state.volume = 0;
-			break;
-		case sound_cmd_set_mute:
-			sound_state.mute = 1;
-			break;
-		case sound_cmd_set_unmute:
-			sound_state.mute = 0;
-			break;
-		case sound_cmd_set_beep:
-			sound_state.mode = sound_mode_beep;
-			break;
-		case sound_cmd_set_cont:
-			sound_state.mode = sound_mode_cont;
-			break;
-		default:
-			break;
+			switch(sound_command.command)
+			{
+			case sound_cmd_set_frequ:
+				sound_state.frequency = (uint16_t)sound_command.data;
+				break;
+
+			case sound_cmd_set_vol:
+				sound_state.volume = (uint16_t)sound_command.data;
+				break;
+
+			case sound_cmd_set_louder:
+				if(sound_state.volume >= 100-(uint8_t)sound_command.data)
+					sound_state.volume += (uint8_t)sound_command.data;
+				else
+					sound_state.volume = 100;
+				break;
+
+			case sound_cmd_set_quieter:
+				if(sound_state.volume >= (uint8_t)sound_command.data)
+					sound_state.volume -= (uint8_t)sound_command.data;
+				else
+					sound_state.volume = 0;
+				break;
+
+			case sound_cmd_set_mute:
+				sound_state.mute = 1;
+				break;
+
+			case sound_cmd_set_unmute:
+				sound_state.mute = 0;
+				break;
+
+			case sound_cmd_set_beep:
+				sound_state.mode = sound_mode_beep;
+				break;
+
+			case sound_cmd_set_cont:
+				sound_state.mode = sound_mode_cont;
+				break;
+
+			case sound_cmd_set_period:
+				sound_state.period = (uint8_t)sound_command.data;
+				break;
+
+			default:
+				break;
+			}
 		}
 	}
-	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * (sound_state.mute^1));
+	if(sound_state.mode != sound_mode_beep)
+		sound_state.beep = 1;
+
+
+	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * (sound_state.mute^1) * sound_state.beep, sound_state.period);
 }
 
 void TIM3_IRQHandler (void)
 {
 	if(sound_state.mode == sound_mode_beep)
-		sound_state.mute ^= 1;
+		sound_state.beep ^= 1;
 
 	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }

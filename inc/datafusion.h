@@ -13,4 +13,10 @@
 // ***** Defines *****
 #define climbavtime 15
 
+// ***** Functions *****
+void datafusion_init(void);
+void datafusion_task(void);
+
+
+
 #endif /* DATAFUSION_H_ */

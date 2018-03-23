@@ -32,11 +32,11 @@ typedef struct
 //*********** Functions **************
 void* ipc_memory_register	(uint32_t no_bytes, uint8_t did);
 void* ipc_memory_get		(uint8_t did);
-void  ipc_queue_register	(uint16_t no_bytes, uint8_t did);
+
 
 void  	ipc_register_queue	(uint16_t size_queue, uint8_t did);
 uint8_t ipc_queue_push		(void* p_data, uint8_t no_bytes, uint8_t did);
-void* 	ipc_queue_get		(uint8_t did, uint8_t no_bytes);
+uint8_t ipc_queue_get(uint8_t did, uint8_t no_bytes, void* pData);
 void* 	ipc_queue_look		(uint8_t did);
 uint8_t ipc_get_queue_bytes	(uint8_t did);
 

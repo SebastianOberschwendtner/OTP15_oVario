@@ -11,6 +11,7 @@
 //*********** Includes **************
 #include "stm32f4xx.h"
 #include "ipc.h"
+#include "did.h"
 
 //*********** Defines **************
 #define sound_cmd_set_frequ 	1
@@ -21,6 +22,7 @@
 #define sound_cmd_set_unmute	6
 #define sound_cmd_set_beep 		7
 #define sound_cmd_set_cont		8
+#define sound_cmd_set_period	9
 
 #define sound_mode_cont			1
 #define sound_mode_beep			2

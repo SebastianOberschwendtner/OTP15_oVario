@@ -22,9 +22,11 @@ typedef struct
 typedef struct
 {
 	uint8_t	mute;
-	uint8_t volume;
-	uint16_t frequency;
+	uint8_t volume;		//[%]
+	uint16_t frequency; //[Hz]
+	uint8_t period;		//[1/100s]
 	uint8_t mode;
+	uint8_t beep;
 }T_sound_state;
 #pragma pack(pop)
 
@@ -63,7 +65,8 @@ typedef struct{
 #pragma pack(push, 1)
 typedef struct{
 	int32_t pressure;
-	int32_t temperatur;
+	int32_t temperature;
+	uint32_t timestamp;
 }ms5611_T;
 #pragma pack(pop)
 

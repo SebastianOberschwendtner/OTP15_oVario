@@ -23,5 +23,6 @@ int32_t get_temp_MS();
 
 //A function to read and calculate the pressure
 int32_t get_pressure_MS();
+void ms5611_task();
 
 #endif /* MS5611_H_ */
