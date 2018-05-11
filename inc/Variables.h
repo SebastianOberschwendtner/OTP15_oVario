@@ -70,6 +70,22 @@ typedef struct{
 }ms5611_T;
 #pragma pack(pop)
 
+//BMS
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned long charge_current = 0;		//[mA]
+	unsigned long discharge_current = 0;	//[mA]
+	unsigned long battery_voltage = 0;		//[mV]
+	unsigned long input_voltage = 0;		//[mV]
+	unsigned char enable_otg = 0;
+	unsigned char adc_requested = 0;
+	unsigned char charging_state = 0;
+	unsigned long otg_voltage = 5000;		//[mV]
+	unsigned long otg_current = 2000;		//[mV]
+}BMS_T;
+#pragma pack(pop)
+
 
 
 #endif /* VARIABLES_H_ */
