@@ -82,7 +82,7 @@ void init_lcd(void)
 	lcd_set_write_pattern(PAGE_PATTERN0);
 
 	//register buffer
-	plcd_DOGXL = ipc_memory_register(LCD_PIXEL_X*LCD_PIXEL_Y/8,did_LCD);
+	plcd_DOGXL = ipc_memory_register((LCD_PIXEL_X*LCD_PIXEL_Y/8)+8,did_LCD);
 
 	lcd_set_cursor(0,0);
 	lcd_set_inverted(0);
@@ -368,9 +368,9 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 			plcd_DOGXL->cursor_x -= 2*12;
 	}
 	if(plcd_DOGXL->ch_fontsize)
-		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
+		plcd_DOGXL->cursor_x += (ch_predecimal+1)*FONT_X*plcd_DOGXL->ch_fontsize;
 	else
-		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
+		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
 }
 
 /*
