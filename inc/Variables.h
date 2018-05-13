@@ -74,15 +74,15 @@ typedef struct{
 #pragma pack(push, 1)
 typedef struct
 {
-	unsigned long charge_current = 0;		//[mA]
-	unsigned long discharge_current = 0;	//[mA]
-	unsigned long battery_voltage = 0;		//[mV]
-	unsigned long input_voltage = 0;		//[mV]
-	unsigned char enable_otg = 0;
-	unsigned char adc_requested = 0;
-	unsigned char charging_state = 0;
-	unsigned long otg_voltage = 5000;		//[mV]
-	unsigned long otg_current = 2000;		//[mV]
+	unsigned int charge_current;		//[mA]
+	unsigned int discharge_current;		//[mA]
+	unsigned int battery_voltage;		//[mV]
+	unsigned int input_voltage;			//[mV]
+	unsigned int input_current;			//[mA]
+	unsigned int charging_state;
+	unsigned int otg_voltage;			//[mV]
+	unsigned int otg_current;			//[mV]
+	unsigned int max_charge_current;	//[mA]
 }BMS_T;
 #pragma pack(pop)
 
