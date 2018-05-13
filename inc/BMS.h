@@ -9,8 +9,11 @@
 #define BMS_H_
 //*********** Includes **************
 #include "stm32f4xx.h"
+#include "i2c.h"
 #include "ipc.h"
 #include "did.h"
+#include "oVario_Framework.h"
+
 
 //*********** Defines **************
 /*
@@ -124,37 +127,6 @@
 
 //TODO Add Prochot status register bits
 
-//CHARGE_CURRENT
-#define ADD_CHRG_CURRENT_4096		(1<<12)	// Add 4096 mA to charger current
-#define ADD_CHRG_CURRENT_2048		(1<<11)	// Add 2048 mA to charger current
-#define ADD_CHRG_CURRENT_1024		(1<<10)	// Add 1024 mA to charger current
-#define ADD_CHRG_CURRENT_512		(1<<9)	// Add 512 mA to charger current
-#define ADD_CHRG_CURRENT_256		(1<<8)	// Add 256 mA to charger current
-#define ADD_CHRG_CURRENT_128		(1<<7)	// Add 128 mA to charger current
-#define ADD_CHRG_CURRENT_64			(1<<6)	// Add 64 mA to charger current
-
-//TODO ADD bits for MAX_CHARGE_VOLTAGE, Min_SYS_VOLTAGE, INPUT_LIMIT_HOST. The register values are determined by external circuitry
-
-//TODO Add bits for INPUT_VOLTAGE
-
-//OTG_VOLTAGE
-#define OTG_VOLTAGE_ADD_8192		(1<<13)	// Add 8192mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_4096		(1<<12)	// Add 4096mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_2048		(1<<11)	// Add 2048mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_1024		(1<<10)	// Add 1024mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_512			(1<<9)	// Add 512mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_256			(1<<8)	// Add 256mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_128			(1<<7)	// Add 128mV to OTG Voltage
-#define OTG_VOLTAGE_ADD_64			(1<<6)	// Add 64mV to OTG Voltage
-
-//OTG_CURRENT
-#define OTG_CURENT_ADD_3200			(1<<14)	// ADD 3200 mA to OTG current
-#define OTG_CURENT_ADD_1600			(1<<13)	// ADD 1600 mA to OTG current
-#define OTG_CURENT_ADD_800			(1<<12)	// ADD 800 mA to OTG current
-#define OTG_CURENT_ADD_400			(1<<11)	// ADD 400 mA to OTG current
-#define OTG_CURENT_ADD_200			(1<<10)	// ADD 200 mA to OTG current
-#define OTG_CURENT_ADD_100			(1<<9)	// ADD 100 mA to OTG current
-#define OTG_CURENT_ADD_50			(1<<8)	// ADD 50 mA to OTG current
 
 /*
  * Option Bit Positions
@@ -170,6 +142,22 @@
 #define PKPWR_TOVL_DEG_pos			14		// Input overload time in peak power mode
 #define PKPWR_TMAX_pos				8		// Peak power mode relax and overload cycle time
 
+//Status defines
+#define STATUS_INPUT_PRESENT		(1<<15)	//Whether Input power is present
+#define STATUS_FAST_CHARGE			(1<<14)
+#define STATUS_PRE_CHARGE			(1<<13)
+#define STATUS_OTG_EN				(1<<12)	//Whether OTG is enabled
+#define STATUS_ADC_REQUESTED		(1<<11)
+#define STATUS_ADC_FINISHED			(1<<10)
+#define STATUS_CHRG_OK				(1<<9)	//Status of the CHRG_OK pin
+
+// ***** Functions *****
+void init_BMS(void);
+void BMS_adc_start(void);
+void BMS_get_adc(void);
+void BMS_get_status(void);
+void BMS_charge_start(void);
+void BMS_set_otg(unsigned char ch_state);
 
 
 #endif /* BMS_H_ */
