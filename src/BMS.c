@@ -21,11 +21,56 @@ void init_BMS(void)
 	 * PA0	Output	PUSH_PULL	EN_OTG
 	 * PA1	Input	PULL_UP		CHRG_OK
 	 * PA2	Input	PULL_UP		PROCHOT
+	 * PA3	Input	PULL_UP		ALERT_CC
 	 */
 	gpio_en(GPIO_A);
 	GPIOA->MODER |= GPIO_MODER_MODER0_0;
-	GPIOA->PUPDR |= GPIO_PUPDR_PUPDR1_0 | GPIO_PUPDR_PUPDR2_0;
+	GPIOA->PUPDR |= GPIO_PUPDR_PUPDR3_0 | GPIO_PUPDR_PUPDR2_0 | GPIO_PUPDR_PUPDR1_0;
 
+	//***********************Setup the coulomb counter**********************************************
+	//save the desired manufacturer status init register value
+	unsigned int i_config = IGNORE_SD_EN;
+	//check the configuration value on the flash
+	i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_STATUS_INIT_df_addr);
+	if(i_config != i2c_read_int(i2c_addr_BMS_GAUGE,MAC_DATA_addr))
+	{
+		//If the configuration on the flash doesn't match, write the flash.
+		//Changes take affect on next restart.
+		i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_STATUS_INIT_df_addr);
+		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_DATA_addr,i_config);
+		//calculate checksum
+		unsigned int i_checksum = (MAC_STATUS_INIT_df_addr>>8) + (MAC_STATUS_INIT_df_addr & 0xFF);
+		i_checksum += (i_config>>8);
+		i_checksum += (i_config & 0xFF);
+		i_checksum = ~i_checksum;
+		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(i_checksum<<8)+0x06);
+
+	}
+	//wait for flash write to finish
+	wait_systick(1);
+
+	//save the desired configuration register value
+	i_config = 0x00;
+	//check the configuration value on the flash
+	i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,CONFIGURATION_A_df_addr);
+	if(i_config != i2c_read_int(i2c_addr_BMS_GAUGE,MAC_DATA_addr))
+	{
+		//If the configuration on the flash doesn't match, write the flash.
+		//Changes take affect on next restart.
+		i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,CONFIGURATION_A_df_addr);
+		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_DATA_addr,i_config);
+		//calculate checksum
+		unsigned int i_checksum = (CONFIGURATION_A_df_addr>>8) + (CONFIGURATION_A_df_addr & 0xFF);
+		i_checksum += (i_config>>8);
+		i_checksum += (i_config & 0xFF);
+		i_checksum = ~i_checksum;
+		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(i_checksum<<8)+0x06);
+
+	}
+	//wait for flash write to finish
+	wait_systick(1);
+
+	//***********************Setup the BMS**********************************************************
 	/*
 	 * Set Charge options:
 	 * -disable low power mode
@@ -273,3 +318,19 @@ void BMS_set_otg(unsigned char ch_state)
 		i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_3_addr,0);
 	}
 };
+
+/*
+ * Get the battery parameters from the coulomb counter
+ */
+//TODO discuss whether signed int for current should be used
+void BMS_gauge_get_adc(void)
+{
+	pBMS->battery_voltage = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,VOLTAGE_addr);
+	//Get battery current, current is read as signed int and converted to unsigned int
+	unsigned int i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,CURRENT_addr);
+
+	if(i_temp <= 32767)
+		pBMS->charge_current = i_temp;
+	else
+		pBMS->discharge_current = 65535-i_temp;
+}

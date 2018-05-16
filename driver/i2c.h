@@ -11,8 +11,9 @@
 
 // ***** Defines *****
 //I2C addresses of sensors
-#define i2c_addr_MS5611 0xEE
-#define i2c_addr_BMS	0x12
+#define i2c_addr_MS5611 	0xEE
+#define i2c_addr_BMS		0x12
+#define i2c_addr_BMS_GAUGE	0xAA
 
 
 // ***** Functions *****
@@ -20,6 +21,7 @@ void init_i2c(void);
 void i2c_send_char(unsigned char ch_address, unsigned char ch_data);
 void i2c_send_int(unsigned char ch_address, unsigned int i_data);
 void i2c_send_int_LSB(unsigned char ch_address, unsigned int i_data);
+void i2c_send_int_register(unsigned char ch_address, unsigned char ch_register, unsigned int i_data);
 void i2c_send_int_register_LSB(unsigned char ch_address, unsigned char ch_register, unsigned int i_data);
 unsigned char i2c_read_char(unsigned char ch_address, unsigned char ch_command);
 unsigned int i2c_read_int(unsigned char ch_address, unsigned char ch_command);

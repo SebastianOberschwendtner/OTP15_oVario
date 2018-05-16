@@ -116,6 +116,36 @@ void i2c_send_int_LSB(unsigned char ch_address, unsigned int i_data)
 };
 
 /*
+ * send int value to register
+ */
+
+void i2c_send_int_register(unsigned char ch_address, unsigned char ch_register, unsigned int i_data)
+{
+	while(I2C1->SR2 & I2C_SR2_BUSY);
+
+	I2C1->CR1 |= I2C_CR1_START;  // Start generation
+	while(!(I2C1->SR1 & I2C_SR1_SB));		// Wait for start condition
+
+	I2C1->DR = ch_address;					// Write Adress to register
+	while(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL))); // Adress sent and Master Mode
+
+	//transmit register address
+	I2C1->DR = ch_register;					// Write Data to register
+	while(!(I2C1->SR1 & I2C_SR1_TXE));		// Data register empty
+	while(!(I2C1->SR2 & I2C_SR2_MSL));		// Interface in Master Mode
+	//transmit 1st byte
+	I2C1->DR = (i_data>>8);						// Write Data to register
+	while(!(I2C1->SR1 & I2C_SR1_TXE));		// Data register empty
+	while(!(I2C1->SR2 & I2C_SR2_MSL));		// Interface in Master Mode
+	//transmit 2nd byte
+	I2C1->DR = i_data;						// Write Data to register
+	while(!(I2C1->SR1 & I2C_SR1_TXE));		// Data register empty
+	while(!(I2C1->SR2 & I2C_SR2_MSL));		// Interface in Master Mode
+
+	I2C1->CR1 |= I2C_CR1_STOP;	// Stop generation
+};
+
+/*
  * send int value to register, LSB first
  */
 

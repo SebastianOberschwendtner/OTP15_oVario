@@ -1,6 +1,6 @@
 /*
  * BMS.h
- *  Created for TI BQ25700A
+ *  Created for TI BQ25700A and BQ34110
  *  Created on: 10.05.2018
  *      Author: Sebastian
  */
@@ -19,6 +19,7 @@
 /*
  * Register Addresses
  */
+//BQ25700
 #define CHARGE_OPTION_0_addr		0x12	// R/W
 #define CHARGE_OPTION_1_addr		0x30	// R/W
 #define CHARGE_OPTION_2_addr		0x31	// R/W
@@ -43,9 +44,24 @@
 #define MANUFACTURER_ID_addr		0xFE	// R/W
 #define DEVICE_ID_addr				0xFF	// R/W
 
+//BQ34110
+#define CONFIGURATION_A_df_addr		0x413A	// R/W Configration Register, only FLASH access!
+#define MAC_STATUS_INIT_df_addr		0x40D7	// R/W Manufacturer status init, only FLASH access!
+#define MAC_addr					0x3E	// R/W Manufacturer Access Control to write commands
+#define MAC_DATA_addr				0x40	// R/W
+#define MAC_SUM_addr				0x60	// R/W Checksum for commands
+#define MAC_LEN_addr				0x61	// R/W Number of bytes included in checksum
+#define TEMPERATURE_addr			0x06	// R
+#define VOLTAGE_addr				0x08	// R
+#define BATTERY_STAT_addr			0x0A	// R
+#define CURRENT_addr				0x0C	// R
+
+#define RESET_subaddr				0x41
+
 /*
  * Option Bits
  */
+//********************BQ25700*************************************************************
 //CHARGE_OPTION_0
 #define EN_LWPWR					(1<<15)	// Enable low power mode
 #define IDPM_AUTO_DISABLE			(1<<12)
@@ -151,6 +167,30 @@
 #define STATUS_ADC_FINISHED			(1<<10)
 #define STATUS_CHRG_OK				(1<<9)	//Status of the CHRG_OK pin
 
+//********************BQ34110*************************************************************
+// CONFIG_A
+#define TEMPS						(1<<15)	//Which temperature sensor is used
+#define SCALED						(1<<10)	//Scaled Mode in voltage and current
+#define SLEEP						(1<<9)	//Wether Sleep mode is possible
+#define SLPWAKECHG					(1<<8)
+#define JEITA						(1<<7)	//Use temperature profiles for self discharge estimation
+#define GNDSEL						(1<<6)	//Select ground reference for adc
+#define NIMH_CHG_EN					(1<<5)
+#define NI_DT						(1<<4)	//Use dV/dT for charge termination in NiMh mode
+#define NI_DV						(1<<3)	//Use -dV for charge termination in NiMh mode
+#define IWAKE						(1<<2)
+#define	RSNS1						(1<<1)
+#define RSNS0						(1<<0)
+
+//MAC_STATUS_INIT
+#define WHR_EN						(1<<6)	// WHr charge termination
+#define LF_EN						(1<<5)	// Lifetime data collection enable
+#define PCTL_EN						(1<<4)	// Pin control enable
+#define EOS_EN						(1<<3)	// End-of-Service determination enable
+#define IGNORE_SD_EN				(1<<2)	// Ignore self discharge control
+#define ACCHG_EN					(1<<1)	// Accumulated charge enable for charging current integration
+#define ACDSG_EN					(1<<0)	// Accumulated charge enable for discharging current integration
+
 // ***** Functions *****
 void init_BMS(void);
 void BMS_adc_start(void);
@@ -158,6 +198,7 @@ void BMS_get_adc(void);
 void BMS_get_status(void);
 void BMS_charge_start(void);
 void BMS_set_otg(unsigned char ch_state);
+void BMS_gauge_get_adc(void);
 
 
 #endif /* BMS_H_ */
