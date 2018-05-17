@@ -374,6 +374,40 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 }
 
 /*
+ * Write a signed number to buffer using ascii font.
+ * Enter data, the number of places to be displayed.
+ * Because of the calculation of the digits (LSB first), the cursor has to be shifted to fit the MSB first.
+ */
+void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
+{
+	if(l_number < 0)
+	{
+		lcd_char2buffer('-');
+		l_number *= -1;
+	}
+	else
+		lcd_char2buffer('+');
+
+	if(plcd_DOGXL->ch_fontsize)
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
+	else
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
+	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
+	{
+		lcd_char2buffer((l_number%10)+48);
+		l_number /=10;
+		if(plcd_DOGXL->ch_fontsize)
+			plcd_DOGXL->cursor_x -= 2*FONT_X*plcd_DOGXL->ch_fontsize;
+		else
+			plcd_DOGXL->cursor_x -= 2*12;
+	}
+	if(plcd_DOGXL->ch_fontsize)
+		plcd_DOGXL->cursor_x += (ch_predecimal+1)*FONT_X*plcd_DOGXL->ch_fontsize;
+	else
+		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
+}
+
+/*
  * Write number with special number font.
  */
 void lcd_digit2buffer(unsigned char ch_data)
