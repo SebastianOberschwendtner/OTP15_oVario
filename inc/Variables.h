@@ -83,6 +83,9 @@ typedef struct
 	unsigned int otg_voltage;			//[mV]
 	unsigned int otg_current;			//[mV]
 	unsigned int max_charge_current;	//[mA]
+	signed int current;
+	signed int discharged_capacity;		//[mA]
+	unsigned int temperature;			//[degC]
 }BMS_T;
 #pragma pack(pop)
 

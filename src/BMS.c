@@ -29,7 +29,9 @@ void init_BMS(void)
 
 	//***********************Setup the coulomb counter**********************************************
 	//save the desired manufacturer status init register value
-	unsigned int i_config = IGNORE_SD_EN;
+	//FIXME At startup without the battery the i2c command waits for a response. Use timeouts?
+
+	unsigned int i_config = IGNORE_SD_EN | ACCHG_EN | ACDSG_EN;
 	//check the configuration value on the flash
 	i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_STATUS_INIT_df_addr);
 	if(i_config != i2c_read_int(i2c_addr_BMS_GAUGE,MAC_DATA_addr))
@@ -77,7 +79,6 @@ void init_BMS(void)
 	 * -disable WDT
 	 * -PWM 800 kHz
 	 * -IADPT Gain 40
-	 * -LDO Mode enable
 	 * -IDPM enable
 	 * -Out-of-audio enable
 	 */
@@ -103,26 +104,26 @@ void init_BMS(void)
 	/*
 	 * Set min sys voltage
 	 * Resolution is 256 mV with this formula:
-	 * VMAX = Register * 256 mV/bit + 1024
+	 * VMIN = Register * 256 mV/bit + 1024
 	 *
 	 * The 6-bit value is bitshifted by 8
 	 */
-	i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE-1024)/256)<<8));
+	//i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE-1024)/256)<<8));
 
 	/*
 	 * Set max input current
 	 * Resolution is 50 mA with this formula:
-	 * VMAX = Register * 50 mV/bit
+	 * IMAX = Register * 50 mV/bit
 	 *
 	 * The 7-bit value is bitshifted by 8
 	 */
 	i2c_send_int_register_LSB(i2c_addr_BMS,INPUT_LIMIT_HOST_addr,((MAX_CURRENT/50)<<8));
 
 	//Register memory
-	pBMS = ipc_memory_register(36,did_BMS);
+	pBMS = ipc_memory_register(48,did_BMS);
 
 	//Set charging current
-	pBMS->max_charge_current = 400;
+	pBMS->max_charge_current = 1000;
 
 	//Set OTG parameters
 	pBMS->otg_voltage = OTG_VOLTAGE;
@@ -322,15 +323,26 @@ void BMS_set_otg(unsigned char ch_state)
 /*
  * Get the battery parameters from the coulomb counter
  */
-//TODO discuss whether signed int for current should be used
+//TODO discuss whether signed int for current should be used, problem: i2c data register is unsigned
 void BMS_gauge_get_adc(void)
 {
-	pBMS->battery_voltage = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,VOLTAGE_addr);
-	//Get battery current, current is read as signed int and converted to unsigned int
-	unsigned int i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,CURRENT_addr);
 
-	if(i_temp <= 32767)
-		pBMS->charge_current = i_temp;
+	pBMS->battery_voltage = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,VOLTAGE_addr);
+
+	//Get battery current, has to be converted from unsigned to signed
+	unsigned int i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,CURRENT_addr);
+	if(i_temp > 32767)
+		pBMS->current = i_temp - 65535;
 	else
-		pBMS->discharge_current = 65535-i_temp;
-}
+		pBMS->current = i_temp;
+
+	//Get accumulated charge, has to be converted from unsigned to signed, positive discharge, negative charge
+	//TODO Add offline saving of discharged capacity.
+
+	i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,ACC_CHARGE_addr);
+	if(i_temp > 32767)
+		pBMS->discharged_capacity = i_temp - 65535;
+	else
+		pBMS->discharged_capacity = i_temp;
+
+};

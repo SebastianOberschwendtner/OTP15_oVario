@@ -55,6 +55,7 @@
 #define VOLTAGE_addr				0x08	// R
 #define BATTERY_STAT_addr			0x0A	// R
 #define CURRENT_addr				0x0C	// R
+#define ACC_CHARGE_addr				0x1A	// R
 
 #define RESET_subaddr				0x41
 
