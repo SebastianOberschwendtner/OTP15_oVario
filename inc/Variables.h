@@ -73,6 +73,25 @@ typedef struct{
 }ms5611_T;
 #pragma pack(pop)
 
+//BMS
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned int charge_current;		//[mA]
+	unsigned int discharge_current;		//[mA]
+	unsigned int battery_voltage;		//[mV]
+	unsigned int input_voltage;			//[mV]
+	unsigned int input_current;			//[mA]
+	unsigned int charging_state;
+	unsigned int otg_voltage;			//[mV]
+	unsigned int otg_current;			//[mV]
+	unsigned int max_charge_current;	//[mA]
+	signed int current;
+	signed int discharged_capacity;		//[mA]
+	unsigned int temperature;			//[degC]
+}BMS_T;
+#pragma pack(pop)
+
 
 // GPS
 #pragma pack(push, 1)

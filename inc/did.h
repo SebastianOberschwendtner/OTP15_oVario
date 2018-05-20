@@ -15,7 +15,7 @@
 #define 	did_KEYPAD		2
 #define 	did_SOUND		3
 #define 	did_DATAFUSION  4
-#define 	did_GPS			5
+#define 	did_BMS			5
 
 
 #endif /* DID_H_ */

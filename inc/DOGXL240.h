@@ -151,6 +151,7 @@ void lcd_char2buffer(unsigned char ch_data);
 void lcd_clear_buffer(void);
 void lcd_string2buffer(char* pch_string);
 void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal);
+void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal);
 void lcd_digit2buffer(unsigned char ch_data);
 void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char ch_dedecimal);
 void lcd_bat2buffer(unsigned char ch_stat);
