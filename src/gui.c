@@ -17,12 +17,14 @@ uint8_t menu = Gui_Initscreen;
 uint8_t submenu = 0;
 datafusion_T* p_ipc_gui_df_data;
 GPS_T* p_ipc_gui_gps_data;
+BMS_T* p_ipc_gui_bms_data;
 
 //*********** Functions **************
 void gui_init (void)
 {
 	p_ipc_gui_df_data = ipc_memory_get(did_DATAFUSION);
 	p_ipc_gui_gps_data = ipc_memory_get(did_GPS);
+	p_ipc_gui_bms_data = ipc_memory_get(did_BMS);
 }
 
 
@@ -75,18 +77,28 @@ void fkt_Initscreen (void)
 	lcd_string2buffer("fix:");
 	lcd_num2buffer(p_ipc_gui_gps_data->fix,1);
 
+	lcd_set_cursor(0, 64);
+	lcd_string2buffer("UBat:");
+	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
+	lcd_string2buffer("mV");
+
+	lcd_set_cursor(0, 77);
+	lcd_string2buffer("IBat:");
+	lcd_signed_num2buffer(p_ipc_gui_bms_data->current,4);
+	lcd_string2buffer("mA");
 
 
 
 
-	lcd_set_cursor(70, 50);
+	lcd_set_cursor(80, 50);
 	lcd_set_fontsize(3);
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);
 
+	/*
 	lcd_set_cursor(70, 90);
 	lcd_set_fontsize(3);
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_av,2,1);
-
+*/
 
 	lcd_block2buffer(0, 127, 20, 10);
 
