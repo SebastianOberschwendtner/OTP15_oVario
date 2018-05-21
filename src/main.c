@@ -38,7 +38,7 @@ int main(void)
 	set_led_red(ON);
 	init_lcd();
 	exti_init();
-	//sound_init();
+	sound_init();
 	timer_init();
 	init_i2c();
 	MS5611_init();
