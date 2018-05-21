@@ -21,6 +21,7 @@
 #include "gui.h"
 #include "Variables.h"
 #include "gps.h"
+#include "BMS.h"
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
@@ -45,6 +46,9 @@ int main(void)
 	datafusion_init();
 	vario_init();
 	gps_init();
+	wait_systick(10);
+	init_BMS();
+
 
 	gui_init();
 
@@ -59,6 +63,9 @@ int main(void)
 			vario_task();
 			gui_task();
 			gps_task();
+
+			BMS_get_adc();
+			BMS_gauge_get_adc();
 
 
 			set_led_green(TOGGLE);

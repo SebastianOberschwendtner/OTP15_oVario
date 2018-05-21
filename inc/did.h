@@ -16,6 +16,7 @@
 #define 	did_SOUND		3
 #define 	did_DATAFUSION  4
 #define 	did_BMS			5
+#define		did_GPS			6
 
 
 #endif /* DID_H_ */

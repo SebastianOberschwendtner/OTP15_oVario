@@ -8,6 +8,10 @@
 #include "DOGXL240.h"
 #include "font.h"
 
+unsigned char temp[4];
+
+
+
 #pragma pack(push, 1)
 typedef struct
 {
@@ -82,7 +86,7 @@ void init_lcd(void)
 	lcd_set_write_pattern(PAGE_PATTERN0);
 
 	//register buffer
-	plcd_DOGXL = ipc_memory_register((LCD_PIXEL_X*LCD_PIXEL_Y/8)+8,did_LCD);
+	plcd_DOGXL = ipc_memory_register(LCD_PIXEL_X*LCD_PIXEL_Y/8 + 4,did_LCD);
 
 	lcd_set_cursor(0,0);
 	lcd_set_inverted(0);
@@ -358,6 +362,7 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
 	else
 		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
+
 	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
 	{
 		lcd_char2buffer((l_number%10)+48);
@@ -367,40 +372,7 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 		else
 			plcd_DOGXL->cursor_x -= 2*12;
 	}
-	if(plcd_DOGXL->ch_fontsize)
-		plcd_DOGXL->cursor_x += (ch_predecimal+1)*FONT_X*plcd_DOGXL->ch_fontsize;
-	else
-		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
-}
 
-/*
- * Write a signed number to buffer using ascii font.
- * Enter data, the number of places to be displayed.
- * Because of the calculation of the digits (LSB first), the cursor has to be shifted to fit the MSB first.
- */
-void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
-{
-	if(l_number < 0)
-	{
-		lcd_char2buffer('-');
-		l_number *= -1;
-	}
-	else
-		lcd_char2buffer('+');
-
-	if(plcd_DOGXL->ch_fontsize)
-		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
-	else
-		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
-	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
-	{
-		lcd_char2buffer((l_number%10)+48);
-		l_number /=10;
-		if(plcd_DOGXL->ch_fontsize)
-			plcd_DOGXL->cursor_x -= 2*FONT_X*plcd_DOGXL->ch_fontsize;
-		else
-			plcd_DOGXL->cursor_x -= 2*12;
-	}
 	if(plcd_DOGXL->ch_fontsize)
 		plcd_DOGXL->cursor_x += (ch_predecimal+1)*FONT_X*plcd_DOGXL->ch_fontsize;
 	else
@@ -441,6 +413,41 @@ void lcd_digit2buffer(unsigned char ch_data)
 		}
 	}
 }
+
+
+/*
+ * Write float number to buffer
+ */
+void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char ch_dedecimal)
+{
+	if(f_number >= 0)
+		lcd_char2buffer('+');
+	else
+	{
+		lcd_char2buffer('-');
+		f_number = -f_number;
+	}
+
+
+	unsigned long E = 1;
+	for(unsigned char cnt = 0; cnt < ch_dedecimal; cnt++)
+	{
+		E *= 10;
+	}
+
+
+	unsigned long predec = (unsigned long)f_number;
+	unsigned long dedec  =  (unsigned long)((f_number - predec) * E);
+
+	lcd_num2buffer(predec,ch_predecimal);
+	if(ch_dedecimal > 0)
+	{
+		lcd_char2buffer('.');
+		lcd_num2buffer(dedec,ch_dedecimal);
+	}
+
+}
+
 
 /*
  * Write battery symbol to buffer
@@ -506,3 +513,56 @@ void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, uns
 {
 
 }
+
+/*
+ * Draw Block; Coordinates are bottom left corner
+ */
+void lcd_block2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_height, unsigned char ch_width)
+{
+	if(ch_height != 0)
+	{
+		for(unsigned char x_cnt = 0; x_cnt < ch_width; x_cnt++)
+		{
+			for(unsigned char y_cnt = 0; y_cnt < ch_height; y_cnt++)
+			{
+				lcd_pixel2buffer(ch_x + x_cnt, ch_y - y_cnt,1);
+			}
+		}
+	}
+}
+
+
+/*
+ * Write a signed number to buffer using ascii font.
+ * Enter data, the number of places to be displayed.
+ * Because of the calculation of the digits (LSB first), the cursor has to be shifted to fit the MSB first.
+ */
+void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
+{
+	if(l_number < 0)
+	{
+		lcd_char2buffer('-');
+		l_number *= -1;
+	}
+	else
+		lcd_char2buffer('+');
+
+	if(plcd_DOGXL->ch_fontsize)
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*FONT_X*plcd_DOGXL->ch_fontsize;
+	else
+		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
+	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
+	{
+		lcd_char2buffer((l_number%10)+48);
+		l_number /=10;
+		if(plcd_DOGXL->ch_fontsize)
+			plcd_DOGXL->cursor_x -= 2*FONT_X*plcd_DOGXL->ch_fontsize;
+		else
+			plcd_DOGXL->cursor_x -= 2*12;
+	}
+	if(plcd_DOGXL->ch_fontsize)
+		plcd_DOGXL->cursor_x += (ch_predecimal+1)*FONT_X*plcd_DOGXL->ch_fontsize;
+	else
+		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
+}
+

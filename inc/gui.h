@@ -20,11 +20,14 @@ enum states
 };
 
 // Functions
-void gui_set 		(void);
+void gui_init		(void);
+void gui_task 		(void);
 
 void fkt_Initscreen (void);
 void fkt_Vario 		(void);
 void fkt_Menu 		(void);
 void fkt_Settings	(void);
+
+void gui_gauge      (float value, float min, float max);
 
 #endif /* GUI_H_ */
