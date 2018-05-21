@@ -8,7 +8,7 @@
 #ifndef GPS_H_
 #define GPS_H_
 
-
+//Git ist scheiße!
 // ***** DEFINES *****
 #define dma_buf_size	512
 

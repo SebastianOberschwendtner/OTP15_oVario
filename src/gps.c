@@ -12,7 +12,7 @@
 #include "did.h"
 #include "oVario_Framework.h"
 #include "Variables.h"
-
+//Git ist schei√üe!
 // Variables
 #pragma pack(push, 1)
 typedef struct{
@@ -216,7 +216,7 @@ void gps_task ()
 						while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
 						{
 
-							if(msg_buff[cnt] == ',') // Wenn Komma, ¸berspringen
+							if(msg_buff[cnt] == ',') // Wenn Komma, ÔøΩberspringen
 							{
 								;
 							}
