@@ -33,8 +33,6 @@ float yi2 = 0;
 float sub = 0;
 
 float timeclimbarray[climbavtime * 10] = {0};
-float timeclimbh[2];
-float timeclimbav = 0;
 
 uint8_t flagfirst = 1;
 uint8_t timecnt = 0;
@@ -71,13 +69,10 @@ void datafusion_task(void)
 		yi2 = -2 * d * T * u;
 
 		// Init Averager
-		/*for(uint8_t cntx = 0; cntx < (climbavtime * 10); cntx ++)
+		for(uint8_t cntx = 0; cntx < (climbavtime * 10); cntx ++)
 		{
 			timeclimbarray[cntx] = df_data->height;
-
-		}*/
-		timeclimbh[0] = df_data->height;
-
+		}
 
 		flagfirst = 0;
 	}
@@ -102,21 +97,17 @@ void datafusion_task(void)
 	df_data->pressure 			= p;
 
 	// TimeClimb
-	uint16_t idx1 = timeidx;
-	uint16_t idx2 = (timeidx + (climbavtime * 10) - 1) % (climbavtime * 10);
-
-	timeclimbh[1] = timeclimbh[0];
-	timeclimbh[0] = df_data->height;
-
-	timeclimbarray[timeidx] = (timeclimbh[0] - timeclimbh[1]);
-
-	df_data->climbrate_av 	+= (timeclimbarray[timeidx] - timeclimbarray[(timeidx + (climbavtime * 10) - 1) % (climbavtime * 10)]);
-
-
-
-	timeidx++;
-	if (timeidx == (climbavtime * 10))
+	timecnt++;
+	if (timecnt == 5)
 	{
-		timeidx = 0;
+		timeclimbarray[timeidx] = df_data->height;
+		df_data->climbrate_av = (timeclimbarray[timeidx] - timeclimbarray[(timeidx + 1) % (climbavtime * 10)]) / climbavtime;
+		timeidx++;
+		if (timeidx == (climbavtime * 10))
+		{
+			timeidx = 0;
+		}
+		timecnt = 0;
 	}
+
 }

@@ -499,64 +499,6 @@ void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned 
 	}
 }
 
-// Float to Buffer
-
-/*
- * Write float number to buffer
- */
-void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char ch_dedecimal)
-{
-    if(f_number >= 0)
-        lcd_char2buffer('+');
-    else
-    {
-        lcd_char2buffer('-');
-        f_number = -f_number;
-    }
-
-
-    unsigned long E = 1;
-    for(unsigned char cnt = 0; cnt < ch_dedecimal; cnt++)
-    {
-        E *= 10;
-    }
-
-
-    unsigned long predec = (unsigned long)f_number;
-    unsigned long dedec  =  (unsigned long)((f_number - predec) * E);
-
-    lcd_num2buffer(predec,ch_predecimal);
-    if(ch_dedecimal > 0)
-    {
-        lcd_char2buffer('.');
-        lcd_num2buffer(dedec,ch_dedecimal);
-    }
-
-}
-
-// Block to Buffer
-
-/*
- * Draw Block; Coordinates are bottom left corner
- */
-void lcd_block2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_height, unsigned char ch_width)
-{
-    if(ch_height != 0)
-    {
-        for(unsigned char x_cnt = 0; x_cnt < ch_width; x_cnt++)
-        {
-            for(unsigned char y_cnt = 0; y_cnt < ch_height; y_cnt++)
-            {
-                lcd_pixel2buffer(ch_x + x_cnt, ch_y - y_cnt,1);
-            }
-        }
-    }
-}
-
-
-
-
-
 /*
  * Write circle to buffer
  */

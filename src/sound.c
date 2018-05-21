@@ -117,16 +117,15 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 {
 	// 105 = 0.01ms; 	1000Hz
 	uint32_t reload = 100000/((uint32_t)frequency) * 105;//10500;
-	uint32_t compare = (reload / 2) * volume / 100;
+	uint32_t compare = (reload / 2) * 100 / volume;
 
 	TIM_SetAutoreload(TIM2, reload);
 	TIM_SetCompare1(TIM2, compare);
 
+
 	reload = period * 200;			// 20000 = 1Hz
 	TIM_SetAutoreload(TIM3, reload);
 
-	if(TIM3->CNT > reload)
-		TIM3->CNT = 0;
 }
 
 void sound_task(void)

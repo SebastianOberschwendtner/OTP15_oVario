@@ -6,10 +6,8 @@
 
 uint8_t ipc_data_memory[memory_data_size];
 uint8_t ipc_queue_memory[memory_queue_size];
-
-uint32_t memory_data_idx = 0;
-
-uint32_t memory_queue_idx = 0;
+uint8_t memory_data_idx = 0;
+uint8_t memory_queue_idx = 0;
 
 uint8_t queue_cnt = 0;
 T_queue queues[did_size];
@@ -18,7 +16,7 @@ T_queue queues[did_size];
 void* memory_data_did[did_size];
 void* memory_queue_did[did_size];
 
-//extern uint8_t error;
+extern uint8_t error;
 
 //************************************
 //*********** Functions **************
@@ -36,7 +34,7 @@ void* ipc_memory_register(uint32_t no_bytes, uint8_t did)
 	}
 	else
 	{
-	//	error = err_no_memory_left;
+		error = err_no_memory_left;
 		return 0;
 	}
 }
@@ -65,7 +63,7 @@ void ipc_register_queue(uint16_t size_queue, uint8_t did)
 	}
 	else
 	{
-		;//error = err_no_memory_left;
+		error = err_no_memory_left;
 	}
 }
 
