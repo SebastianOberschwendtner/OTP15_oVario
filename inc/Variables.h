@@ -8,9 +8,6 @@
 #ifndef VARIABLES_H_
 #define VARIABLES_H_
 
-#define true 1
-#define false 0
-
 
 // Sound
 #pragma pack(push, 1)
@@ -90,16 +87,6 @@ typedef struct
 	signed int discharged_capacity;		//[mA]
 	unsigned int temperature;			//[degC]
 }BMS_T;
-#pragma pack(pop)
-
-
-// GPS
-#pragma pack(push, 1)
-typedef struct{
-	float speed_kmh;
-	float heading_deg;
-	uint8_t fix;
-}GPS_T;
 #pragma pack(pop)
 
 
