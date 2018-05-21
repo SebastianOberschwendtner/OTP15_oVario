@@ -153,9 +153,11 @@ void lcd_string2buffer(char* pch_string);
 void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal);
 void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal);
 void lcd_digit2buffer(unsigned char ch_data);
+void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char ch_dedecimal);
 void lcd_bat2buffer(unsigned char ch_stat);
 void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned char ch_x_end,unsigned char ch_y_end);
 void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius);
+void lcd_block2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_height, unsigned char ch_width);
 
 
 #endif /* DOGXL240_H_ */
