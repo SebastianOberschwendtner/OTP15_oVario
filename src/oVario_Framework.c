@@ -54,8 +54,9 @@ void init_clock(void)
  */
 void gpio_en(unsigned char ch_port)
 {
-	RCC->AHB1ENR |= (1<<ch_port);
-}
+	unsigned long l_temp = RCC->AHB1ENR;
+	RCC->AHB1ENR = l_temp | (1<<ch_port);
+};
 
 /*
  * Init systick timer
