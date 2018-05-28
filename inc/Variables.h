@@ -102,4 +102,15 @@ typedef struct
 }BMS_T;
 #pragma pack(pop)
 
+//SDIO
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned long buffer[128];
+	unsigned long response;
+	unsigned long state;
+	unsigned int RCA;
+}SDIO_T;
+#pragma pack(pop)
+
 #endif /* VARIABLES_H_ */
