@@ -271,3 +271,41 @@ void sdio_dma_receive(void)
 		DMA2_Stream6->CR |= DMA_SxCR_EN;
 };
 
+/*
+ * Swap the bytes in the buffer in the correct order:
+ *
+ * Received:	B0 B1 B2 B3
+ * Swapped:		B3 B2 B1 B0
+
+unsigned long sdio_swap_word(unsigned long l_data)
+{
+	unsigned char ch_temp_byte0 = 0, ch_temp_byte1 = 0, ch_temp_byte2 = 0, ch_temp_byte3 = 0;
+
+	ch_temp_byte3 = ((l_data>>0) & 0xFF);
+	ch_temp_byte2 = ((l_data>>8) & 0xFF);
+	ch_temp_byte1 = ((l_data>>16) & 0xFF);
+	ch_temp_byte0 = ((l_data>>24) & 0xFF);
+	return (unsigned long)((ch_temp_byte3<<24) | (ch_temp_byte2<<16) | (ch_temp_byte1<<8) | (ch_temp_byte0<<0));
+};*/
+
+/*
+ * Read a byte from buffer with the corresponding location in the sd-card memory
+ */
+unsigned char sdio_read_byte(unsigned int i_adress)
+{
+	unsigned char ch_adress = (unsigned char)((i_adress/4));	//Get adress of buffer
+	unsigned char ch_byte = (unsigned char)(i_adress%4);		//Get number of byte in buffer
+
+	return (unsigned char)( (SD->buffer[ch_adress] >> (ch_byte*8)) & 0xFF);
+};
+
+/*
+ * Read a word from buffer with the corresponding location in the sd-card memory
+ */
+unsigned long sdio_read_long(unsigned int i_adress)
+{
+	unsigned long l_data = 0;
+	for(unsigned char ch_count = 0; ch_count<4; ch_count++)
+		l_data |= (sdio_read_byte(i_adress+ch_count)<<8*ch_count);
+	return l_data;
+};
