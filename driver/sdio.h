@@ -68,6 +68,7 @@ unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg);
 void sdio_read_block(unsigned long l_block_address);
+void sdio_dma_receive(void);
 
 
 #endif /* SDIO_H_ */

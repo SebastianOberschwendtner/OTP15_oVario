@@ -15,7 +15,8 @@ SDIO_T* SD;
 void init_sdio(void)
 {
 	//Activate Clocks
-	RCC->APB2ENR |= RCC_APB2ENR_SDIOEN;
+	RCC->APB2ENR |= RCC_APB2ENR_SDIOEN;		//Sdio adapter
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;		//DMA2
 	gpio_en(GPIO_C);
 	gpio_en(GPIO_D);
 
@@ -48,8 +49,24 @@ void init_sdio(void)
 
 
 	//Register Memory
-	SD = ipc_memory_register(528,did_SDIO);
-	wait_ms(1);			//Wait for power up of card
+	SD = ipc_memory_register(522,did_SDIO);
+
+	//Clear DMA interrupts
+	DMA2->HIFCR = DMA_LIFCR_CTCIF3 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
+
+	/*
+	 * Configure DMA2 Stream 6 Channel 4:
+	 * -Memorysize:	32bit	incremented
+	 * -Peripheral:	32bit	fixed
+	 * -Peripheral flow control
+	 */
+	DMA2_Stream6->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_MSIZE_1 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL;
+	//DMA2_Stream3->NDTR = 128;							//128*4bytes to transmit
+	DMA2_Stream6->PAR = (unsigned long)&SDIO->FIFO;		//Peripheral address
+	DMA2_Stream6->M0AR = (unsigned long)&SD->buffer[0];	//Buffer start address
+	DMA2_Stream6->FCR = DMA_SxFCR_DMDIS | DMA_SxFCR_FTH_1 | DMA_SxFCR_FTH_0;
+
+	wait_ms(1);			//Wait for powerup of card
 
 	/*
 	 * Begin card identification
@@ -215,7 +232,7 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
  */
 void sdio_read_block(unsigned long l_block_address)
 {
-	unsigned char ch_buffer_count = 127;
+	//unsigned char ch_buffer_count = 127;
 
 	if(!(SD->state & SD_SDHC))				//If SDSC card, byte addressing is used
 		l_block_address *= SDIO_BLOCKLEN;
@@ -226,9 +243,11 @@ void sdio_read_block(unsigned long l_block_address)
 	{
 		SD->response = sdio_send_cmd_short(CMD16,512);
 		SD->response = sdio_send_cmd_short(CMD17,l_block_address);
-		SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DTEN;
-		SD->response = 0;
-		while(!(SDIO->STA & SDIO_STA_DBCKEND))
+		sdio_dma_receive();
+		SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
+
+		//unsigned ch_buffer_count = 127;
+		while(!(SDIO->STA & SDIO_STA_DBCKEND));/*
 		{
 			if(SDIO->STA & SDIO_STA_RXFIFOHF)
 			{
@@ -237,7 +256,18 @@ void sdio_read_block(unsigned long l_block_address)
 				ch_buffer_count -= 8;
 				SD->response += 8;
 			}
-		}
-		SDIO->ICR = SDIO_ICR_DBCKENDC;
+		}*/
+		SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
+
 	}
-}
+};
+
+/*
+ * Enable the DMA for data receive
+ */
+void sdio_dma_receive(void)
+{
+	if(!(DMA2_Stream6->CR & DMA_SxCR_EN))		//check if transfer is complete
+		DMA2_Stream6->CR |= DMA_SxCR_EN;
+};
+
