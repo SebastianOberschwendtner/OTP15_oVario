@@ -44,15 +44,15 @@ void init_sdio(void)
 	 */
 	sdio_set_clock(400000);										//set sdio clock
 	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0;	//Enable SD_CLK
-	SDIO->DTIMER = 0xFFFF;										//Data timeout during data transfer
+	SDIO->DTIMER = 0x404;										//Data timeout during data transfer
 	SDIO->DLEN	=	SDIO_BLOCKLEN;								//Numbers of bytes per block
 
 
 	//Register Memory
-	SD = ipc_memory_register(522,did_SDIO);
+	SD = ipc_memory_register(531,did_SDIO);
 
 	//Clear DMA interrupts
-	DMA2->HIFCR = DMA_LIFCR_CTCIF3 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
+	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
 
 	/*
 	 * Configure DMA2 Stream 6 Channel 4:
@@ -106,6 +106,9 @@ void init_sdio(void)
 		if(sdio_send_cmd_long(CMD2,0))
 			SD->RCA = (sdio_send_cmd_short(CMD3,0)>>16);
 
+		//Set Blocklen to 512 bytes
+		SD->response = sdio_send_cmd_short(CMD16,512);
+
 		/*Set bus mode to 4 bit
 		if(!(sdio_send_cmd_short(CMD7,(SD->RCA<<16)) & R1_ERROR))
 		{
@@ -117,7 +120,8 @@ void init_sdio(void)
 
 		wait_ms(1);
 		//Read first sector
-		sdio_read_block(0);
+		sdio_select_card();
+		sdio_init_file();
 	}
 };
 
@@ -227,39 +231,34 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
 };
 
 /*
+ * Select card for data transfer
+ * This library only supports one sd-card at a time!
+ */
+void sdio_select_card(void)
+{
+	if(!(SD->state & SD_CARD_SELECTED))
+	{
+		SD->response = sdio_send_cmd_short(CMD7,(SD->RCA<<16)); //Select Card
+		if(!(SD->response & R1_ERROR))								//Check for Error
+			SD->state |= SD_CARD_SELECTED;
+	}
+};
+
+/*
  * Read block data from card at specific block address.
  * The addressing uses block number and adapts to SDSC and SDHC cards.
  */
 void sdio_read_block(unsigned long l_block_address)
 {
-	//unsigned char ch_buffer_count = 127;
-
 	if(!(SD->state & SD_SDHC))				//If SDSC card, byte addressing is used
 		l_block_address *= SDIO_BLOCKLEN;
+	SD->response = sdio_send_cmd_short(CMD17,l_block_address);
 
-	//Select card
-	SD->response = sdio_send_cmd_short(CMD7,(SD->RCA<<16));
-	if(!(SD->response & R1_ERROR))
-	{
-		SD->response = sdio_send_cmd_short(CMD16,512);
-		SD->response = sdio_send_cmd_short(CMD17,l_block_address);
-		sdio_dma_receive();
-		SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
-
-		//unsigned ch_buffer_count = 127;
-		while(!(SDIO->STA & SDIO_STA_DBCKEND));/*
-		{
-			if(SDIO->STA & SDIO_STA_RXFIFOHF)
-			{
-				for(unsigned char ch_count = 0; ch_count < 8;ch_count++)
-					SD->buffer[ch_buffer_count - ch_count] = SDIO->FIFO;
-				ch_buffer_count -= 8;
-				SD->response += 8;
-			}
-		}*/
-		SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
-
-	}
+	sdio_dma_receive();
+	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
+	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
+	//TODO Add timeout
+	SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
 };
 
 /*
@@ -267,26 +266,11 @@ void sdio_read_block(unsigned long l_block_address)
  */
 void sdio_dma_receive(void)
 {
+	//Clear DMA interrupts
+	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
 	if(!(DMA2_Stream6->CR & DMA_SxCR_EN))		//check if transfer is complete
 		DMA2_Stream6->CR |= DMA_SxCR_EN;
 };
-
-/*
- * Swap the bytes in the buffer in the correct order:
- *
- * Received:	B0 B1 B2 B3
- * Swapped:		B3 B2 B1 B0
-
-unsigned long sdio_swap_word(unsigned long l_data)
-{
-	unsigned char ch_temp_byte0 = 0, ch_temp_byte1 = 0, ch_temp_byte2 = 0, ch_temp_byte3 = 0;
-
-	ch_temp_byte3 = ((l_data>>0) & 0xFF);
-	ch_temp_byte2 = ((l_data>>8) & 0xFF);
-	ch_temp_byte1 = ((l_data>>16) & 0xFF);
-	ch_temp_byte0 = ((l_data>>24) & 0xFF);
-	return (unsigned long)((ch_temp_byte3<<24) | (ch_temp_byte2<<16) | (ch_temp_byte1<<8) | (ch_temp_byte0<<0));
-};*/
 
 /*
  * Read a byte from buffer with the corresponding location in the sd-card memory
@@ -300,6 +284,17 @@ unsigned char sdio_read_byte(unsigned int i_adress)
 };
 
 /*
+ * Read a int from buffer with the corresponding location in the sd-card memory
+ */
+unsigned int sdio_read_int(unsigned int i_adress)
+{
+	unsigned long l_data = 0;
+	for(unsigned char ch_count = 0; ch_count<3; ch_count++)
+		l_data |= (sdio_read_byte(i_adress+ch_count)<<8*ch_count);
+	return l_data;
+};
+
+/*
  * Read a word from buffer with the corresponding location in the sd-card memory
  */
 unsigned long sdio_read_long(unsigned int i_adress)
@@ -309,3 +304,26 @@ unsigned long sdio_read_long(unsigned int i_adress)
 		l_data |= (sdio_read_byte(i_adress+ch_count)<<8*ch_count);
 	return l_data;
 };
+
+/*
+ * Initialize file system.
+ * Gets the type and begin of the file system
+ */
+void sdio_init_file(void)
+{
+	unsigned char ch_part_type = 0;
+	sdio_read_block(0);
+	if(sdio_read_int(MBR_MAGIC_NUMBER_pos) == 0xAA55)	//Check filesystem for corruption
+	{
+		ch_part_type = sdio_read_byte(MBR_PART1_TYPE_pos);				//Save partition type
+		SD->LBA_begin_fat = sdio_read_long(MBR_PART1_LBA_BEGIN_pos);
+		sdio_read_block(SD->LBA_begin_fat);		//read partition table
+
+		if(ch_part_type == 0xEE)										//EFI filesystem
+		{
+			SD->LBA_begin_clus = sdio_read_long(EFI_TABLE_LBA_BEGIN_pos);
+			sdio_read_block(SD->LBA_begin_clus);	//Read EFI partition table
+			SD->LBA_begin_fat = sdio_read_long(EFI_PART_LBA_BEGIN_pos);	//Get begin of file system
+		}
+	}
+}

@@ -110,6 +110,9 @@ typedef struct
 	unsigned long response;
 	unsigned long state;
 	unsigned int RCA;
+	unsigned long LBA_begin_fat;
+	unsigned long LBA_begin_clus;
+	unsigned char sec_per_clus;
 }SDIO_T;
 #pragma pack(pop)
 

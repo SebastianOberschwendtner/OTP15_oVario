@@ -51,6 +51,9 @@
 //Response bits
 #define R1_APP_CMD			(1<<5)		//Card will accept ACMD as next command
 #define R1_ERROR			(1<<19)		//Generic error bit
+#define R1_ILLEGAL_CMD		(1<<22)
+#define R1_READY_4_DATA		(1<<8)
+
 
 //SD Register bits
 #define OCR_3_0V			(1<<17)
@@ -58,6 +61,19 @@
 //Status bits
 #define SD_CARD_DETECTED	(1<<0)
 #define SD_SDHC				(1<<1)
+#define SD_CARD_SELECTED	(1<<2)
+
+/*
+ * defines for filesystem
+ */
+//MBR
+#define MBR_MAGIC_NUMBER_pos	0x1FE
+#define MBR_PART1_TYPE_pos		0x1C2
+#define MBR_PART1_LBA_BEGIN_pos	0x1C6
+
+//EFI
+#define EFI_TABLE_LBA_BEGIN_pos	0x48
+#define EFI_PART_LBA_BEGIN_pos	0x20
 
 
 //*********** Functions **************
@@ -67,9 +83,12 @@ void sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg);
+void sdio_select_card(void);
 void sdio_read_block(unsigned long l_block_address);
 void sdio_dma_receive(void);
 unsigned char sdio_read_byte(unsigned int i_adress);
+unsigned int sdio_read_int(unsigned int i_adress);
 unsigned long sdio_read_long(unsigned int i_adress);
+void sdio_init_file(void);
 
 #endif /* SDIO_H_ */
