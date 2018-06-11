@@ -112,7 +112,9 @@ typedef struct
 	unsigned int RCA;
 	unsigned long LBA_begin_fat;
 	unsigned long LBA_begin_clus;
+	unsigned long root_clus;
 	unsigned char sec_per_clus;
+	unsigned char err;
 }SDIO_T;
 #pragma pack(pop)
 
