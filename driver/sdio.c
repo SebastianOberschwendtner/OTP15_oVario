@@ -49,7 +49,7 @@ void init_sdio(void)
 
 
 	//Register Memory
-	SD = ipc_memory_register(531,did_SDIO);
+	SD = ipc_memory_register(538,did_SDIO);
 
 	//Clear DMA interrupts
 	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
@@ -77,6 +77,7 @@ void init_sdio(void)
 
 	//send CMD8 to specify supply voltage
 	SD->state = 0;
+	SD->err = 0;
 	SD->response = sdio_send_cmd_short(CMD8,CMD8_VOLTAGE_0 | CHECK_PATTERN);
 	if(SD->response)	//Check response
 	{
@@ -121,7 +122,7 @@ void init_sdio(void)
 		wait_ms(1);
 		//Read first sector
 		sdio_select_card();
-		sdio_init_file();
+		sdio_init_filesystem();
 	}
 };
 
@@ -288,10 +289,10 @@ unsigned char sdio_read_byte(unsigned int i_adress)
  */
 unsigned int sdio_read_int(unsigned int i_adress)
 {
-	unsigned long l_data = 0;
-	for(unsigned char ch_count = 0; ch_count<3; ch_count++)
-		l_data |= (sdio_read_byte(i_adress+ch_count)<<8*ch_count);
-	return l_data;
+	unsigned int i_data = 0;
+	i_data = (sdio_read_byte(i_adress)<<0);
+	i_data |= (sdio_read_byte(i_adress+1)<<8);
+	return i_data;
 };
 
 /*
@@ -300,8 +301,15 @@ unsigned int sdio_read_int(unsigned int i_adress)
 unsigned long sdio_read_long(unsigned int i_adress)
 {
 	unsigned long l_data = 0;
+	/*
 	for(unsigned char ch_count = 0; ch_count<4; ch_count++)
-		l_data |= (sdio_read_byte(i_adress+ch_count)<<8*ch_count);
+		l_data |= (sdio_read_byte(i_adress+ch_count)<<(8*ch_count));
+	 */
+	l_data = (sdio_read_byte(i_adress)<<0);
+	l_data |= (sdio_read_byte(i_adress+1)<<8);
+	l_data |= (sdio_read_byte(i_adress+2)<<16);
+	l_data |= (sdio_read_byte(i_adress+3)<<24);
+
 	return l_data;
 };
 
@@ -309,9 +317,11 @@ unsigned long sdio_read_long(unsigned int i_adress)
  * Initialize file system.
  * Gets the type and begin of the file system
  */
-void sdio_init_file(void)
+void sdio_init_filesystem(void)
 {
 	unsigned char ch_part_type = 0;
+	unsigned long l_temp = 0, l_RootDirSectors = 0, l_FATSz = 0, l_TotSec = 0, l_DataSec = 0, l_CountofCluster = 0;
+
 	sdio_read_block(0);
 	if(sdio_read_int(MBR_MAGIC_NUMBER_pos) == 0xAA55)	//Check filesystem for corruption
 	{
@@ -325,5 +335,49 @@ void sdio_init_file(void)
 			sdio_read_block(SD->LBA_begin_clus);	//Read EFI partition table
 			SD->LBA_begin_fat = sdio_read_long(EFI_PART_LBA_BEGIN_pos);	//Get begin of file system
 		}
+		sdio_read_block(SD->LBA_begin_fat);	//Read BPB
+		//Check for errors and read filesystem variables
+		if((sdio_read_int(BPB_BYTES_PER_SEC_pos) == 512) && (sdio_read_byte(BPB_NUM_FAT_pos) == 2))
+		{
+			/************Determine the FAT-type according to Microsoft specifications****************************************************************************/
+			//Determine the count of sectors occupied by the root directory
+			l_RootDirSectors = ( (sdio_read_int(BPB_ROOT_ENT_CNT_pos) * 32) + (sdio_read_int(BPB_BYTES_PER_SEC_pos) - 1)) / sdio_read_int(BPB_BYTES_PER_SEC_pos);
+
+			//Determine the count of sectors in the data region of the volume
+			if(sdio_read_int(BPB_FAT_SIZE_16_pos))
+				l_FATSz = sdio_read_int(BPB_FAT_SIZE_16_pos);
+			else
+				l_FATSz = sdio_read_long(BPB_FAT_SIZE_32_pos);
+
+			if(sdio_read_int(BPB_TOT_SEC_16_pos))
+				l_TotSec = sdio_read_int(BPB_TOT_SEC_16_pos);
+			else
+				l_TotSec = sdio_read_long(BPB_TOT_SEC_32_pos);
+
+			l_DataSec = l_TotSec - (sdio_read_int(BPB_RES_SEC_pos) + (sdio_read_byte(BPB_NUM_FAT_pos) * l_FATSz) + l_RootDirSectors);
+
+			//determine the count of clusters as
+			l_CountofCluster = l_DataSec / sdio_read_byte(BPB_SEC_PER_CLUS_pos);
+
+			if(l_CountofCluster < 4085)
+			{
+				/* Volume is FAT12 => not supported! */
+				SD->err = SD_ERROR_WRONG_FAT;
+			}
+			else if(l_CountofCluster < 65525)
+			{
+				/* Volume is FAT16 */
+				SD->state |= SD_IS_FAT16;
+			}
+			else
+			{
+				/* Volume is FAT32 */
+			}
+			/********Set file system variables according to filesystem********************/
+
+			SD->err = 0;
+		}
+		else
+			SD->err = SD_ERROR_WRONG_FILESYSTEM;
 	}
 }

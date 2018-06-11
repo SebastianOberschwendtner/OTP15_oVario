@@ -62,18 +62,38 @@
 #define SD_CARD_DETECTED	(1<<0)
 #define SD_SDHC				(1<<1)
 #define SD_CARD_SELECTED	(1<<2)
+#define SD_IS_FAT16			(1<<3)
 
 /*
  * defines for filesystem
  */
 //MBR
-#define MBR_MAGIC_NUMBER_pos	0x1FE
-#define MBR_PART1_TYPE_pos		0x1C2
-#define MBR_PART1_LBA_BEGIN_pos	0x1C6
+#define MBR_MAGIC_NUMBER_pos	0x1FE	//int
+#define MBR_PART1_TYPE_pos		0x1C2	//char
+#define MBR_PART1_LBA_BEGIN_pos	0x1C6	//long
 
 //EFI
-#define EFI_TABLE_LBA_BEGIN_pos	0x48
-#define EFI_PART_LBA_BEGIN_pos	0x20
+#define EFI_TABLE_LBA_BEGIN_pos	0x48	//long
+#define EFI_PART_LBA_BEGIN_pos	0x20	//long
+
+//BPB
+#define BPB_BYTES_PER_SEC_pos	0x0B	//int
+#define BPB_SEC_PER_CLUS_pos	0x0D	//char
+#define BPB_RES_SEC_pos			0x0E	//int
+#define BPB_NUM_FAT_pos			0x10	//byte
+#define BPB_ROOT_ENT_CNT_pos	0x11	//int
+#define BPB_TOT_SEC_16_pos		0x13	//int
+#define BPB_FAT_SIZE_16_pos		0x16	//int
+#define BPB_TOT_SEC_32_pos		0x20	//long
+#define BPB_FAT_SIZE_32_pos		0x24	//long
+#define BPB_ROOT_DIR_CLUS_pos	0x2C	//long
+
+
+/*
+ * Defines for erros
+ */
+#define SD_ERROR_WRONG_FILESYSTEM	0x01
+#define SD_ERROR_WRONG_FAT			0x02
 
 
 //*********** Functions **************
@@ -89,6 +109,6 @@ void sdio_dma_receive(void);
 unsigned char sdio_read_byte(unsigned int i_adress);
 unsigned int sdio_read_int(unsigned int i_adress);
 unsigned long sdio_read_long(unsigned int i_adress);
-void sdio_init_file(void);
+void sdio_init_filesystem(void);
 
 #endif /* SDIO_H_ */
