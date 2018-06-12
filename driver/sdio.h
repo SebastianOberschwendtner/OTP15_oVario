@@ -106,9 +106,10 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg);
 void sdio_select_card(void);
 void sdio_read_block(unsigned long l_block_address);
 void sdio_dma_receive(void);
-unsigned char sdio_read_byte(unsigned int i_adress);
-unsigned int sdio_read_int(unsigned int i_adress);
-unsigned long sdio_read_long(unsigned int i_adress);
+unsigned char sdio_read_byte(unsigned int i_address);
+unsigned int sdio_read_int(unsigned int i_address);
+unsigned long sdio_read_long(unsigned int i_address);
 void sdio_init_filesystem(void);
+unsigned long sdio_get_lba(unsigned long l_cluster);
 
 #endif /* SDIO_H_ */

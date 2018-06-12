@@ -49,7 +49,7 @@ void init_sdio(void)
 
 
 	//Register Memory
-	SD = ipc_memory_register(538,did_SDIO);
+	SD = ipc_memory_register(548,did_SDIO);
 
 	//Clear DMA interrupts
 	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
@@ -276,39 +276,39 @@ void sdio_dma_receive(void)
 /*
  * Read a byte from buffer with the corresponding location in the sd-card memory
  */
-unsigned char sdio_read_byte(unsigned int i_adress)
+unsigned char sdio_read_byte(unsigned int i_address)
 {
-	unsigned char ch_adress = (unsigned char)((i_adress/4));	//Get adress of buffer
-	unsigned char ch_byte = (unsigned char)(i_adress%4);		//Get number of byte in buffer
+	unsigned char ch_address = (unsigned char)((i_address/4));	//Get adress of buffer
+	unsigned char ch_byte = (unsigned char)(i_address%4);		//Get number of byte in buffer
 
-	return (unsigned char)( (SD->buffer[ch_adress] >> (ch_byte*8)) & 0xFF);
+	return (unsigned char)( (SD->buffer[ch_address] >> (ch_byte*8)) & 0xFF);
 };
 
 /*
  * Read a int from buffer with the corresponding location in the sd-card memory
  */
-unsigned int sdio_read_int(unsigned int i_adress)
+unsigned int sdio_read_int(unsigned int i_address)
 {
 	unsigned int i_data = 0;
-	i_data = (sdio_read_byte(i_adress)<<0);
-	i_data |= (sdio_read_byte(i_adress+1)<<8);
+	i_data = (sdio_read_byte(i_address)<<0);
+	i_data |= (sdio_read_byte(i_address+1)<<8);
 	return i_data;
 };
 
 /*
  * Read a word from buffer with the corresponding location in the sd-card memory
  */
-unsigned long sdio_read_long(unsigned int i_adress)
+unsigned long sdio_read_long(unsigned int i_address)
 {
 	unsigned long l_data = 0;
 	/*
 	for(unsigned char ch_count = 0; ch_count<4; ch_count++)
 		l_data |= (sdio_read_byte(i_adress+ch_count)<<(8*ch_count));
 	 */
-	l_data = (sdio_read_byte(i_adress)<<0);
-	l_data |= (sdio_read_byte(i_adress+1)<<8);
-	l_data |= (sdio_read_byte(i_adress+2)<<16);
-	l_data |= (sdio_read_byte(i_adress+3)<<24);
+	l_data = (sdio_read_byte(i_address)<<0);
+	l_data |= (sdio_read_byte(i_address+1)<<8);
+	l_data |= (sdio_read_byte(i_address+2)<<16);
+	l_data |= (sdio_read_byte(i_address+3)<<24);
 
 	return l_data;
 };
@@ -320,25 +320,27 @@ unsigned long sdio_read_long(unsigned int i_adress)
 void sdio_init_filesystem(void)
 {
 	unsigned char ch_part_type = 0;
-	unsigned long l_temp = 0, l_RootDirSectors = 0, l_FATSz = 0, l_TotSec = 0, l_DataSec = 0, l_CountofCluster = 0;
+	unsigned long l_temp = 0,l_LBABegin = 0, l_RootDirSectors = 0, l_FATSz = 0, l_TotSec = 0, l_DataSec = 0, l_CountofCluster = 0;
 
 	sdio_read_block(0);
 	if(sdio_read_int(MBR_MAGIC_NUMBER_pos) == 0xAA55)	//Check filesystem for corruption
 	{
 		ch_part_type = sdio_read_byte(MBR_PART1_TYPE_pos);				//Save partition type
-		SD->LBA_begin_fat = sdio_read_long(MBR_PART1_LBA_BEGIN_pos);
-		sdio_read_block(SD->LBA_begin_fat);		//read partition table
+		l_temp = sdio_read_long(MBR_PART1_LBA_BEGIN_pos);
+		sdio_read_block(l_temp);		//read partition table
 
 		if(ch_part_type == 0xEE)										//EFI filesystem
 		{
-			SD->LBA_begin_clus = sdio_read_long(EFI_TABLE_LBA_BEGIN_pos);
-			sdio_read_block(SD->LBA_begin_clus);	//Read EFI partition table
-			SD->LBA_begin_fat = sdio_read_long(EFI_PART_LBA_BEGIN_pos);	//Get begin of file system
+			l_temp = sdio_read_long(EFI_TABLE_LBA_BEGIN_pos);
+			sdio_read_block(l_temp);	//Read EFI partition table
+			l_temp = sdio_read_long(EFI_PART_LBA_BEGIN_pos);	//Get begin of file system
 		}
-		sdio_read_block(SD->LBA_begin_fat);	//Read BPB
+		sdio_read_block(l_temp);	//Read BPB
 		//Check for errors and read filesystem variables
 		if((sdio_read_int(BPB_BYTES_PER_SEC_pos) == 512) && (sdio_read_byte(BPB_NUM_FAT_pos) == 2))
 		{
+			//Save the LBA begin address
+			l_LBABegin = l_temp;
 			/************Determine the FAT-type according to Microsoft specifications****************************************************************************/
 			//Determine the count of sectors occupied by the root directory
 			l_RootDirSectors = ( (sdio_read_int(BPB_ROOT_ENT_CNT_pos) * 32) + (sdio_read_int(BPB_BYTES_PER_SEC_pos) - 1)) / sdio_read_int(BPB_BYTES_PER_SEC_pos);
@@ -373,11 +375,27 @@ void sdio_init_filesystem(void)
 			{
 				/* Volume is FAT32 */
 			}
-			/********Set file system variables according to filesystem********************/
+			/********Get the Fat begin address ********************************************************************/
+			SD->LBAFATBegin = l_LBABegin + sdio_read_int(BPB_RES_SEC_pos);
+
+			/********Get sector number of root directory **********************************************************/
+			SD->FirstRootDirSecNum = SD->LBAFATBegin + (sdio_read_byte(BPB_NUM_FAT_pos) * l_FATSz);
+
+			if(!(SD->state & SD_IS_FAT16))
+				SD->FirstRootDirSecNum = sdio_get_lba(sdio_read_long(BPB_ROOT_DIR_CLUS_pos));
 
 			SD->err = 0;
 		}
 		else
 			SD->err = SD_ERROR_WRONG_FILESYSTEM;
 	}
-}
+};
+
+/*
+ * Compute the LBA begin address of a specific cluster
+ * Cluster numbering begins at 2.
+ */
+unsigned long sdio_get_lba(unsigned long l_cluster)
+{
+	return SD->FirstRootDirSecNum + (l_cluster -2) * SD->SecPerClus;
+};
