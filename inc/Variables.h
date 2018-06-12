@@ -110,10 +110,12 @@ typedef struct
 	unsigned long response;
 	unsigned long state;
 	unsigned int RCA;
-	unsigned long LBA_begin_fat;
-	unsigned long LBA_begin_clus;
-	unsigned long root_clus;
-	unsigned char sec_per_clus;
+	unsigned long LBAFATBegin;
+	unsigned long FATsSz;
+	unsigned long ThisFATSecNum;
+	unsigned long ThisFATEntOffset;
+	unsigned long FirstRootDirSecNum;
+	unsigned char SecPerClus;
 	unsigned char err;
 }SDIO_T;
 #pragma pack(pop)
