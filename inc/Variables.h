@@ -60,6 +60,7 @@ typedef struct{
 	float		yi2;
 	float		sub;
 	float		climbrate_av;
+	float		glide;
 }datafusion_T;
 #pragma pack(pop)
 

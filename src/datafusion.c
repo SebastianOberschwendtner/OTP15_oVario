@@ -14,6 +14,7 @@
 // ***** Variables *****
 ms5611_T* ipc_df_data;
 datafusion_T* df_data;
+GPS_T* ipc_df_gps_data;
 
 float ps = 102500;
 
@@ -45,7 +46,8 @@ uint8_t timeidx = 0;
 void datafusion_init(void)
 {
 	ipc_df_data = ipc_memory_get(did_MS5611);
-	df_data		= ipc_memory_register(44,did_DATAFUSION);
+	df_data		= ipc_memory_register(48,did_DATAFUSION);
+	ipc_df_gps_data = ipc_memory_get(did_GPS);
 }
 
 
@@ -100,6 +102,17 @@ void datafusion_task(void)
 	df_data->Time 				= Time;
 	df_data->sub				= sub;
 	df_data->pressure 			= p;
+
+
+	if(y < 0)
+	{
+		df_data->glide = ipc_df_gps_data->speed_kmh/3.6/(-y);
+	}
+	else
+		df_data->glide = 99;
+
+
+
 
 	// TimeClimb
 	uint16_t idx1 = timeidx;

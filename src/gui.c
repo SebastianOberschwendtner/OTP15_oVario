@@ -87,6 +87,12 @@ void fkt_Initscreen (void)
 	lcd_signed_num2buffer(p_ipc_gui_bms_data->current,3);
 	lcd_string2buffer("mA");
 
+
+	lcd_set_cursor(0, 90);
+	lcd_string2buffer("Glide:");
+	lcd_float2buffer(p_ipc_gui_df_data->glide,2,1);
+
+
 	lcd_set_cursor(80, 50);
 	lcd_set_fontsize(3);
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);
