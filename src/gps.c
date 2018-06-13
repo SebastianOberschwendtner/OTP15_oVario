@@ -135,7 +135,7 @@ void gps_init (){
 	DMA_DeInit(DMA1_Stream1);
 	DMA_InitStructure.DMA_BufferSize 			= dma_buf_size;
 	DMA_InitStructure.DMA_FIFOMode 				= DMA_FIFOMode_Enable;//DMA_FIFOMode_Disable;
-	DMA_InitStructure.DMA_FIFOThreshold 		= DMA_FIFOThreshold_Full;
+	DMA_InitStructure.DMA_FIFOThreshold 		= DMA_FIFOThreshold_1QuarterFull;
 	DMA_InitStructure.DMA_MemoryBurst			= DMA_MemoryBurst_Single ;
 	DMA_InitStructure.DMA_MemoryDataSize 		= DMA_MemoryDataSize_Byte;
 	DMA_InitStructure.DMA_MemoryInc 			= DMA_MemoryInc_Enable;
@@ -147,8 +147,8 @@ void gps_init (){
 	DMA_InitStructure.DMA_Priority 				= DMA_Priority_High;
 	DMA_InitStructure.DMA_Channel 				= DMA_Channel_4;
 	DMA_InitStructure.DMA_DIR 					= DMA_DIR_PeripheralToMemory;
-	//	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)pDMABuff;
-	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)&DMABuff[0];
+	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)pDMABuff;
+	//DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)&DMABuff[0];
 	DMA_Init(DMA1_Stream1,&DMA_InitStructure);
 
 	// Enable DMA Stream Transfer Complete interrupt */
@@ -162,7 +162,6 @@ void gps_init (){
 
 
 	p_GPS_data = ipc_memory_register(50, did_GPS);
-
 }
 
 
@@ -178,10 +177,32 @@ uint8_t dedeccnt = 0;
 uint8_t deccnt = 0;
 uint8_t gnflag = 0;
 
+uint16_t currentDMA = 0;
+uint16_t lastDMA = 0;
+
+uint8_t test = 0;
+uint16_t test02 = 0;
+
 void gps_task ()
 {
+
+
 	uint16_t msg_cnt = 0;
 	uint16_t msg_cnt2 = 0;
+
+	currentDMA = dma_buf_size - DMA_GetCurrDataCounter(DMA1_Stream1);
+
+	Rd_Cnt += (currentDMA + dma_buf_size - lastDMA) % dma_buf_size;
+
+	if(Rd_Cnt > dma_buf_size) Rd_Cnt = dma_buf_size;
+	lastDMA = currentDMA;
+
+
+
+
+
+
+
 
 	while(msg_cnt <= Rd_Cnt)
 	{
@@ -325,10 +346,10 @@ void gps_task ()
 void DMA1_Stream1_IRQHandler(void) // USART3_RX
 {
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_FEIF1))
-		{
-			/* Clear DMA Stream Transfer Complete interrupt pending bit */
-			DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_FEIF1);
-		}
+	{
+		/* Clear DMA Stream Transfer Complete interrupt pending bit */
+		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_FEIF1);
+	}
 
 
 
@@ -343,14 +364,15 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
 	{
 		Wr_Idx = (Wr_Idx + dma_buf_size / 4) % dma_buf_size;
-		Rd_Cnt = (Rd_Cnt + dma_buf_size / 4);
+		/*Rd_Cnt = (Rd_Cnt + dma_buf_size / 4);
+
 
 		if(Rd_Cnt > dma_buf_size)
 		{
 			Rd_Cnt = dma_buf_size;
 			Rd_Idx = (Wr_Idx + 1) % dma_buf_size ;
 		}
-
+		 */
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
 	}
