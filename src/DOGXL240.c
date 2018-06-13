@@ -114,8 +114,12 @@ void init_lcd(void)
 void lcd_dma_enable(void)
 {
 	lcd_set_cd(DATA);
-	DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;
-	DMA1_Stream4->CR |= DMA_SxCR_EN;
+	if(!(DMA1_Stream4->CR & DMA_SxCR_EN))		//check if transfer is complete
+	{
+
+		DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;
+		DMA1_Stream4->CR |= DMA_SxCR_EN;
+	}
 }
 /*
  * Reset display

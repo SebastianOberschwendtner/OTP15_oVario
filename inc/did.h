@@ -17,6 +17,7 @@
 #define 	did_DATAFUSION  4
 #define 	did_BMS			5
 #define		did_GPS			6
+#define 	did_SDIO		7
 
 
 #endif /* DID_H_ */
