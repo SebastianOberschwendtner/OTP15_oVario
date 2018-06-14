@@ -119,5 +119,6 @@ unsigned long sdio_read_fat_pos(unsigned long l_pos);
 unsigned long sdio_get_next_cluster(void);
 void sdio_read_cluster(unsigned long l_cluster);
 unsigned char sdio_read_next_cluster(void);
+void sdio_get_name(unsigned long l_fileid);
 
 #endif /* SDIO_H_ */

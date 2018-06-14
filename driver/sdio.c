@@ -8,6 +8,7 @@
 #include "Variables.h"
 
 SDIO_T* SD;
+FILE_T* file;
 
 /*
  * initialize sdio and sd-card
@@ -50,6 +51,8 @@ void init_sdio(void)
 
 	//Register Memory
 	SD = ipc_memory_register(548,did_SDIO);
+	file = ipc_memory_register(24, did_FILE);
+	file->name[11] = 0;	//End of string
 
 	//Clear DMA interrupts
 	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
@@ -526,4 +529,16 @@ unsigned char sdio_read_next_cluster(void)
 			}
 		}
 	}
+};
+
+/*
+ * Read the name of a file or directory
+ */
+//TODO return the string direct not using the file struct
+void sdio_get_name(unsigned long l_fileid)
+{
+	l_fileid %= 16;		//one sector can contain 16 files or directories
+	//Read the name string
+	for(unsigned char ch_count = 0; ch_count<11; ch_count++)
+		file->name[ch_count] = sdio_read_byte(l_fileid*32 + ch_count);
 };
