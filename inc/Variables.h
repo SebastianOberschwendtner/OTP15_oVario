@@ -121,4 +121,24 @@ typedef struct
 }SDIO_T;
 #pragma pack(pop)
 
+//fileid
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned long id;
+	unsigned long DirCluster;
+	unsigned long StartCluster;
+	char name[12];
+}FILE_T;
+#pragma pack(pop)
+
+//System variables
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned int date;
+	unsigned int time;
+}SYS_T;
+#pragma pack(pop)
+
 #endif /* VARIABLES_H_ */

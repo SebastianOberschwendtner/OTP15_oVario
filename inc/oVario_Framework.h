@@ -9,6 +9,8 @@
 #define OVARIO_FRAMEWORK_H_
 
 #include "stm32f4xx.h"
+#include "did.h"
+#include "ipc.h"
 
 
 /*
@@ -53,6 +55,15 @@
 #define OFF				0
 #define TOGGLE			3
 
+//Positions for date and time bits
+#define SYS_DATE_YEAR_pos		9
+#define SYS_DATE_MONTH_pos		5
+#define SYS_DATE_DAY_pos		0
+
+#define SYS_TIME_HOUR_pos		11
+#define SYS_TIME_MINUTE_pos		5
+#define SYS_TIME_SECONDS_pos	0
+
 
 
 void init_clock(void);
@@ -63,5 +74,7 @@ void set_led_green(unsigned char ch_state);
 void set_led_red(unsigned char ch_state);
 void wait_ms(unsigned long l_time);
 void wait_systick(unsigned long l_ticks);
+void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second);
+void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year);
 
 #endif /* OVARIO_FRAMEWORK_H_ */
