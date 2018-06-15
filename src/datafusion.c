@@ -40,13 +40,14 @@ float timeclimbav = 0;
 uint8_t flagfirst = 1;
 uint8_t timecnt = 0;
 uint8_t timeidx = 0;
+uint8_t tcnt = 0;
 
 // ***** Functions *****
 
 void datafusion_init(void)
 {
 	ipc_df_data = ipc_memory_get(did_MS5611);
-	df_data		= ipc_memory_register(48,did_DATAFUSION);
+	df_data		= ipc_memory_register(201 + 48,did_DATAFUSION);
 	ipc_df_gps_data = ipc_memory_get(did_GPS);
 }
 
@@ -112,6 +113,13 @@ void datafusion_task(void)
 		df_data->glide = 99;
 
 
+	if(tcnt > 4)		// running @ 10Hz, happening every 0.5s
+	{
+		df_data->hist_clib[df_data->hist_ptr] = df_data->climbrate_filt;
+		df_data->hist_ptr = (df_data->hist_ptr + 1) % 50;
+		tcnt = 0;
+	}
+	tcnt++;
 
 
 	// TimeClimb

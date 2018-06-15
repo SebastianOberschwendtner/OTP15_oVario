@@ -61,6 +61,8 @@ typedef struct{
 	float		sub;
 	float		climbrate_av;
 	float		glide;
+	float		hist_clib[50];
+	uint8_t 	hist_ptr;
 }datafusion_T;
 #pragma pack(pop)
 
