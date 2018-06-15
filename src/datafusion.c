@@ -33,13 +33,12 @@ float yi1 = 0;
 float yi2 = 0;
 float sub = 0;
 
-float timeclimbarray[climbavtime * 10] = {0};
+float timeclimbarray[climbavtime * 2] = {0};
 float timeclimbh[2];
 float timeclimbav = 0;
 
 uint8_t flagfirst = 1;
 uint8_t timecnt = 0;
-uint8_t timeidx = 0;
 uint8_t tcnt = 0;
 
 // ***** Functions *****
@@ -47,7 +46,7 @@ uint8_t tcnt = 0;
 void datafusion_init(void)
 {
 	ipc_df_data = ipc_memory_get(did_MS5611);
-	df_data		= ipc_memory_register(201 + 48,did_DATAFUSION);
+	df_data		= ipc_memory_register(121 + 201 + 48,did_DATAFUSION);
 	ipc_df_gps_data = ipc_memory_get(did_GPS);
 }
 
@@ -115,29 +114,19 @@ void datafusion_task(void)
 
 	if(tcnt > 4)		// running @ 10Hz, happening every 0.5s
 	{
+		// climb history
 		df_data->hist_clib[df_data->hist_ptr] = df_data->climbrate_filt;
 		df_data->hist_ptr = (df_data->hist_ptr + 1) % 50;
+
+		// height history
+		df_data->hist_h[df_data->hist_ptr] = df_data->height;
+
+		df_data->climbrate_av = (df_data->height - df_data->hist_h[(df_data->hist_ptr + 1) % 30])/15;
+
+		df_data->histh_ptr = (df_data->histh_ptr + 1) % 30;
+
+
 		tcnt = 0;
 	}
 	tcnt++;
-
-
-	// TimeClimb
-	uint16_t idx1 = timeidx;
-	uint16_t idx2 = (timeidx + (climbavtime * 10) - 1) % (climbavtime * 10);
-
-	timeclimbh[1] = timeclimbh[0];
-	timeclimbh[0] = df_data->height;
-
-	timeclimbarray[timeidx] = (timeclimbh[0] - timeclimbh[1]);
-
-	df_data->climbrate_av 	+= (timeclimbarray[timeidx] - timeclimbarray[(timeidx + (climbavtime * 10) - 1) % (climbavtime * 10)]);
-
-
-
-	timeidx++;
-	if (timeidx == (climbavtime * 10))
-	{
-		timeidx = 0;
-	}
 }

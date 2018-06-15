@@ -43,13 +43,15 @@ int main(void)
 	timer_init();
 	init_i2c();
 	MS5611_init();
-	datafusion_init();
-	vario_init();
-	gps_init();
+
+
 	wait_systick(10);
 	init_BMS();
 
+	gps_init();
 
+	datafusion_init();
+	vario_init();
 	gui_init();
 
 
@@ -64,8 +66,10 @@ int main(void)
 			gui_task();
 			gps_task();
 
+
 			BMS_get_adc();
 			BMS_gauge_get_adc();
+
 
 
 			set_led_green(TOGGLE);

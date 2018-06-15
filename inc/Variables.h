@@ -63,6 +63,8 @@ typedef struct{
 	float		glide;
 	float		hist_clib[50];
 	uint8_t 	hist_ptr;
+	float 		hist_h[30];
+	uint8_t 	histh_ptr;
 }datafusion_T;
 #pragma pack(pop)
 
