@@ -8,6 +8,7 @@
 #include "Variables.h"
 
 SDIO_T* SD;
+FILE_T* file;
 
 /*
  * initialize sdio and sd-card
@@ -50,6 +51,8 @@ void init_sdio(void)
 
 	//Register Memory
 	SD = ipc_memory_register(548,did_SDIO);
+	file = ipc_memory_register(24, did_FILE);
+	file->name[11] = 0;	//End of string
 
 	//Clear DMA interrupts
 	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
@@ -320,7 +323,7 @@ unsigned long sdio_read_long(unsigned int i_address)
 void sdio_init_filesystem(void)
 {
 	unsigned char ch_part_type = 0;
-	unsigned long l_temp = 0,l_LBABegin = 0, l_RootDirSectors = 0, l_FATSz = 0, l_TotSec = 0, l_DataSec = 0, l_CountofCluster = 0;
+	unsigned long l_temp = 0,l_LBABegin = 0, l_RootDirSectors = 0, l_TotSec = 0, l_DataSec = 0, l_CountofCluster = 0;
 
 	sdio_read_block(0);
 	if(sdio_read_int(MBR_MAGIC_NUMBER_pos) == 0xAA55)	//Check filesystem for corruption
@@ -337,7 +340,7 @@ void sdio_init_filesystem(void)
 		}
 		sdio_read_block(l_temp);	//Read BPB
 		//Check for errors and read filesystem variables
-		if((sdio_read_int(BPB_BYTES_PER_SEC_pos) == 512) && (sdio_read_byte(BPB_NUM_FAT_pos) == 2))
+		if((sdio_read_int(BPB_BYTES_PER_SEC_pos) == SDIO_BLOCKLEN) && (sdio_read_byte(BPB_NUM_FAT_pos) == 2))
 		{
 			//Save the LBA begin address
 			l_LBABegin = l_temp;
@@ -347,19 +350,20 @@ void sdio_init_filesystem(void)
 
 			//Determine the count of sectors in the data region of the volume
 			if(sdio_read_int(BPB_FAT_SIZE_16_pos))
-				l_FATSz = sdio_read_int(BPB_FAT_SIZE_16_pos);
+				SD->FATSz = sdio_read_int(BPB_FAT_SIZE_16_pos);
 			else
-				l_FATSz = sdio_read_long(BPB_FAT_SIZE_32_pos);
+				SD->FATSz = sdio_read_long(BPB_FAT_SIZE_32_pos);
 
 			if(sdio_read_int(BPB_TOT_SEC_16_pos))
 				l_TotSec = sdio_read_int(BPB_TOT_SEC_16_pos);
 			else
 				l_TotSec = sdio_read_long(BPB_TOT_SEC_32_pos);
 
-			l_DataSec = l_TotSec - (sdio_read_int(BPB_RES_SEC_pos) + (sdio_read_byte(BPB_NUM_FAT_pos) * l_FATSz) + l_RootDirSectors);
+			l_DataSec = l_TotSec - (sdio_read_int(BPB_RES_SEC_pos) + (sdio_read_byte(BPB_NUM_FAT_pos) * SD->FATSz) + l_RootDirSectors);
 
 			//determine the count of clusters as
-			l_CountofCluster = l_DataSec / sdio_read_byte(BPB_SEC_PER_CLUS_pos);
+			SD->SecPerClus = sdio_read_byte(BPB_SEC_PER_CLUS_pos);
+			l_CountofCluster = l_DataSec / SD->SecPerClus;
 
 			if(l_CountofCluster < 4085)
 			{
@@ -379,7 +383,7 @@ void sdio_init_filesystem(void)
 			SD->LBAFATBegin = l_LBABegin + sdio_read_int(BPB_RES_SEC_pos);
 
 			/********Get sector number of root directory **********************************************************/
-			SD->FirstRootDirSecNum = SD->LBAFATBegin + (sdio_read_byte(BPB_NUM_FAT_pos) * l_FATSz);
+			SD->FirstRootDirSecNum = SD->LBAFATBegin + (sdio_read_byte(BPB_NUM_FAT_pos) * SD->FATSz);
 
 			if(!(SD->state & SD_IS_FAT16))
 				SD->FirstRootDirSecNum = sdio_get_lba(sdio_read_long(BPB_ROOT_DIR_CLUS_pos));
@@ -398,4 +402,143 @@ void sdio_init_filesystem(void)
 unsigned long sdio_get_lba(unsigned long l_cluster)
 {
 	return SD->FirstRootDirSecNum + (l_cluster -2) * SD->SecPerClus;
+};
+
+/*
+ * Get the FAT sector for a specific cluster
+ */
+unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum)
+{
+	unsigned long l_FATOffset = 0;
+
+	if(SD->state & SD_IS_FAT16)
+		l_FATOffset = l_cluster * 2;
+	else
+		l_FATOffset = l_cluster * 4;
+
+	if(ch_FATNum == 1)
+		return SD->LBAFATBegin + (l_FATOffset / SDIO_BLOCKLEN);
+	else
+		return SD->LBAFATBegin + (l_FATOffset / SDIO_BLOCKLEN) + (SD->FATSz * ch_FATNum);
+
+};
+
+/*
+ * Get the byte position of a cluster withing a FAT sector
+ */
+unsigned long sdio_get_fat_pos(unsigned long l_cluster)
+{
+	unsigned long l_FATOffset = 0;
+
+	if(SD->state & SD_IS_FAT16)
+		l_FATOffset = l_cluster * 2;
+	else
+		l_FATOffset = l_cluster * 4;
+
+	return l_FATOffset % SDIO_BLOCKLEN;
+};
+
+/*
+ * Read the FAT entry of the loaded Sector and return the content
+ */
+unsigned long sdio_read_fat_pos(unsigned long l_pos)
+{
+	if(SD->state & SD_IS_FAT16)
+		return (unsigned long)sdio_read_int(l_pos);
+	else
+		return sdio_read_long(l_pos);
+};
+
+/*
+ * Get the next cluster of a current cluster, reading the FAT
+ */
+unsigned long sdio_get_next_cluster(void)
+{
+	//Read the sector with the entry of the current cluster
+	sdio_read_block(sdio_get_fat_sec(SD->CurrentCluster,1));
+
+	//Determine the FAT entry
+	return sdio_read_fat_pos(sdio_get_fat_pos(SD->CurrentCluster));
+};
+
+/*
+ * Read the first sector of a specific cluster from sd-card
+ */
+void sdio_read_cluster(unsigned long l_cluster)
+{
+	sdio_read_block(sdio_get_lba(l_cluster));
+	SD->CurrentCluster = l_cluster;
+	SD->CurrentSector = 1;
+};
+
+/*
+ * Read the next sectors of a file until the end of file is reached
+ */
+unsigned char sdio_read_next_cluster(void)
+{
+	unsigned long l_FATEntry = 0;
+
+	if(SD->CurrentSector != SD->SecPerClus)
+	{
+		sdio_read_block(sdio_get_fat_sec(SD->CurrentCluster, 1)+SD->CurrentSector++);
+		return 1;
+	}
+	else
+	{
+		//Get the entry of the FAT table
+		l_FATEntry = sdio_get_next_cluster();
+
+		if(SD->state & SD_IS_FAT16)					//If FAT16
+		{
+			if(l_FATEntry == 0xFFFF)				//End of file
+				return 0;
+			else if(l_FATEntry >= 0xFFF8)			//Bad Sector
+			{
+				SD->err = SD_ERROR_BAD_SECTOR;
+				return 0;
+			}
+			else if(l_FATEntry == 0x0000)			//Sector Empty
+			{
+				SD->err = SD_ERROR_FAT_CORRUPTED;
+				return 0;
+			}
+			else									//Read the next cluster
+			{
+				sdio_read_cluster(l_FATEntry);
+				return 1;
+			}
+		}
+		else										//If FAT32
+		{
+			if(l_FATEntry == 0xFFFFFFFF)			//End of file
+				return 0;
+			else if(l_FATEntry >= 0xFFFFFFF8)		//Bad Sector
+			{
+				SD->err = SD_ERROR_BAD_SECTOR;
+				return 0;
+			}
+			else if(l_FATEntry == 0x00000000)		//Sector Empty
+			{
+				SD->err = SD_ERROR_FAT_CORRUPTED;
+				return 0;
+			}
+			else									//Read the next cluster
+			{
+				sdio_read_cluster(l_FATEntry);
+				return 1;
+			}
+		}
+	}
+};
+
+/*
+ * Read the name of a file or directory
+ */
+//TODO return the string direct not using the file struct
+void sdio_get_name(unsigned long l_fileid)
+{
+	l_fileid %= 16;		//one sector can contain 16 files or directories
+	//Read the name string
+	for(unsigned char ch_count = 0; ch_count<11; ch_count++)
+		file->name[ch_count] = sdio_read_byte(l_fileid*32 + ch_count);
 };

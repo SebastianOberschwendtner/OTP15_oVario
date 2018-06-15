@@ -18,6 +18,8 @@
 #define 	did_BMS			5
 #define		did_GPS			6
 #define 	did_SDIO		7
+#define		did_SYS			8
+#define 	did_FILE		9
 
 
 #endif /* DID_H_ */

@@ -94,6 +94,8 @@
  */
 #define SD_ERROR_WRONG_FILESYSTEM	0x01
 #define SD_ERROR_WRONG_FAT			0x02
+#define SD_ERROR_BAD_SECTOR			0x03
+#define SD_ERROR_FAT_CORRUPTED		0x04
 
 
 //*********** Functions **************
@@ -111,5 +113,12 @@ unsigned int sdio_read_int(unsigned int i_address);
 unsigned long sdio_read_long(unsigned int i_address);
 void sdio_init_filesystem(void);
 unsigned long sdio_get_lba(unsigned long l_cluster);
+unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum);
+unsigned long sdio_get_fat_pos(unsigned long l_cluster);
+unsigned long sdio_read_fat_pos(unsigned long l_pos);
+unsigned long sdio_get_next_cluster(void);
+void sdio_read_cluster(unsigned long l_cluster);
+unsigned char sdio_read_next_cluster(void);
+void sdio_get_name(unsigned long l_fileid);
 
 #endif /* SDIO_H_ */

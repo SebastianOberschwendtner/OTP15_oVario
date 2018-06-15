@@ -6,6 +6,9 @@
  */
 
 #include "oVario_Framework.h"
+#include "Variables.h"
+
+SYS_T* sys;
 
 /*
  * Init Clock
@@ -47,6 +50,12 @@ void init_clock(void)
 
 	//Activate FPU
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
+
+	//register system struct
+	sys = ipc_memory_register(4,did_SYS);
+	set_time(20,15,0);
+	set_date(23,2,2018);
+
 };
 
 /*
@@ -142,4 +151,20 @@ void wait_systick(unsigned long l_ticks)
 {
 	for(unsigned long l_count = 0;l_count<l_ticks; l_count++)
 		while(!TICK_PASSED);
+}
+
+/*
+ * Set the time
+ */
+void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second)
+{
+	sys->time = (ch_hour<<SYS_TIME_HOUR_pos) | (ch_minute<<SYS_TIME_MINUTE_pos) | ((ch_second/2)<<SYS_TIME_SECONDS_pos);
+};
+
+/*
+ * Set the date
+ */
+void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
+{
+	sys->date = ((unsigned char)(i_year-1980)<<SYS_DATE_YEAR_pos) | (ch_month<<SYS_DATE_MONTH_pos) | (ch_day<<SYS_DATE_DAY_pos);
 }

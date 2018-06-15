@@ -113,14 +113,34 @@ typedef struct
 	unsigned long response;
 	unsigned long state;
 	unsigned int RCA;
+	unsigned long CurrentCluster;
+	unsigned char CurrentSector;
 	unsigned long LBAFATBegin;
-	unsigned long FATsSz;
-	unsigned long ThisFATSecNum;
-	unsigned long ThisFATEntOffset;
+	unsigned long FATSz;
 	unsigned long FirstRootDirSecNum;
 	unsigned char SecPerClus;
 	unsigned char err;
 }SDIO_T;
+#pragma pack(pop)
+
+//fileid
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned long id;
+	unsigned long DirCluster;
+	unsigned long StartCluster;
+	char name[12];
+}FILE_T;
+#pragma pack(pop)
+
+//System variables
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned int date;
+	unsigned int time;
+}SYS_T;
 #pragma pack(pop)
 
 #endif /* VARIABLES_H_ */
