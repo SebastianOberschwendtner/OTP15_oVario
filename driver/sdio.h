@@ -14,6 +14,7 @@
 #include "did.h"
 #include "ipc.h"
 #include "error.h"
+#include "Variables.h"
 
 //*********** Defines **************
 //Clocks
@@ -36,6 +37,7 @@
 #define CMD8		8
 #define CMD16		16
 #define CMD17		17
+#define CMD24		24
 #define CMD55		55
 
 #define ACMD6		6
@@ -88,6 +90,28 @@
 #define BPB_FAT_SIZE_32_pos		0x24	//long
 #define BPB_ROOT_DIR_CLUS_pos	0x2C	//long
 
+//DIR
+#define DIR_ATTR_pos			0x0B	//char
+#define DIR_CRT_TIME_pos		0x0E	//int
+#define DIR_CRT_DATE_pos		0x10	//int
+#define DIR_ACC_DATE_pos		0x12	//int
+#define DIR_WRT_TIME_pos		0x16	//int
+#define DIR_WRT_DATE_pos		0x18	//int
+#define DIR_FstClusHI_pos		0x14	//int
+#define DIR_FstClusLO_pos		0x1A	//int
+#define DIR_FILESIZE_pos		0x1C	//long
+
+#define DIR_ATTR_SYS			0x04
+#define DIR_ATTR_DIR			0x10
+
+//Positions for date and time bits
+#define FAT_DATE_YEAR_pos		9
+#define FAT_DATE_MONTH_pos		5
+#define FAT_DATE_DAY_pos		0
+
+#define FAT_TIME_HOUR_pos		11
+#define FAT_TIME_MINUTE_pos		5
+#define FAT_TIME_SECONDS_pos	0
 
 /*
  * Defines for erros
@@ -96,7 +120,12 @@
 #define SD_ERROR_WRONG_FAT			0x02
 #define SD_ERROR_BAD_SECTOR			0x03
 #define SD_ERROR_FAT_CORRUPTED		0x04
-
+#define SD_ERROR_NO_SUCH_FILEID		0x05
+#define SD_ERROR_NO_SUCH_FILE		0x06
+#define SD_ERROR_NOT_A_DIR			0x07
+#define SD_ERROR_NOT_A_FILE			0x08
+#define SD_ERROR_NO_EMPTY_ENTRY		0x09
+#define SD_ERROR_NO_EMPTY_CLUSTER	0x0A
 
 //*********** Functions **************
 void init_sdio(void);
@@ -107,18 +136,37 @@ unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_a
 unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg);
 void sdio_select_card(void);
 void sdio_read_block(unsigned long l_block_address);
+void sdio_write_block(unsigned long l_block_address);
 void sdio_dma_receive(void);
+void sdio_dma_transmit(void);
 unsigned char sdio_read_byte(unsigned int i_address);
+void sdio_write_byte(unsigned int i_address, unsigned char ch_data);
 unsigned int sdio_read_int(unsigned int i_address);
+void sdio_write_int(unsigned int i_address, unsigned int i_data);
 unsigned long sdio_read_long(unsigned int i_address);
+void sdio_write_long(unsigned int i_address, unsigned long l_data);
 void sdio_init_filesystem(void);
 unsigned long sdio_get_lba(unsigned long l_cluster);
 unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum);
 unsigned long sdio_get_fat_pos(unsigned long l_cluster);
 unsigned long sdio_read_fat_pos(unsigned long l_pos);
+void sdio_write_fat_pos(unsigned long l_pos, unsigned long l_data);
 unsigned long sdio_get_next_cluster(void);
+void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state);
 void sdio_read_cluster(unsigned long l_cluster);
-unsigned char sdio_read_next_cluster(void);
-void sdio_get_name(unsigned long l_fileid);
+void sdio_write_current_sector(void);
+unsigned char sdio_read_next_sector_of_cluster(void);
+void sdio_get_name(FILE_T* filehandler);
+unsigned char sdio_strcmp(char* pch_string1, char* pch_string2);
+unsigned char sdio_check_filetype(FILE_T* filehandler, char* pch_type);
+void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid);
+unsigned long sdio_get_empty_id(void);
+unsigned long sdio_get_empty_cluster(void);
+void sdio_get_fileid(FILE_T* filehandler, char* pch_name);
+unsigned int sdio_get_date(void);
+unsigned int sdio_get_time(void);
+void sdio_cd(char* pch_dirname);
+void sdio_fopen(FILE_T* filehandler, char* pch_name);
+void sdio_mkfile(char* pch_name, char* pch_filetype);
 
 #endif /* SDIO_H_ */

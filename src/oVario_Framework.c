@@ -52,7 +52,7 @@ void init_clock(void)
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
 
 	//register system struct
-	sys = ipc_memory_register(4,did_SYS);
+	sys = ipc_memory_register(8,did_SYS);
 	set_time(20,15,0);
 	set_date(23,2,2018);
 
@@ -158,7 +158,7 @@ void wait_systick(unsigned long l_ticks)
  */
 void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second)
 {
-	sys->time = (ch_hour<<SYS_TIME_HOUR_pos) | (ch_minute<<SYS_TIME_MINUTE_pos) | ((ch_second/2)<<SYS_TIME_SECONDS_pos);
+	sys->time = (ch_hour<<SYS_TIME_HOUR_pos) | (ch_minute<<SYS_TIME_MINUTE_pos) | ((ch_second)<<SYS_TIME_SECONDS_pos);
 };
 
 /*

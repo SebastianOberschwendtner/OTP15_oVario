@@ -60,8 +60,8 @@
 #define SYS_DATE_MONTH_pos		5
 #define SYS_DATE_DAY_pos		0
 
-#define SYS_TIME_HOUR_pos		11
-#define SYS_TIME_MINUTE_pos		5
+#define SYS_TIME_HOUR_pos		12
+#define SYS_TIME_MINUTE_pos		6
 #define SYS_TIME_SECONDS_pos	0
 
 

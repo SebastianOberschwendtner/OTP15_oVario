@@ -126,6 +126,7 @@ typedef struct
 typedef struct
 {
 	unsigned long id;
+	unsigned char DirAttr;
 	unsigned long DirCluster;
 	unsigned long StartCluster;
 	char name[12];
@@ -137,7 +138,7 @@ typedef struct
 typedef struct
 {
 	unsigned int date;
-	unsigned int time;
+	unsigned long time;
 }SYS_T;
 #pragma pack(pop)
 
