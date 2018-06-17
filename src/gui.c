@@ -13,7 +13,7 @@
 #include "Variables.h"
 
 //*********** Variables **************
-uint8_t menu = Gui_Initscreen;
+uint8_t menu = Gui_Vario;//Gui_Initscreen;
 uint8_t submenu = 0;
 datafusion_T* p_ipc_gui_df_data;
 GPS_T* p_ipc_gui_gps_data;
@@ -105,7 +105,53 @@ void fkt_Initscreen (void)
 
 void fkt_Vario (void)
 {
-	;
+	lcd_set_cursor(0, 16);
+	lcd_set_fontsize(2);
+	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" m");
+
+	lcd_set_cursor(0, 36);
+	lcd_set_fontsize(2);
+	lcd_float2buffer(p_ipc_gui_gps_data->speed_kmh,2,1);
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" kmh");
+
+	lcd_set_cursor(0, 56);
+	lcd_set_fontsize(2);
+	lcd_float2buffer(p_ipc_gui_df_data->glide,2,1);
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" gz");
+
+	lcd_set_cursor(0, 76);
+	lcd_set_fontsize(2);
+	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg,3,0);
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" hdg");
+
+	lcd_set_cursor(0, 96);
+	lcd_set_fontsize(2);
+	lcd_float2buffer(p_ipc_gui_df_data->climbrate_av,1,2);
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" ms av");
+
+
+
+	lcd_set_fontsize(1);
+	lcd_set_cursor(0, 116);
+	lcd_string2buffer("UBat:");
+	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
+	lcd_string2buffer(" mV");
+
+
+
+	lcd_set_cursor(110, 40);
+	lcd_set_fontsize(3);
+	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" ms");
+
+	draw_graph(138, 57);
 }
 
 void fkt_Menu (void)
@@ -168,4 +214,68 @@ void gui_gauge(float value, float min, float max)
 
 
 }
+
+
+void draw_graph(uint8_t x, uint8_t y)
+{
+	float min = -1;
+	float max = 1;
+	uint8_t height = 61;
+	uint8_t xpixel = 0;
+	uint8_t ypixel = 0;
+	float temp = 0;
+
+
+
+	for (uint8_t dcnt = 0; dcnt < 50; dcnt++)
+	{
+		temp = p_ipc_gui_df_data->hist_clib[(p_ipc_gui_df_data->hist_ptr + dcnt) % 50];
+
+		if(temp < min)
+			temp = min;
+
+		if(temp > max)
+			temp = max;
+
+		xpixel = x + dcnt*2 + 1;
+		ypixel = y + 1 + height/2 - (int8_t)(temp / max * height / 2);
+		lcd_pixel2buffer(xpixel, ypixel,1);
+		lcd_pixel2buffer(xpixel, ypixel-1,1);
+		lcd_pixel2buffer(xpixel, ypixel+1,1);
+
+		lcd_pixel2buffer(xpixel+1, ypixel,1);
+		lcd_pixel2buffer(xpixel+1, ypixel-1,1);
+		lcd_pixel2buffer(xpixel+1, ypixel+1,1);
+	}
+
+	// Draw vertical lines
+	lcd_line2buffer(x, y, x, y + height + 2);
+	lcd_line2buffer(x + 100 + 1, y, x + 100 + 1, y + height + 2);
+
+	// Draw horizontal lines
+	lcd_line2buffer(x, y + height + 1, x + 100 + 1, y + height + 1); 			// Bottom line
+	lcd_line2buffer(x, y , x + 100 + 1, y);										// Top line
+	lcd_line2buffer(x, y + height / 2 + 1 , x + 100 + 1, y + height / 2 + 1);	// Middle line
+
+
+	lcd_set_cursor(x-25, y+8);
+	lcd_set_fontsize(1);
+	lcd_float2buffer((float)max,1,0);
+	lcd_string2buffer("ms");
+
+	lcd_set_cursor(x-25, y + height/2+6);
+	lcd_float2buffer((float)0,1,0);
+	lcd_string2buffer("ms");
+
+
+
+	lcd_set_cursor(x-25, y + height+3);
+	lcd_float2buffer((float)min,1,0);
+	lcd_string2buffer("ms");
+
+
+
+}
+
+
 

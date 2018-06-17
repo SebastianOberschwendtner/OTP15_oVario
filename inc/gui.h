@@ -29,5 +29,6 @@ void fkt_Menu 		(void);
 void fkt_Settings	(void);
 
 void gui_gauge      (float value, float min, float max);
+void draw_graph		(uint8_t x, uint8_t y);
 
 #endif /* GUI_H_ */
