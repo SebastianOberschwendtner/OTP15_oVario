@@ -162,17 +162,12 @@ unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg)
 {
 	SDIO->ARG = l_arg;
 	SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-	while(!(SDIO->STA & SDIO_STA_CMDREND))		//Wait until command response is received
-	{
-		if(SDIO->STA & SDIO_STA_CTIMEOUT)		//If no response is received
-		{
-			//TODO Add Error assignment here
-			break;
-		}
-	}
+	while(!(SDIO->STA & (SDIO_STA_CMDREND | SDIO_STA_CTIMEOUT)));		//Wait until command response is received or timeout
+
 	if(SDIO->STA & SDIO_STA_CTIMEOUT)
 	{
 		SDIO->ICR = SDIO_ICR_CTIMEOUTC;
+		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
 	else
@@ -189,17 +184,12 @@ unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_a
 {
 	SDIO->ARG = l_arg;
 	SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-	while(!(SDIO->STA & SDIO_STA_CCRCFAIL))		//Wait until command response is received, CCRCFAIL indicated a received command response with failed CRC
-	{
-		if(SDIO->STA & SDIO_STA_CTIMEOUT)		//If no response is received
-		{
-			//TODO Add Error assignment here
-			break;
-		}
-	}
+	while(!(SDIO->STA & (SDIO_STA_CCRCFAIL | SDIO_STA_CTIMEOUT)));		//Wait until command response is received, CCRCFAIL indicated a received command response with failed CRC
+
 	if(SDIO->STA & SDIO_STA_CTIMEOUT)
 	{
 		SDIO->ICR = SDIO_ICR_CTIMEOUTC;
+		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
 	else
@@ -216,17 +206,12 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
 {
 	SDIO->ARG = l_arg;
 	SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_1 | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-	while(!(SDIO->STA & SDIO_STA_CMDREND))		//Wait until command response is received
-	{
-		if(SDIO->STA & SDIO_STA_CTIMEOUT)		//If no response is received
-		{
-			//TODO Add Error assignment here
-			break;
-		}
-	}
+	while(!(SDIO->STA & (SDIO_STA_CMDREND | SDIO_STA_CTIMEOUT)));		//Wait until command response is received or timeout
+
 	if(SDIO->STA & SDIO_STA_CTIMEOUT)
 	{
 		SDIO->ICR = SDIO_ICR_CTIMEOUTC;
+		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
 	else
@@ -263,7 +248,14 @@ void sdio_read_block(unsigned long l_block_address)
 	sdio_dma_receive();
 	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
 	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
-	//TODO Add timeout
+
+	//Set error if transfer timeout occured
+	if(SDIO->STA & SDIO_STA_DTIMEOUT)
+	{
+		SD->err = SD_ERROR_TRANSFER_ERROR;
+		SDIO->ICR = SDIO_STA_DTIMEOUT;
+	}
+	//Clear other pending flags
 	SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
 };
 
@@ -280,7 +272,14 @@ void sdio_write_block(unsigned long l_block_address)
 	sdio_dma_transmit();
 	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
 	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
-	//TODO Add timeout
+
+	//Set error if transfer timeout occured
+	if(SDIO->STA & SDIO_STA_DTIMEOUT)
+	{
+		SD->err = SD_ERROR_TRANSFER_ERROR;
+		SDIO->ICR = SDIO_STA_DTIMEOUT;
+	}
+	//Clear other pending flags
 	SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
 };
 
@@ -327,7 +326,8 @@ void sdio_write_byte(unsigned int i_address, unsigned char ch_data)
 	unsigned char ch_address = (unsigned char)((i_address/4));	//Get adress of buffer
 	unsigned char ch_byte = (unsigned char)(i_address%4);		//Get number of byte in buffer
 
-	SD->buffer[ch_address] = ( ((unsigned long) ch_data) << (ch_byte*8) );
+	SD->buffer[ch_address] &= ~( ((unsigned long) 0xFF) << (ch_byte*8) );	//Delete old byte
+	SD->buffer[ch_address] |= ( ((unsigned long) ch_data) << (ch_byte*8) );	//Write new byte
 };
 
 /*
@@ -512,14 +512,14 @@ unsigned long sdio_read_fat_pos(unsigned long l_pos)
 };
 
 /*
- * Wrote the FAT entry of the loaded Sector
+ * Write the FAT entry of the loaded Sector
  */
 void sdio_write_fat_pos(unsigned long l_pos, unsigned long l_data)
 {
 	if(SD->state & SD_IS_FAT16)
-		sdio_write_int(l_pos,(unsigned int)l_data);
+		sdio_write_int((unsigned int)l_pos,(unsigned int)l_data);
 	else
-		sdio_write_long(l_pos,l_data);
+		sdio_write_long((unsigned int)l_pos,l_data);
 };
 
 /*
@@ -539,19 +539,22 @@ unsigned long sdio_get_next_cluster(void)
  */
 void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state)
 {
+	//Get the LBA address of the cluster
+	unsigned long l_lba = sdio_get_fat_sec(l_cluster,1);
 	//Read the sector with the entry of the current cluster
-	sdio_read_block(sdio_get_fat_sec(l_cluster,1));
+	sdio_read_block(l_lba);
 
 	//Determine the FAT entry
 	sdio_write_fat_pos(sdio_get_fat_pos(l_cluster),l_state);
 
 	//Write FAT to sd-card
-	sdio_write_block(sdio_get_fat_sec(l_cluster,1));
+	sdio_write_block(l_lba);
 
 	//Repeat for 2nd FAT
-	sdio_read_block(sdio_get_fat_sec(l_cluster,2));
-	sdio_write_fat_pos(sdio_get_fat_pos(l_cluster),l_state);
-	sdio_write_block(sdio_get_fat_sec(l_cluster,2));
+//	l_lba = sdio_get_fat_sec(l_cluster,2);
+//	sdio_read_block(l_lba);
+//	sdio_write_fat_pos(sdio_get_fat_pos(l_cluster),l_state);
+//	sdio_write_block(l_lba);
 };
 
 /*
@@ -835,14 +838,14 @@ void sdio_mkfile(char* pch_name, char* pch_filetype)
 	for(unsigned char ch_count = 0; ch_count<8; ch_count++)
 	{
 		if(*pch_name)
-			sdio_write_byte(i_address+8+ch_count, *pch_name++);
+			sdio_write_byte(i_address+ch_count, *pch_name++);
 	}
 
 	//Write file extension
 	for(unsigned char ch_count = 0; ch_count<3; ch_count++)
 	{
 		if(*pch_filetype)
-			sdio_write_byte(i_address+ch_count, *pch_filetype++);
+			sdio_write_byte(i_address+8+ch_count, *pch_filetype++);
 	}
 
 	//Write file attribute

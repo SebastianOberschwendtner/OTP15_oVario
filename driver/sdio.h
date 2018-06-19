@@ -126,6 +126,7 @@
 #define SD_ERROR_NOT_A_FILE			0x08
 #define SD_ERROR_NO_EMPTY_ENTRY		0x09
 #define SD_ERROR_NO_EMPTY_CLUSTER	0x0A
+#define SD_ERROR_TRANSFER_ERROR		0x0B
 
 //*********** Functions **************
 void init_sdio(void);
