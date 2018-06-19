@@ -369,7 +369,7 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 
 	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
 	{
-		lcd_char2buffer((l_number%10)+48);
+		lcd_char2buffer((unsigned char)(l_number%10)+48);
 		l_number /=10;
 		if(plcd_DOGXL->ch_fontsize)
 			plcd_DOGXL->cursor_x -= 2*FONT_X*plcd_DOGXL->ch_fontsize;
@@ -557,7 +557,7 @@ void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
 		plcd_DOGXL->cursor_x += (ch_predecimal-1)*12;
 	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
 	{
-		lcd_char2buffer((l_number%10)+48);
+		lcd_char2buffer((unsigned char)(l_number%10)+48);
 		l_number /=10;
 		if(plcd_DOGXL->ch_fontsize)
 			plcd_DOGXL->cursor_x -= 2*FONT_X*plcd_DOGXL->ch_fontsize;

@@ -110,7 +110,7 @@ void init_sdio(void)
 
 		//Get the RCA of the card
 		if(sdio_send_cmd_long(CMD2,0))
-			SD->RCA = (sdio_send_cmd_short(CMD3,0)>>16);
+			SD->RCA = (unsigned int)(sdio_send_cmd_short(CMD3,0)>>16);
 
 		//Set Blocklen to 512 bytes
 		SD->response = sdio_send_cmd_short(CMD16,512);
@@ -278,7 +278,7 @@ void sdio_write_block(unsigned long l_block_address)
 	SD->response = sdio_send_cmd_short(CMD24,l_block_address);
 
 	sdio_dma_transmit();
-	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DTEN;
+	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
 	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
 	//TODO Add timeout
 	SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
@@ -327,7 +327,7 @@ void sdio_write_byte(unsigned int i_address, unsigned char ch_data)
 	unsigned char ch_address = (unsigned char)((i_address/4));	//Get adress of buffer
 	unsigned char ch_byte = (unsigned char)(i_address%4);		//Get number of byte in buffer
 
-	SD->buffer[ch_address] = (ch_data << (ch_byte*8));
+	SD->buffer[ch_address] = ( ((unsigned long) ch_data) << (ch_byte*8) );
 };
 
 /*
@@ -346,8 +346,8 @@ unsigned int sdio_read_int(unsigned int i_address)
  */
 void sdio_write_int(unsigned int i_address, unsigned int i_data)
 {
-	sdio_write_byte(i_address,i_data&0xFF);
-	sdio_write_byte(i_address+1,(i_data>>8)&0xFF);
+	sdio_write_byte(i_address,(unsigned char)(i_data&0xFF));
+	sdio_write_byte(i_address+1,(unsigned char)((i_data>>8)&0xFF));
 };
 
 /*
@@ -373,10 +373,10 @@ unsigned long sdio_read_long(unsigned int i_address)
  */
 void sdio_write_long(unsigned int i_address, unsigned long l_data)
 {
-	sdio_write_byte(i_address,l_data&0xFF);
-	sdio_write_byte(i_address+1,(l_data>>8)&0xFF);
-	sdio_write_byte(i_address+2,(l_data>>16)&0xFF);
-	sdio_write_byte(i_address+3,(l_data>>24)&0xFF);
+	sdio_write_byte(i_address,(unsigned char)(l_data&0xFF));
+	sdio_write_byte(i_address+1,(unsigned char)((l_data>>8)&0xFF));
+	sdio_write_byte(i_address+2,(unsigned char)((l_data>>16)&0xFF));
+	sdio_write_byte(i_address+3,(unsigned char)((l_data>>24)&0xFF));
 };
 
 /*

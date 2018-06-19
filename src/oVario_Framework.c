@@ -166,5 +166,5 @@ void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_s
  */
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
 {
-	sys->date = ((unsigned char)(i_year-1980)<<SYS_DATE_YEAR_pos) | (ch_month<<SYS_DATE_MONTH_pos) | (ch_day<<SYS_DATE_DAY_pos);
+	sys->date = (unsigned int)(((unsigned char)(i_year-1980)<<SYS_DATE_YEAR_pos) | (ch_month<<SYS_DATE_MONTH_pos) | (ch_day<<SYS_DATE_DAY_pos));
 }
