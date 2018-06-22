@@ -46,7 +46,7 @@ void init_sdio(void)
 	 */
 	sdio_set_clock(400000);										//set sdio clock
 	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0;	//Enable SD_CLK
-	SDIO->DTIMER = 0x404;										//Data timeout during data transfer
+	SDIO->DTIMER = 0xFFF;										//Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
 	SDIO->DLEN	=	SDIO_BLOCKLEN;								//Numbers of bytes per block
 
 
@@ -73,6 +73,7 @@ void init_sdio(void)
 
 	wait_ms(1);			//Wait for powerup of card
 
+
 	/*
 	 * Begin card identification
 	 */
@@ -82,12 +83,13 @@ void init_sdio(void)
 
 	//send CMD8 to specify supply voltage
 	SD->state = 0;
+	sdio_set_wait(ON);
 	SD->err = 0;
 	SD->response = sdio_send_cmd_short(CMD8,CMD8_VOLTAGE_0 | CHECK_PATTERN);
 	if(SD->response)	//Check response
 	{
 		if((SD->response & 0b11111111) == CHECK_PATTERN)	//Valid response, card is detected
-			SD->state = SD_CARD_DETECTED;
+			SD->state |= SD_CARD_DETECTED;
 	}
 
 	//If card is detected
@@ -192,11 +194,8 @@ unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_a
 		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
-	else
-	{
-		SDIO->ICR = SDIO_ICR_CCRCFAILC;
-		return SDIO->RESP1;
-	}
+	SDIO->ICR = SDIO_ICR_CCRCFAILC;
+	return SDIO->RESP1;
 };
 
 /*
@@ -214,11 +213,8 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
 		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
-	else
-	{
-		SDIO->ICR = SDIO_ICR_CMDRENDC;
-		return SDIO->RESP1;
-	}
+	SDIO->ICR = SDIO_ICR_CMDRENDC;
+	return SDIO->RESP1;
 };
 
 /*
@@ -247,7 +243,7 @@ void sdio_read_block(unsigned long l_block_address)
 
 	sdio_dma_receive();
 	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
-	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
+	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DCRCFAIL | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
 
 	//Set error if transfer timeout occured
 	if(SDIO->STA & SDIO_STA_DTIMEOUT)
@@ -267,21 +263,45 @@ void sdio_write_block(unsigned long l_block_address)
 {
 	if(!(SD->state & SD_SDHC))				//If SDSC card, byte addressing is used
 		l_block_address *= SDIO_BLOCKLEN;
-	SD->response = sdio_send_cmd_short(CMD24,l_block_address);
 
-	sdio_dma_transmit();
-	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
-	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
+	//Clear pending interrupt flags
+	if(SDIO->STA)
+		SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
 
-	//Set error if transfer timeout occured
-	if(SDIO->STA & SDIO_STA_DTIMEOUT)
+	//Send start address and check whether card is ready for data
+	if(sdio_send_cmd_short(CMD24,l_block_address) & R1_READY_4_DATA)
 	{
-		SD->err = SD_ERROR_TRANSFER_ERROR;
-		SDIO->ICR = SDIO_STA_DTIMEOUT;
+		sdio_dma_transmit();
+		SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
+
+		if(SD->state & SD_WAIT_FOR_TRANSMIT)
+		{
+			while((SDIO->STA & SDIO_STA_TXACT) && !(SDIO->STA & (SDIO_STA_DCRCFAIL | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
+
+			//Set error if transfer timeout occured
+			if(SDIO->STA & SDIO_STA_DTIMEOUT)
+			{
+				SD->err = SD_ERROR_TRANSFER_ERROR;
+				SDIO->ICR = SDIO_STA_DTIMEOUT;
+			}
+			//Clear other pending flags
+			SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
+		}
 	}
-	//Clear other pending flags
-	SDIO->ICR = SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;
+	else
+		SD->state = SD_ERROR_TRANSFER_ERROR;
 };
+
+/*
+ * Enable the wait for finishing a transmit
+ */
+void sdio_set_wait(unsigned char ch_state)
+{
+	if(ch_state == ON)
+		SD->state |= SD_WAIT_FOR_TRANSMIT;
+	else
+		SD->state &= ~SD_WAIT_FOR_TRANSMIT;
+}
 
 /*
  * Enable the DMA for data receive
@@ -551,10 +571,10 @@ void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state)
 	sdio_write_block(l_lba);
 
 	//Repeat for 2nd FAT
-//	l_lba = sdio_get_fat_sec(l_cluster,2);
-//	sdio_read_block(l_lba);
-//	sdio_write_fat_pos(sdio_get_fat_pos(l_cluster),l_state);
-//	sdio_write_block(l_lba);
+	l_lba = sdio_get_fat_sec(l_cluster,2);
+	sdio_read_block(l_lba);
+	sdio_write_fat_pos(sdio_get_fat_pos(l_cluster),l_state);
+	sdio_write_block(l_lba);
 };
 
 /*
@@ -697,7 +717,7 @@ void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid)
 }
 
 /*
- * Get fileid of specific file or directory.
+ * Get fileid of an empty file entry.
  * The directory cluster of the file/directory has to be loaded in the buffer!
  */
 unsigned long sdio_get_empty_id(void)
@@ -724,6 +744,22 @@ unsigned long sdio_get_empty_id(void)
 };
 
 /*
+ * Get fileid of an empty file entry.
+ * The directory cluster of the file/directory has to be loaded in the buffer!
+ */
+void sdio_set_empty_id(unsigned long l_id)
+{
+	sdio_read_cluster(SD->CurrentCluster);
+	for(unsigned char ch_count = 0; ch_count<(l_id/(SDIO_BLOCKLEN/32)); ch_count++)
+	{
+		if(!sdio_read_next_sector_of_cluster())
+			SD->err = SD_ERROR_NO_SUCH_FILEID;
+	}
+	sdio_write_byte((l_id%(SDIO_BLOCKLEN/32))*32,0xE5);
+	sdio_write_current_sector();
+};
+
+/*
  * Get the next empty cluster
  */
 unsigned long sdio_get_empty_cluster(void)
@@ -745,7 +781,7 @@ unsigned long sdio_get_empty_cluster(void)
 	}
 	SD->err = SD_ERROR_NO_EMPTY_CLUSTER;
 	return 0;
-}
+};
 
 /*
  * Get fileid of specific file or directory.

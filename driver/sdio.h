@@ -35,6 +35,7 @@
 #define CMD6		6
 #define CMD7		7
 #define CMD8		8
+#define CMD13		13
 #define CMD16		16
 #define CMD17		17
 #define CMD24		24
@@ -61,10 +62,11 @@
 #define OCR_3_0V			(1<<17)
 
 //Status bits
-#define SD_CARD_DETECTED	(1<<0)
-#define SD_SDHC				(1<<1)
-#define SD_CARD_SELECTED	(1<<2)
-#define SD_IS_FAT16			(1<<3)
+#define SD_CARD_DETECTED		(1<<0)
+#define SD_SDHC					(1<<1)
+#define SD_CARD_SELECTED		(1<<2)
+#define SD_IS_FAT16				(1<<3)
+#define SD_WAIT_FOR_TRANSMIT	(1<<4)
 
 /*
  * defines for filesystem
@@ -138,6 +140,7 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg);
 void sdio_select_card(void);
 void sdio_read_block(unsigned long l_block_address);
 void sdio_write_block(unsigned long l_block_address);
+void sdio_set_wait(unsigned char ch_state);
 void sdio_dma_receive(void);
 void sdio_dma_transmit(void);
 unsigned char sdio_read_byte(unsigned int i_address);
@@ -162,6 +165,7 @@ unsigned char sdio_strcmp(char* pch_string1, char* pch_string2);
 unsigned char sdio_check_filetype(FILE_T* filehandler, char* pch_type);
 void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid);
 unsigned long sdio_get_empty_id(void);
+void sdio_set_empty_id(unsigned long l_id);
 unsigned long sdio_get_empty_cluster(void);
 void sdio_get_fileid(FILE_T* filehandler, char* pch_name);
 unsigned int sdio_get_date(void);
