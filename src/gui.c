@@ -22,9 +22,9 @@ BMS_T* p_ipc_gui_bms_data;
 //*********** Functions **************
 void gui_init (void)
 {
-	p_ipc_gui_df_data = ipc_memory_get(did_DATAFUSION);
-	p_ipc_gui_gps_data = ipc_memory_get(did_GPS);
-	p_ipc_gui_bms_data = ipc_memory_get(did_BMS);
+	p_ipc_gui_df_data 	= ipc_memory_get(did_DATAFUSION);
+	p_ipc_gui_gps_data 	= ipc_memory_get(did_GPS);
+	p_ipc_gui_bms_data 	= ipc_memory_get(did_BMS);
 }
 
 
@@ -153,6 +153,105 @@ void fkt_Vario (void)
 
 	draw_graph(138, 57);
 }
+
+void fkt_BMS(void)
+{
+	uint8_t y 	= 0;
+#define	ls	16		// Line step width
+#define	c1	30		// y Value of Value Column
+
+	// Set Fontsize
+	lcd_set_fontsize(1);
+
+	// Write Data to Screen
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("UBat: ");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
+	lcd_string2buffer(" mV");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("UBat: ");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
+	lcd_string2buffer(" mV");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("I charge: ");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->charge_current,4);
+	lcd_string2buffer(" mA");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("I: ");
+	lcd_set_cursor(c1, y);
+	lcd_signed_num2buffer(p_ipc_gui_bms_data->current,4);
+	lcd_string2buffer(" mA");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("I Discharge: ");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->discharge_current,4);
+	lcd_string2buffer(" mA");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("C Discharged:");
+	lcd_set_cursor(c1, y);
+	lcd_signed_num2buffer(p_ipc_gui_bms_data->discharged_capacity,4);
+	lcd_string2buffer(" mAh");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("I Input:");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->input_current,4);
+	lcd_string2buffer(" mA");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("U Input:");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->input_voltage,4);
+	lcd_string2buffer(" mV");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("I max charge:");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->max_charge_current,4);
+	lcd_string2buffer(" mA");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("I OTG:");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->otg_current,4);
+	lcd_string2buffer(" mA");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("U OTG:");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->otg_voltage,4);
+	lcd_string2buffer(" mV");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Temperature:");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->temperature,4);
+	lcd_string2buffer(" C");
+
+
+}
+
+
 
 void fkt_Menu (void)
 {

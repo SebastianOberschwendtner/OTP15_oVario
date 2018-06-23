@@ -25,6 +25,7 @@ void gui_task 		(void);
 
 void fkt_Initscreen (void);
 void fkt_Vario 		(void);
+void fkt_BMS		(void);
 void fkt_Menu 		(void);
 void fkt_Settings	(void);
 
