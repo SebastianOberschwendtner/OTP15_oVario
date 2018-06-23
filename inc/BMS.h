@@ -194,6 +194,8 @@
 
 // ***** Functions *****
 void init_BMS(void);
+void BMS_task(void);
+void BMS_SolarPanelController(void);
 void BMS_adc_start(void);
 void BMS_get_adc(void);
 void BMS_get_status(void);
