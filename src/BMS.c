@@ -271,6 +271,28 @@ void BMS_charge_start(void)
 };
 
 /*
+ * Set battery charging current.
+ * Checks whether input is present or not.
+ * This function doesn't save the set current!
+ */
+void BMS_set_charge_current(unsigned  int i_current)
+{
+	//Check input source
+	if(pBMS->charging_state & STATUS_CHRG_OK)
+	{
+			/*
+			 * Set charge current in mA. Note that the actual resolution is only 64 mA/bit.
+			 * Setting the charge current to 0 automatically terminates the charge.
+			 */
+			//Clamp to max charge current of 8128 mA
+			if(i_current > 8128)
+				i_current = 8128;
+
+			i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((i_current/64)<<6));
+	}
+};
+
+/*
  * Enables the OTG mode
  */
 //TODO Implement an error if OTG is enabled during charging

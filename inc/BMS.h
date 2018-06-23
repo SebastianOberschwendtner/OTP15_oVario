@@ -198,6 +198,7 @@ void BMS_adc_start(void);
 void BMS_get_adc(void);
 void BMS_get_status(void);
 void BMS_charge_start(void);
+void BMS_set_charge_current(unsigned  int i_current);
 void BMS_set_otg(unsigned char ch_state);
 void BMS_gauge_get_adc(void);
 
