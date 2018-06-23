@@ -131,6 +131,37 @@ void init_BMS(void)
 };
 
 /*
+ * Task
+ */
+void BMS_task(void)
+{
+	// Read Values
+	BMS_get_adc();
+	BMS_gauge_get_adc();
+
+	// Handle Commands
+}
+
+/*
+ * Solar Panel Charge Controller
+ */
+float U_error 	= 0;
+float I_Charge 	= 0;
+float I_Gain    = 100;
+
+void BMS_SolarPanelController(void)
+{
+	#define	n_cells 6.0f	// Number of Serial Solar Cells Used
+	#define U_MPP	0.6f	// Voltage of Maximum Power Point of one Cell
+
+	// Solar Panel Controller (I Controller)
+	U_error 	= (float)pBMS->input_voltage - n_cells * U_MPP;
+	I_Charge 	+= I_Gain * U_error;
+	BMS_set_charge_current((unsigned int)I_Charge);
+}
+
+
+/*
  * Start ADC conversion
  */
 
@@ -280,15 +311,16 @@ void BMS_set_charge_current(unsigned  int i_current)
 	//Check input source
 	if(pBMS->charging_state & STATUS_CHRG_OK)
 	{
-			/*
-			 * Set charge current in mA. Note that the actual resolution is only 64 mA/bit.
-			 * Setting the charge current to 0 automatically terminates the charge.
-			 */
-			//Clamp to max charge current of 8128 mA
-			if(i_current > 8128)
-				i_current = 8128;
+		/*
+		 * Set charge current in mA. Note that the actual resolution is only 64 mA/bit.
+		 * Setting the charge current to 0 automatically terminates the charge.
+		 */
+		//Clamp to max charge current of 8128 mA
+		if(i_current > 8128)
+			i_current = 8128;
 
-			i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((i_current/64)<<6));
+		i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((i_current/64)<<6));
+		pBMS->max_charge_current = i_current;
 	}
 };
 
