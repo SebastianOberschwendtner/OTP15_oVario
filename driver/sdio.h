@@ -105,6 +105,7 @@
 
 #define DIR_ATTR_SYS			0x04
 #define DIR_ATTR_DIR			0x10
+#define DIR_ATTR_ARCH			0x20
 
 //Positions for date and time bits
 #define FAT_DATE_YEAR_pos		9
@@ -118,17 +119,18 @@
 /*
  * Defines for erros
  */
-#define SD_ERROR_WRONG_FILESYSTEM	0x01
-#define SD_ERROR_WRONG_FAT			0x02
-#define SD_ERROR_BAD_SECTOR			0x03
-#define SD_ERROR_FAT_CORRUPTED		0x04
-#define SD_ERROR_NO_SUCH_FILEID		0x05
-#define SD_ERROR_NO_SUCH_FILE		0x06
-#define SD_ERROR_NOT_A_DIR			0x07
-#define SD_ERROR_NOT_A_FILE			0x08
-#define SD_ERROR_NO_EMPTY_ENTRY		0x09
-#define SD_ERROR_NO_EMPTY_CLUSTER	0x0A
-#define SD_ERROR_TRANSFER_ERROR		0x0B
+#define SD_ERROR_WRONG_FILESYSTEM		0x01
+#define SD_ERROR_WRONG_FAT				0x02
+#define SD_ERROR_BAD_SECTOR				0x03
+#define SD_ERROR_FAT_CORRUPTED			0x04
+#define SD_ERROR_NO_SUCH_FILEID			0x05
+#define SD_ERROR_NO_SUCH_FILE			0x06
+#define SD_ERROR_NOT_A_DIR				0x07
+#define SD_ERROR_NOT_A_FILE				0x08
+#define SD_ERROR_NO_EMPTY_ENTRY			0x09
+#define SD_ERROR_NO_EMPTY_CLUSTER		0x0A
+#define SD_ERROR_TRANSFER_ERROR			0x0B
+#define SD_ERROR_FILE_ALLREADY_EXISTS	0x0C
 
 //*********** Functions **************
 void init_sdio(void);
@@ -160,18 +162,20 @@ void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state);
 void sdio_read_cluster(unsigned long l_cluster);
 void sdio_write_current_sector(void);
 unsigned char sdio_read_next_sector_of_cluster(void);
-void sdio_get_name(FILE_T* filehandler);
+void sdio_get_name(char* pch_name, unsigned long l_id);
 unsigned char sdio_strcmp(char* pch_string1, char* pch_string2);
 unsigned char sdio_check_filetype(FILE_T* filehandler, char* pch_type);
 void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid);
 unsigned long sdio_get_empty_id(void);
 void sdio_set_empty_id(unsigned long l_id);
 unsigned long sdio_get_empty_cluster(void);
-void sdio_get_fileid(FILE_T* filehandler, char* pch_name);
+unsigned long sdio_get_fileid(char* pch_name, char* pch_extension);
 unsigned int sdio_get_date(void);
 unsigned int sdio_get_time(void);
-void sdio_cd(char* pch_dirname);
-void sdio_fopen(FILE_T* filehandler, char* pch_name);
+void sdio_cd(FILE_T* filehandler, char* pch_dirname);
+void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension);
 void sdio_mkfile(char* pch_name, char* pch_filetype);
+void sdio_mkdir(char* pch_name);
+void sdio_rm(FILE_T* filehandler);
 
 #endif /* SDIO_H_ */
