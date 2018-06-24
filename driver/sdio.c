@@ -51,7 +51,7 @@ void init_sdio(void)
 
 
 	//Register Memory
-	SD = ipc_memory_register(548,did_SDIO);
+	SD = ipc_memory_register(552,did_SDIO);
 	file = ipc_memory_register(26, did_FILE);
 	file->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
@@ -466,10 +466,12 @@ void sdio_init_filesystem(void)
 			SD->LBAFATBegin = l_LBABegin + sdio_read_int(BPB_RES_SEC_pos);
 
 			/********Get sector number of root directory **********************************************************/
-			SD->FirstRootDirSecNum = SD->LBAFATBegin + (sdio_read_byte(BPB_NUM_FAT_pos) * SD->FATSz);
+			SD->FirstDataSecNum = SD->LBAFATBegin + (2 * SD->FATSz) + l_RootDirSectors;
 
 			if(!(SD->state & SD_IS_FAT16))
-				SD->FirstRootDirSecNum = sdio_get_lba(sdio_read_long(BPB_ROOT_DIR_CLUS_pos));
+				SD->RootDirClus = sdio_read_long(BPB_ROOT_DIR_CLUS_pos);
+			else
+				SD->RootDirClus = 0;
 
 			SD->err = 0;
 		}
@@ -484,7 +486,10 @@ void sdio_init_filesystem(void)
  */
 unsigned long sdio_get_lba(unsigned long l_cluster)
 {
-	return SD->FirstRootDirSecNum + (l_cluster -2) * SD->SecPerClus;
+	if(l_cluster >=2 )
+		return SD->FirstDataSecNum + (l_cluster -2) * (unsigned long)SD->SecPerClus;
+	else
+		return SD->LBAFATBegin + (2 * SD->FATSz);		//Root dir of FAT16
 };
 
 /*
@@ -575,11 +580,29 @@ void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state)
 };
 
 /*
+ * Read root directory
+ */
+void sdio_read_root(void)
+{
+	if(SD->state & SD_IS_FAT16)
+	{
+		sdio_read_block(SD->LBAFATBegin + (2 * SD->FATSz));
+		SD->CurrentCluster = 0;
+		SD->CurrentSector = 1;
+	}
+
+	else
+		sdio_read_cluster(SD->RootDirClus);
+}
+
+/*
  * Read the first sector of a specific cluster from sd-card
  */
 void sdio_read_cluster(unsigned long l_cluster)
 {
+
 	sdio_read_block(sdio_get_lba(l_cluster));
+
 	SD->CurrentCluster = l_cluster;
 	SD->CurrentSector = 1;
 };
@@ -602,7 +625,7 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 
 	if(SD->CurrentSector != SD->SecPerClus)
 	{
-		sdio_read_block(sdio_get_fat_sec(SD->CurrentCluster, 1)+SD->CurrentSector++);
+		sdio_read_block(sdio_get_lba(SD->CurrentCluster)+SD->CurrentSector++);
 		return 1;
 	}
 	else
@@ -728,7 +751,7 @@ unsigned long sdio_get_empty_id(void)
 	sdio_read_cluster(SD->CurrentCluster);
 	while(!SD->err)
 	{
-		for(unsigned char ch_count = 0; ch_count<(l_id/(SDIO_BLOCKLEN/32)); ch_count++)
+		if(((l_id%(SDIO_BLOCKLEN/32)) == 0) && l_id)
 		{
 			if(!sdio_read_next_sector_of_cluster())
 				SD->err = SD_ERROR_NO_SUCH_FILEID;
@@ -814,7 +837,7 @@ unsigned long sdio_get_fileid(char* pch_name, char* pch_extension)
 	sdio_read_cluster(SD->CurrentCluster);
 	while(!SD->err)
 	{
-		for(unsigned char ch_count = 0; ch_count<(l_id/(SDIO_BLOCKLEN/32)); ch_count++)
+		if(((l_id%(SDIO_BLOCKLEN/32)) == 0) && l_id)
 		{
 			if(!sdio_read_next_sector_of_cluster())
 				SD->err = SD_ERROR_NO_SUCH_FILEID;

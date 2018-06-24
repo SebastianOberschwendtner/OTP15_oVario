@@ -119,7 +119,8 @@ typedef struct
 	unsigned char CurrentSector;
 	unsigned long LBAFATBegin;
 	unsigned long FATSz;
-	unsigned long FirstRootDirSecNum;
+	unsigned long FirstDataSecNum;
+	unsigned long RootDirClus;
 	unsigned char SecPerClus;
 	unsigned char err;
 }SDIO_T;
