@@ -103,6 +103,8 @@
 #define DIR_FstClusLO_pos		0x1A	//int
 #define DIR_FILESIZE_pos		0x1C	//long
 
+#define DIR_ATTR_R				0x01
+#define DIR_ATTR_HID			0x02
 #define DIR_ATTR_SYS			0x04
 #define DIR_ATTR_DIR			0x10
 #define DIR_ATTR_ARCH			0x20
@@ -159,6 +161,7 @@ unsigned long sdio_read_fat_pos(unsigned long l_pos);
 void sdio_write_fat_pos(unsigned long l_pos, unsigned long l_data);
 unsigned long sdio_get_next_cluster(void);
 void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state);
+void sdio_clear_cluster(unsigned long l_cluster);
 void sdio_read_root(void);
 void sdio_read_cluster(unsigned long l_cluster);
 void sdio_write_current_sector(void);
@@ -175,8 +178,10 @@ unsigned int sdio_get_date(void);
 unsigned int sdio_get_time(void);
 void sdio_cd(FILE_T* filehandler, char* pch_dirname);
 void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension);
+void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype, unsigned long l_emptycluster, unsigned char ch_attribute);
 void sdio_mkfile(char* pch_name, char* pch_filetype);
 void sdio_mkdir(char* pch_name);
 void sdio_rm(FILE_T* filehandler);
+void sdio_set_filesize(FILE_T* filehandler, unsigned long l_size);
 
 #endif /* SDIO_H_ */
