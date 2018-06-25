@@ -45,7 +45,7 @@
 #define ACMD41		41
 
 //SD Comamnd bits
-#define CMD8_VOLTAGE_0		(1<<8)
+#define CMD8_VOLTAGE_0		(1<<8)		//Voltage Range 2.7V - 3.0V
 
 #define ACMD41_BUSY			(1<<31)		//Card indicates whether initialization is completed
 #define ACMD41_CCS			(1<<30)		//Card Capacity Status
@@ -54,19 +54,19 @@
 //Response bits
 #define R1_APP_CMD			(1<<5)		//Card will accept ACMD as next command
 #define R1_ERROR			(1<<19)		//Generic error bit
-#define R1_ILLEGAL_CMD		(1<<22)
-#define R1_READY_4_DATA		(1<<8)
+#define R1_ILLEGAL_CMD		(1<<22)		//Illegal command
+#define R1_READY_4_DATA		(1<<8)		//Card processed old data and is ready to receive new data
 
 
 //SD Register bits
 #define OCR_3_0V			(1<<17)
 
 //Status bits
-#define SD_CARD_DETECTED		(1<<0)
-#define SD_SDHC					(1<<1)
-#define SD_CARD_SELECTED		(1<<2)
-#define SD_IS_FAT16				(1<<3)
-#define SD_WAIT_FOR_TRANSMIT	(1<<4)
+#define SD_CARD_DETECTED		(1<<0)	//Card inserted and responding
+#define SD_SDHC					(1<<1)	//High Capacity Card
+#define SD_CARD_SELECTED		(1<<2)	//Current card is selected and in transfer mode
+#define SD_IS_FAT16				(1<<3)	//File system is FAT16, if not FAT32 is assumed
+#define SD_WAIT_FOR_TRANSMIT	(1<<4)	//Wait for transfer finish of each transfer
 
 /*
  * defines for filesystem
@@ -103,6 +103,7 @@
 #define DIR_FstClusLO_pos		0x1A	//int
 #define DIR_FILESIZE_pos		0x1C	//long
 
+//Attribute bits
 #define DIR_ATTR_R				0x01
 #define DIR_ATTR_HID			0x02
 #define DIR_ATTR_SYS			0x04

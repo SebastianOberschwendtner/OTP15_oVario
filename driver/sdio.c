@@ -115,7 +115,7 @@ void init_sdio(void)
 			SD->RCA = (unsigned int)(sdio_send_cmd_short(CMD3,0)>>16);
 
 		//Set Blocklen to 512 bytes
-		SD->response = sdio_send_cmd_short(CMD16,512);
+		SD->response = sdio_send_cmd_short(CMD16,SDIO_BLOCKLEN);
 
 		/*Set bus mode to 4 bit
 		if(!(sdio_send_cmd_short(CMD7,(SD->RCA<<16)) & R1_ERROR))
@@ -127,7 +127,8 @@ void init_sdio(void)
 		}*/
 
 		wait_ms(1);
-		//Read first sector
+
+		//Select the card and initialize the filesystem
 		sdio_select_card();
 		sdio_init_filesystem();
 	}
@@ -166,17 +167,17 @@ unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg)
 	SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
 	while(!(SDIO->STA & (SDIO_STA_CMDREND | SDIO_STA_CTIMEOUT)));		//Wait until command response is received or timeout
 
+	//If command timeout occurs set error and clear flags
 	if(SDIO->STA & SDIO_STA_CTIMEOUT)
 	{
 		SDIO->ICR = SDIO_ICR_CTIMEOUTC;
 		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
-	else
-	{
-		SDIO->ICR = SDIO_ICR_CMDRENDC;
-		return SDIO->RESP1;
-	}
+
+	//If no error return response and clear flags
+	SDIO->ICR = SDIO_ICR_CMDRENDC;
+	return SDIO->RESP1;
 };
 
 /*
@@ -188,12 +189,14 @@ unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_a
 	SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
 	while(!(SDIO->STA & (SDIO_STA_CCRCFAIL | SDIO_STA_CTIMEOUT)));		//Wait until command response is received, CCRCFAIL indicated a received command response with failed CRC
 
+	//If command timeout occurs set error and clear flags
 	if(SDIO->STA & SDIO_STA_CTIMEOUT)
 	{
 		SDIO->ICR = SDIO_ICR_CTIMEOUTC;
 		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
+	//If no error return response and clear flags
 	SDIO->ICR = SDIO_ICR_CCRCFAILC;
 	return SDIO->RESP1;
 };
@@ -207,12 +210,14 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
 	SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_1 | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
 	while(!(SDIO->STA & (SDIO_STA_CMDREND | SDIO_STA_CTIMEOUT)));		//Wait until command response is received or timeout
 
+	//If command timeout occurs set error and clear flags
 	if(SDIO->STA & SDIO_STA_CTIMEOUT)
 	{
 		SDIO->ICR = SDIO_ICR_CTIMEOUTC;
 		SD->err = SD_ERROR_TRANSFER_ERROR;
 		return 0;
 	}
+	//If no error return first register of response and clear flags
 	SDIO->ICR = SDIO_ICR_CMDRENDC;
 	return SDIO->RESP1;
 };
@@ -223,9 +228,10 @@ unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
  */
 void sdio_select_card(void)
 {
+	//First check whether card is already selected
 	if(!(SD->state & SD_CARD_SELECTED))
 	{
-		SD->response = sdio_send_cmd_short(CMD7,(SD->RCA<<16)); //Select Card
+		SD->response = sdio_send_cmd_short(CMD7,(SD->RCA<<16)); 	//Select Card
 		if(!(SD->response & R1_ERROR))								//Check for Error
 			SD->state |= SD_CARD_SELECTED;
 	}
@@ -245,7 +251,7 @@ void sdio_read_block(unsigned long l_block_address)
 	SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
 	while(!(SDIO->STA & (SDIO_STA_DBCKEND | SDIO_STA_DCRCFAIL | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
 
-	//Set error if transfer timeout occured
+	//Set error if transfer timeout occurred
 	if(SDIO->STA & SDIO_STA_DTIMEOUT)
 	{
 		SD->err = SD_ERROR_TRANSFER_ERROR;
@@ -274,11 +280,12 @@ void sdio_write_block(unsigned long l_block_address)
 		sdio_dma_transmit();
 		SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
 
+		//If wait for transfer finish is activated
 		if(SD->state & SD_WAIT_FOR_TRANSMIT)
 		{
 			while((SDIO->STA & SDIO_STA_TXACT) && !(SDIO->STA & (SDIO_STA_DCRCFAIL | SDIO_STA_DTIMEOUT)));	//Wait for transfer to finish
 
-			//Set error if transfer timeout occured
+			//Set error if transfer timeout occurred
 			if(SDIO->STA & SDIO_STA_DTIMEOUT)
 			{
 				SD->err = SD_ERROR_TRANSFER_ERROR;
@@ -332,10 +339,10 @@ void sdio_dma_transmit(void)
  */
 unsigned char sdio_read_byte(unsigned int i_address)
 {
-	unsigned char ch_address = (unsigned char)((i_address/4));	//Get adress of buffer
-	unsigned char ch_byte = (unsigned char)(i_address%4);		//Get number of byte in buffer
+	unsigned char ch_address = (unsigned char)((i_address/4));					//Get address of buffer
+	unsigned char ch_byte = (unsigned char)(i_address%4);						//Get number of byte in buffer
 
-	return (unsigned char)( (SD->buffer[ch_address] >> (ch_byte*8)) & 0xFF);
+	return (unsigned char)( (SD->buffer[ch_address] >> (ch_byte*8)) & 0xFF);	//Write in buffer
 };
 
 /*
@@ -343,8 +350,8 @@ unsigned char sdio_read_byte(unsigned int i_address)
  */
 void sdio_write_byte(unsigned int i_address, unsigned char ch_data)
 {
-	unsigned char ch_address = (unsigned char)((i_address/4));	//Get adress of buffer
-	unsigned char ch_byte = (unsigned char)(i_address%4);		//Get number of byte in buffer
+	unsigned char ch_address = (unsigned char)((i_address/4));				//Get adress of buffer
+	unsigned char ch_byte = (unsigned char)(i_address%4);					//Get number of byte in buffer
 
 	SD->buffer[ch_address] &= ~( ((unsigned long) 0xFF) << (ch_byte*8) );	//Delete old byte
 	SD->buffer[ch_address] |= ( ((unsigned long) ch_data) << (ch_byte*8) );	//Write new byte
@@ -412,16 +419,16 @@ void sdio_init_filesystem(void)
 	if(sdio_read_int(MBR_MAGIC_NUMBER_pos) == 0xAA55)	//Check filesystem for corruption
 	{
 		ch_part_type = sdio_read_byte(MBR_PART1_TYPE_pos);				//Save partition type
-		l_temp = sdio_read_long(MBR_PART1_LBA_BEGIN_pos);
-		sdio_read_block(l_temp);		//read partition table
+		l_temp = sdio_read_long(MBR_PART1_LBA_BEGIN_pos);				//Read beginn address of filesystem
+		sdio_read_block(l_temp);										//read partition table
 
 		if(ch_part_type == 0xEE)										//EFI filesystem
 		{
 			l_temp = sdio_read_long(EFI_TABLE_LBA_BEGIN_pos);
-			sdio_read_block(l_temp);	//Read EFI partition table
-			l_temp = sdio_read_long(EFI_PART_LBA_BEGIN_pos);	//Get begin of file system
+			sdio_read_block(l_temp);									//Read EFI partition table
+			l_temp = sdio_read_long(EFI_PART_LBA_BEGIN_pos);			//Get begin of file system
 		}
-		sdio_read_block(l_temp);	//Read BPB
+		sdio_read_block(l_temp);										//Read BPB
 		//Check for errors and read filesystem variables
 		if((sdio_read_int(BPB_BYTES_PER_SEC_pos) == SDIO_BLOCKLEN) && (sdio_read_byte(BPB_NUM_FAT_pos) == 2))
 		{
@@ -488,7 +495,7 @@ unsigned long sdio_get_lba(unsigned long l_cluster)
 {
 	if(l_cluster >=2 )
 		return SD->FirstDataSecNum + (l_cluster -2) * (unsigned long)SD->SecPerClus;
-	else
+	else	//if cluster number is zero, only the root directory of FAT16 can have this value
 		return SD->LBAFATBegin + (2 * SD->FATSz);		//Root dir of FAT16
 };
 
@@ -584,12 +591,13 @@ void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state)
  */
 void sdio_clear_cluster(unsigned long l_cluster)
 {
+	//Get LBA of cluster
 	l_cluster = sdio_get_lba(l_cluster);
 	//Clear buffer
 	for(unsigned char ch_count = 0; ch_count < (SDIO_BLOCKLEN/4); ch_count++)
 		SD->buffer[ch_count] = 0;
 
-	//Clear Sectors
+	//Clear Sectors until all sectors of one cluster a zero
 	for(unsigned int i_count = 0; i_count < SD->SecPerClus; i_count++)
 		sdio_write_block(l_cluster+ (unsigned long)i_count);
 };
@@ -599,7 +607,7 @@ void sdio_clear_cluster(unsigned long l_cluster)
  */
 void sdio_read_root(void)
 {
-	if(SD->state & SD_IS_FAT16)
+	if(SD->state & SD_IS_FAT16)	//FAT16 uses a specific region for the root directory
 	{
 		sdio_read_block(SD->LBAFATBegin + (2 * SD->FATSz));
 		SD->CurrentCluster = 0;
@@ -615,9 +623,9 @@ void sdio_read_root(void)
  */
 void sdio_read_cluster(unsigned long l_cluster)
 {
-
+	//Get the LBA address of cluster and th read the corresponding first sector
 	sdio_read_block(sdio_get_lba(l_cluster));
-
+	//Set the current sector and cluster
 	SD->CurrentCluster = l_cluster;
 	SD->CurrentSector = 1;
 };
@@ -638,11 +646,16 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 {
 	unsigned long l_FATEntry = 0;
 
+	//If the current sector is not the last sector of the current cluster, the next sector of the cluster is read
 	if(SD->CurrentSector != SD->SecPerClus)
 	{
 		sdio_read_block(sdio_get_lba(SD->CurrentCluster)+SD->CurrentSector++);
 		return 1;
 	}
+	/*
+	 * If the current sector is the last sector of the cluster, the next cluster is determined using the FAT.
+	 * If the FAT gives an unexpected result (End-of-File or Bad-Sector) the transmission is aborted.
+	 */
 	else
 	{
 		//Get the entry of the FAT table
@@ -736,21 +749,28 @@ void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid)
 	//Read current cluster
 	sdio_read_cluster(SD->CurrentCluster);
 
+	//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
 	for(unsigned char ch_count = 0; ch_count<(l_fileid/(SDIO_BLOCKLEN/32)); ch_count++)
 	{
 		if(!sdio_read_next_sector_of_cluster())
 			SD->err = SD_ERROR_NO_SUCH_FILEID;
 	}
+	//Read the entry of the file
 	if(!SD->err)
 	{
-		filehandler->id = l_fileid;
+		filehandler->id = l_fileid;																					//File id
+
+		/*
+		 * The fileid is a consecutive number. To get the specific entry within one sector,
+		 * the remainder of the entries per sector has to be used to access the information in the sd buffer.
+		 */
 		l_fileid %= (SDIO_BLOCKLEN/32);
-		sdio_get_name(filehandler->name,filehandler->id);
-		filehandler->DirAttr = sdio_read_byte(l_fileid*32 + DIR_ATTR_pos);
-		filehandler->DirCluster = SD->CurrentCluster;
-		filehandler->StartCluster = (unsigned long)sdio_read_int(l_fileid*32 + DIR_FstClusLO_pos);
+		sdio_get_name(filehandler->name,filehandler->id);															//Name
+		filehandler->DirAttr = sdio_read_byte(l_fileid*32 + DIR_ATTR_pos);											//Attribute Byte
+		filehandler->DirCluster = SD->CurrentCluster;																//Cluster in which entry can be found
+		filehandler->StartCluster = (unsigned long)sdio_read_int(l_fileid*32 + DIR_FstClusLO_pos);					//Cluster in which the file starts (FAT16)
 		if(!(SD->state & SD_IS_FAT16))
-			filehandler->StartCluster |= ( ((unsigned long)sdio_read_int(l_fileid*32 + DIR_FstClusHI_pos)) << 16);
+			filehandler->StartCluster |= ( ((unsigned long)sdio_read_int(l_fileid*32 + DIR_FstClusHI_pos)) << 16);	//Cluster in which the file starts (FAT32)
 	}
 }
 
