@@ -183,6 +183,7 @@ void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype
 void sdio_mkfile(char* pch_name, char* pch_filetype);
 void sdio_mkdir(char* pch_name);
 void sdio_rm(FILE_T* filehandler);
-void sdio_set_filesize(FILE_T* filehandler, unsigned long l_size);
+void sdio_set_filesize(FILE_T* filehandler);
+void sdio_read_end_sector_of_file(FILE_T* filehandler);
 
 #endif /* SDIO_H_ */

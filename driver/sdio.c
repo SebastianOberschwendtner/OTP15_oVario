@@ -52,7 +52,7 @@ void init_sdio(void)
 
 	//Register Memory
 	SD = ipc_memory_register(552,did_SDIO);
-	file = ipc_memory_register(26, did_FILE);
+	file = ipc_memory_register(30, did_FILE);
 	file->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
 
@@ -594,8 +594,8 @@ void sdio_clear_cluster(unsigned long l_cluster)
 	//Get LBA of cluster
 	l_cluster = sdio_get_lba(l_cluster);
 	//Clear buffer
-	for(unsigned char ch_count = 0; ch_count < (SDIO_BLOCKLEN/4); ch_count++)
-		SD->buffer[ch_count] = 0;
+	for(unsigned int i_count = 0; i_count < (SDIO_BLOCKLEN/4); i_count++)
+		SD->buffer[i_count] = 0;
 
 	//Clear Sectors until all sectors of one cluster a zero
 	for(unsigned int i_count = 0; i_count < SD->SecPerClus; i_count++)
@@ -705,7 +705,7 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 };
 
 /*
- * Read the name of a file or directory
+ * Read the name of a file or directory. The sector of the file id has to be loaded.
  */
 void sdio_get_name(char* pch_name, unsigned long l_id)
 {
@@ -750,7 +750,7 @@ void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid)
 	sdio_read_cluster(SD->CurrentCluster);
 
 	//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
-	for(unsigned char ch_count = 0; ch_count<(l_fileid/(SDIO_BLOCKLEN/32)); ch_count++)
+	for(unsigned long l_count = 0; l_count<(l_fileid/(SDIO_BLOCKLEN/32)); l_count++)
 	{
 		if(!sdio_read_next_sector_of_cluster())
 			SD->err = SD_ERROR_NO_SUCH_FILEID;
@@ -771,6 +771,7 @@ void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid)
 		filehandler->StartCluster = (unsigned long)sdio_read_int(l_fileid*32 + DIR_FstClusLO_pos);					//Cluster in which the file starts (FAT16)
 		if(!(SD->state & SD_IS_FAT16))
 			filehandler->StartCluster |= ( ((unsigned long)sdio_read_int(l_fileid*32 + DIR_FstClusHI_pos)) << 16);	//Cluster in which the file starts (FAT32)
+		filehandler->size = sdio_read_long(l_fileid*32 + DIR_FILESIZE_pos);
 	}
 }
 
@@ -818,7 +819,7 @@ void sdio_set_empty_id(unsigned long l_id)
 	sdio_read_cluster(SD->CurrentCluster);
 
 	//Read the sector in which the current file id lays
-	for(unsigned char ch_count = 0; ch_count<(l_id/(SDIO_BLOCKLEN/32)); ch_count++)
+	for(unsigned long l_count = 0; l_count<(l_id/(SDIO_BLOCKLEN/32)); l_count++)
 	{
 		if(!sdio_read_next_sector_of_cluster())
 			SD->err = SD_ERROR_NO_SUCH_FILEID;
@@ -1182,7 +1183,7 @@ void sdio_rm(FILE_T* filehandler)
 /*
  * Set file size of file
  */
-void sdio_set_filesize(FILE_T* filehandler, unsigned long l_size)
+void sdio_set_filesize(FILE_T* filehandler)
 {
 	//Get the address within one sector for the current file id, see sdio_get_file() for more explanation
 	unsigned int i_address = (unsigned int)(filehandler->id%(SDIO_BLOCKLEN/32)*32);
@@ -1191,15 +1192,34 @@ void sdio_set_filesize(FILE_T* filehandler, unsigned long l_size)
 	sdio_read_cluster(filehandler->DirCluster);
 
 	//Read sector with entry
-	for(unsigned char ch_count = 0; ch_count<(filehandler->id/(SDIO_BLOCKLEN/32)); ch_count++)
+	for(unsigned long l_count = 0; l_count<(filehandler->id/(SDIO_BLOCKLEN/32)); l_count++)
 	{
 		if(!sdio_read_next_sector_of_cluster())
 			SD->err = SD_ERROR_NO_SUCH_FILEID;
 	}
 
 	//Write file size in entry
-	sdio_write_long(i_address+DIR_FILESIZE_pos,l_size);
+	sdio_write_long(i_address+DIR_FILESIZE_pos,filehandler->size);
 
 	//Write entry
 	sdio_write_current_sector();
+};
+
+/*
+ * Read the sector of a file which contains the current end of file using the stored filesize
+ */
+void sdio_read_end_sector_of_file(FILE_T* filehandler)
+{
+	unsigned long l_sector = 0, l_cluster = filehandler->StartCluster;
+	//First get the cluster in which the end sector of the file is located
+	for(unsigned long l_count = 0; l_count<((filehandler->size/SDIO_BLOCKLEN)/SD->SecPerClus); l_count++)
+		l_cluster = sdio_get_next_cluster();
+
+	//Second get the sector of the end cluster in which the file ends
+	l_sector = ( (filehandler->size / SDIO_BLOCKLEN) % SD->SecPerClus );
+
+	//Read the end sector of the file
+	sdio_read_block(sdio_get_lba(l_cluster)+l_sector);
+	SD->CurrentCluster = l_cluster;
+	SD->CurrentSector = l_sector+1;
 };
