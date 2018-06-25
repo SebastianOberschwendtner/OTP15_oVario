@@ -654,7 +654,7 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 	}
 	/*
 	 * If the current sector is the last sector of the cluster, the next cluster is determined using the FAT.
-	 * If the FAT gives an unexpected result (End-of-File or Bad-Sector) the transmission is aborted.
+	 * If the FAT gives an unexpected result (End-of-File, Bad-Sector or empty cluster) the transmission is aborted.
 	 */
 	else
 	{
@@ -670,7 +670,7 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 				SD->err = SD_ERROR_BAD_SECTOR;
 				return 0;
 			}
-			else if(l_FATEntry == 0x0000)			//Sector Empty
+			else if(l_FATEntry == 0x0000)			//Cluster empty
 			{
 				SD->err = SD_ERROR_FAT_CORRUPTED;
 				return 0;
@@ -690,7 +690,7 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 				SD->err = SD_ERROR_BAD_SECTOR;
 				return 0;
 			}
-			else if(l_FATEntry == 0x00000000)		//Sector Empty
+			else if(l_FATEntry == 0x00000000)		//Cluster Empty
 			{
 				SD->err = SD_ERROR_FAT_CORRUPTED;
 				return 0;
@@ -761,8 +761,8 @@ void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid)
 		filehandler->id = l_fileid;																					//File id
 
 		/*
-		 * The fileid is a consecutive number. To get the specific entry within one sector,
-		 * the remainder of the entries per sector has to be used to access the information in the sd buffer.
+		 * The fileid is a consecutive number over all sectors of the directory. To get the specific entry within one sector,
+		 * the remainder of the entries per sector has to be used to access the information in the sd-buffer.
 		 */
 		l_fileid %= (SDIO_BLOCKLEN/32);
 		sdio_get_name(filehandler->name,filehandler->id);															//Name
@@ -784,16 +784,24 @@ unsigned long sdio_get_empty_id(void)
 	char ch_entry = 0;
 
 	sdio_read_cluster(SD->CurrentCluster);
+	//Read the entries of the directory until all sectors are read
 	while(!SD->err)
 	{
+		//Read the sector in which the current file id lays
 		if(((l_id%(SDIO_BLOCKLEN/32)) == 0) && l_id)
 		{
 			if(!sdio_read_next_sector_of_cluster())
 				SD->err = SD_ERROR_NO_SUCH_FILEID;
 		}
+
+		//Read the first byte of the filename
 		ch_entry = sdio_read_byte((l_id%(SDIO_BLOCKLEN/32))*32);
+
+		//0x00 or 0xE5 represent empty entries
 		if((ch_entry == 0) || (ch_entry == 0xE5))
 			return l_id;
+
+		//If current entry is not empty, try next entry
 		l_id++;
 	}
 
@@ -808,12 +816,18 @@ unsigned long sdio_get_empty_id(void)
 void sdio_set_empty_id(unsigned long l_id)
 {
 	sdio_read_cluster(SD->CurrentCluster);
+
+	//Read the sector in which the current file id lays
 	for(unsigned char ch_count = 0; ch_count<(l_id/(SDIO_BLOCKLEN/32)); ch_count++)
 	{
 		if(!sdio_read_next_sector_of_cluster())
 			SD->err = SD_ERROR_NO_SUCH_FILEID;
 	}
+
+	//Set the current id as empty entry
 	sdio_write_byte((l_id%(SDIO_BLOCKLEN/32))*32,0xE5);
+
+	//Write the sector to sd-card
 	sdio_write_current_sector();
 };
 
@@ -824,17 +838,24 @@ unsigned long sdio_get_empty_cluster(void)
 {
 	unsigned long l_cluster = 2;
 	unsigned long l_limit = 0;
-	if(SD->state & SD_IS_FAT16)
+
+	//Determine the limit of clusters occupied by one FAT according to FAT-type
+	if(SD->state & SD_IS_FAT16)						//FAT16
 		l_limit = SD->FATSz * (SDIO_BLOCKLEN/16);
-	else
+	else											//FAT32
 		l_limit = SD->FATSz * (SDIO_BLOCKLEN/32);
+
+	//Read FAT until end is reached
 	while(l_cluster <= l_limit)
 	{
 		//Read the block with the cluster entry
 		sdio_read_block(sdio_get_fat_sec(l_cluster,1));
-		//Determine the cluster state
+
+		//Determine the cluster state, if the function returns 0 the cluster is empty
 		if(!sdio_read_fat_pos(sdio_get_fat_pos(l_cluster)))
 			return l_cluster;
+
+		//If cluster is occupied try next cluster
 		l_cluster++;
 	}
 	SD->err = SD_ERROR_NO_EMPTY_CLUSTER;
@@ -848,6 +869,8 @@ unsigned long sdio_get_empty_cluster(void)
 unsigned long sdio_get_fileid(char* pch_name, char* pch_extension)
 {
 	unsigned long l_id = 0;
+
+	//Temporary name strings, pre-filled with spaces and end-of-string identifier (0x00)
 	char pch_temp[12] = { 0x20,  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00};
 	char pch_in[12] = { 0x20,  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00};
 
@@ -870,27 +893,37 @@ unsigned long sdio_get_fileid(char* pch_name, char* pch_extension)
 	l_id = 0;
 
 	sdio_read_cluster(SD->CurrentCluster);
+
+	//Read entries until the end of the directory is reched
 	while(!SD->err)
 	{
+		//Read the sector in which the current file id lays
 		if(((l_id%(SDIO_BLOCKLEN/32)) == 0) && l_id)
 		{
 			if(!sdio_read_next_sector_of_cluster())
 				SD->err = SD_ERROR_NO_SUCH_FILEID;
 		}
+
+		//If the file id exists, read the name of the id
 		if(!SD->err)
-		{
 			sdio_get_name(pch_temp,l_id);
-		}
+
+		//Compare the entry name to the input string and break if the names match
 		if(sdio_strcmp(pch_in, pch_temp))
 			break;
+
+		//If the names do not match try the next entry
 		l_id++;
 	}
 
+	//An error at this point means that there is no such file in the directory
 	if(SD->err)
 	{
 		SD->err = SD_ERROR_NO_SUCH_FILE;
 		return 0;
 	}
+
+	//If file is found in directory return the corresponding file id
 	return l_id;
 };
 
@@ -907,6 +940,7 @@ unsigned int sdio_get_date(void)
  */
 unsigned int sdio_get_time(void)
 {
+	//In FAT the time is only stored with a resolution of 2 seconds. Bit shifting the current time by 1 (dividing by 2) converts to this format.
 	return (unsigned int)(sys->time>>1);
 };
 
@@ -916,11 +950,17 @@ unsigned int sdio_get_time(void)
  */
 void sdio_cd(FILE_T* filehandler, char* pch_dirname)
 {
+	//Get the file id of the desired directory
 	filehandler->id = sdio_get_fileid(pch_dirname, " ");
+
+	//If directory exists read the entry
 	if(!SD->err)
 		sdio_get_file(file, filehandler->id);
+
+	//If entry could be read, read the start cluster of the directory
 	if(!SD->err)
 	{
+		//Check whether entry is a directory, before accessing the start cluster
 		if(!(filehandler->DirAttr & DIR_ATTR_DIR))
 			SD->err = SD_ERROR_NOT_A_DIR;
 		else
@@ -933,11 +973,17 @@ void sdio_cd(FILE_T* filehandler, char* pch_dirname)
  */
 void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
 {
+	//Get the file id of the desired file
 	filehandler->id = sdio_get_fileid(pch_name, pch_extension);
+
+	//If file exists read the entry
 	if(!SD->err)
 		sdio_get_file(filehandler, filehandler->id);
+
+	//If entry could be read, read the start cluster of the file
 	if(!SD->err)
 	{
+		//Check whether entry is a valid file (not a directory and not a system file), before accessing the start cluster
 		if(filehandler->DirAttr & (DIR_ATTR_DIR | DIR_ATTR_SYS))
 			SD->err = SD_ERROR_NOT_A_FILE;
 		else
@@ -949,7 +995,9 @@ void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
  */
 void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype, unsigned long l_emptycluster, unsigned char ch_attribute)
 {
+	//Get the address within one sector for the current file id, see sdio_get_file() for more explanation
 	unsigned int i_address = (unsigned int)(l_emptyid%(SDIO_BLOCKLEN/32)*32);
+
 	/*
 	 * Make entry in directory
 	 */
@@ -982,12 +1030,12 @@ void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype
 	sdio_write_int(i_address+DIR_WRT_DATE_pos,sdio_get_date());
 	sdio_write_int(i_address+DIR_ACC_DATE_pos,sdio_get_date());
 
-	//Write first cluster
-	sdio_write_int(i_address + DIR_FstClusLO_pos, (l_emptycluster&0xFF));
+	//Write first cluster with the number of the allocated empty cluster
+	sdio_write_int(i_address + DIR_FstClusLO_pos, (l_emptycluster&0xFF));		//FAT16
 	if(!(SD->state & SD_IS_FAT16))
-		sdio_write_int(i_address + DIR_FstClusHI_pos, (l_emptycluster>>16));
+		sdio_write_int(i_address + DIR_FstClusHI_pos, (l_emptycluster>>16));	//FAT32 uses 32bit cluster addressing
 
-	//Write filesize
+	//Write file size, 0 for empty file. When writing to file, the file size has to be updated! Otherwise OEMs will assume the file is still empty.
 	sdio_write_long(i_address+DIR_FILESIZE_pos,0);
 
 	//Write Entry to sd-card
@@ -1019,9 +1067,9 @@ void sdio_mkfile(char* pch_name, char* pch_filetype)
 
 
 		//Load and set the entry in FAT of new cluster to end of file
-		if(SD->state & SD_IS_FAT16)
+		if(SD->state & SD_IS_FAT16)							//FAT16
 			sdio_set_cluster(l_emptycluster, 0xFFFF);
-		else
+		else												//FAT32
 			sdio_set_cluster(l_emptycluster, 0xFFFFFFFF);
 
 		//Clear allocated Cluster
@@ -1061,7 +1109,7 @@ void sdio_mkdir(char* pch_name)
 		else
 			sdio_set_cluster(l_emptycluster, 0xFFFFFFFF);
 
-		//Clear the allcated cluster
+		//Clear the allocated cluster
 		sdio_clear_cluster(l_emptycluster);
 
 		sdio_read_cluster(l_emptycluster);
@@ -1084,16 +1132,24 @@ void sdio_mkdir(char* pch_name)
 void sdio_rm(FILE_T* filehandler)
 {
 	unsigned long l_cluster = 0, l_cluster_next = 0;
+
+	//Read the file entry of the file which should be removed
 	if(!SD->err)
 	{
 		sdio_read_cluster(file->DirCluster);
 		sdio_get_file(filehandler, filehandler->id);
 	}
+
+	//If file exists remove it.
 	if(!SD->err)
 	{
+		//Set the entry as empty space
 		sdio_set_empty_id(filehandler->id);
+
+		//Remember the allocated start cluster of the file
 		l_cluster = filehandler->StartCluster;
 
+		//Set all cluster of file as empty space
 		do
 		{
 			//Read the sector with the entry of start cluster of the file
@@ -1105,6 +1161,7 @@ void sdio_rm(FILE_T* filehandler)
 			//Set current cluster as free space
 			sdio_set_cluster(l_cluster, 0);
 
+			//Determine whether current cluster was end-of-file or whether other clusters are still allocated
 			if(SD->state & SD_IS_FAT16)
 			{
 				if(l_cluster_next < 0xFFF8)
@@ -1123,10 +1180,11 @@ void sdio_rm(FILE_T* filehandler)
 	}
 };
 /*
- * Set fielsize of file
+ * Set file size of file
  */
 void sdio_set_filesize(FILE_T* filehandler, unsigned long l_size)
 {
+	//Get the address within one sector for the current file id, see sdio_get_file() for more explanation
 	unsigned int i_address = (unsigned int)(filehandler->id%(SDIO_BLOCKLEN/32)*32);
 
 	//Read root cluster of file
@@ -1139,9 +1197,9 @@ void sdio_set_filesize(FILE_T* filehandler, unsigned long l_size)
 			SD->err = SD_ERROR_NO_SUCH_FILEID;
 	}
 
-	//Write filesize in entry
+	//Write file size in entry
 	sdio_write_long(i_address+DIR_FILESIZE_pos,l_size);
 
 	//Write entry
 	sdio_write_current_sector();
-}
+};
