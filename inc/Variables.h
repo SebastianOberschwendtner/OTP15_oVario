@@ -135,6 +135,7 @@ typedef struct
 	unsigned long DirCluster;
 	unsigned long StartCluster;
 	unsigned long size;
+	unsigned int CurrentByte;
 	char name[12];
 }FILE_T;
 #pragma pack(pop)
