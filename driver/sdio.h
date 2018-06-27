@@ -179,11 +179,14 @@ unsigned int sdio_get_date(void);
 unsigned int sdio_get_time(void);
 void sdio_cd(FILE_T* filehandler, char* pch_dirname);
 void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension);
+void sdio_fclose(FILE_T* filehandler);
 void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype, unsigned long l_emptycluster, unsigned char ch_attribute);
 void sdio_mkfile(char* pch_name, char* pch_filetype);
 void sdio_mkdir(char* pch_name);
 void sdio_rm(FILE_T* filehandler);
 void sdio_set_filesize(FILE_T* filehandler);
 void sdio_read_end_sector_of_file(FILE_T* filehandler);
+void sdio_write_file(FILE_T* filehandler);
+void sdio_byte2file(FILE_T* filehandler, unsigned char ch_byte);
 
 #endif /* SDIO_H_ */

@@ -46,13 +46,13 @@ void init_sdio(void)
 	 */
 	sdio_set_clock(400000);										//set sdio clock
 	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0;	//Enable SD_CLK
-	SDIO->DTIMER = 0xFFFF;										//Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
+	SDIO->DTIMER = 0xFFFFF;										//Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
 	SDIO->DLEN	=	SDIO_BLOCKLEN;								//Numbers of bytes per block
 
 
 	//Register Memory
 	SD = ipc_memory_register(552,did_SDIO);
-	file = ipc_memory_register(30, did_FILE);
+	file = ipc_memory_register(34, did_FILE);
 	file->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
 
@@ -984,13 +984,35 @@ void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
 	//If entry could be read, read the start cluster of the file
 	if(!SD->err)
 	{
-		//Check whether entry is a valid file (not a directory and not a system file), before accessing the start cluster
+		//Check whether entry is a valid file (not a directory and not a system file), before accessing the file and reading the last sector
 		if(filehandler->DirAttr & (DIR_ATTR_DIR | DIR_ATTR_SYS))
 			SD->err = SD_ERROR_NOT_A_FILE;
 		else
-			sdio_read_cluster(filehandler->StartCluster);
+			sdio_read_end_sector_of_file(filehandler);
 	}
 };
+
+/*
+ * Close current file
+ */
+void sdio_fclose(FILE_T* filehandler)
+{
+	//Save file to sd-card
+	sdio_write_file(filehandler);
+
+	//Read the Directory of the file
+	sdio_read_cluster(filehandler->DirCluster);
+
+	//Clear the filehandler
+	filehandler->CurrentByte = 0;
+	filehandler->id = 0;
+	filehandler->DirAttr = 0;
+	filehandler->DirCluster = 0;
+	filehandler->StartCluster = 0;
+	filehandler->name[0] = 0;
+	filehandler->size = 0;
+};
+
 /*
  * Create a new entry in the current cluster
  */
@@ -1061,11 +1083,8 @@ void sdio_mkfile(char* pch_name, char* pch_filetype)
 		unsigned long l_emptycluster = sdio_get_empty_cluster();
 		l_emptyid = sdio_get_empty_id();
 
-		/*
-		 * Make entry in directory
-		 */
+		//Make entry in directory
 		sdio_make_entry(l_emptyid, pch_name, pch_filetype, l_emptycluster, DIR_ATTR_ARCH);
-
 
 		//Load and set the entry in FAT of new cluster to end of file
 		if(SD->state & SD_IS_FAT16)							//FAT16
@@ -1206,15 +1225,18 @@ void sdio_set_filesize(FILE_T* filehandler)
 };
 
 /*
- * Read the sector of a file which contains the current end of file using the stored filesize
+ * Read the sector of a file which contains the current end of file using the stored filesize.
+ * Works only after sdio_fopen() or when only the first sector of the file has been read from sd-card!
  */
 void sdio_read_end_sector_of_file(FILE_T* filehandler)
 {
-	unsigned long l_sector = 0, l_cluster = filehandler->StartCluster;
+	unsigned long l_sector = 0, l_usedcluster = 0, l_cluster = filehandler->StartCluster;
 	//First get the cluster in which the end sector of the file is located
 	for(unsigned long l_count = 0; l_count<((filehandler->size/SDIO_BLOCKLEN)/SD->SecPerClus); l_count++)
+	{
 		l_cluster = sdio_get_next_cluster();
-
+		l_usedcluster++;
+	}
 	//Second get the sector of the end cluster in which the file ends
 	l_sector = ( (filehandler->size / SDIO_BLOCKLEN) % SD->SecPerClus );
 
@@ -1222,4 +1244,83 @@ void sdio_read_end_sector_of_file(FILE_T* filehandler)
 	sdio_read_block(sdio_get_lba(l_cluster)+l_sector);
 	SD->CurrentCluster = l_cluster;
 	SD->CurrentSector = l_sector+1;
+
+	//Set the current byte pointer to the first empty byte
+	filehandler->CurrentByte = (unsigned int) (filehandler->size - ( ( l_usedcluster*SD->SecPerClus + l_sector) * SDIO_BLOCKLEN ));
 };
+
+/*
+ * Write current file content onto sd-card. If cluster or sector is full, the memory is extended.
+ * Filesize has to be current!
+ */
+void sdio_write_file(FILE_T* filehandler)
+{
+	//Save current position in filesystem
+	unsigned long l_emptycluster = 0, l_currentcluster = SD->CurrentCluster, l_currentsector = SD->CurrentSector;
+
+	//Write the current buffer to sd-card
+	sdio_write_current_sector();
+
+	//Set the filesize in the directory entry of the file to the current size
+	sdio_set_filesize(filehandler);
+
+	//If the current sector is full, check whether the cluster is full and allocate the next cluster if necessary
+	if(filehandler->CurrentByte == SDIO_BLOCKLEN)
+	{
+		//If current sector equals the amount of sectors per cluster
+		if( l_currentsector == SD->SecPerClus )
+		{
+			//Search for empty cluster number
+			l_emptycluster = sdio_get_empty_cluster();
+
+			//Save empty cluster number to old end-of-file cluster
+			sdio_set_cluster(l_currentcluster, l_emptycluster);
+
+			//Load and set the entry in FAT of new cluster to end of file
+			if(SD->state & SD_IS_FAT16)							//FAT16
+				sdio_set_cluster(l_emptycluster, 0xFFFF);
+			else												//FAT32
+				sdio_set_cluster(l_emptycluster, 0xFFFFFFFF);
+
+			//Save the new write position of the file
+			SD->CurrentSector = 1;
+			SD->CurrentCluster = l_emptycluster;
+		}
+		//If cluster is not full, just read the next sector
+		else
+		{
+			SD->CurrentSector = l_currentsector + 1;
+			SD->CurrentCluster = l_currentcluster;
+		}
+		//Set current byte of file to beginning of cluster
+		filehandler->CurrentByte = 0;
+
+	}
+	//If neither the sector or the cluster were full, just read the same sector again
+	else
+	{
+		SD->CurrentSector = l_currentsector;
+		SD->CurrentCluster = l_currentcluster;
+	}
+	//Read the block containing the new end-of-file byte
+	sdio_read_block(sdio_get_lba(SD->CurrentCluster) + SD->CurrentSector - 1 );
+};
+
+/*
+ * Write byte to sd-buffer at current byte position after file is opened
+ */
+void sdio_byte2file(FILE_T* filehandler, unsigned char ch_byte)
+{
+	//Write data to buffer
+	sdio_write_byte(filehandler->CurrentByte, ch_byte);
+
+	//Update the file properties
+	filehandler->CurrentByte++;
+	filehandler->size++;
+
+	//If the buffer is full, write data to sd-card
+	if(filehandler->CurrentByte == SDIO_BLOCKLEN)
+		sdio_write_file(filehandler);
+};
+
+
