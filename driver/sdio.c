@@ -554,13 +554,13 @@ void sdio_write_fat_pos(unsigned long l_pos, unsigned long l_data)
 /*
  * Get the next cluster of a current cluster, reading the FAT
  */
-unsigned long sdio_get_next_cluster(void)
+unsigned long sdio_get_next_cluster(unsigned long l_currentcluster)
 {
 	//Read the sector with the entry of the current cluster
-	sdio_read_block(sdio_get_fat_sec(SD->CurrentCluster,1));
+	sdio_read_block(sdio_get_fat_sec(l_currentcluster,1));
 
 	//Determine the FAT entry
-	return sdio_read_fat_pos(sdio_get_fat_pos(SD->CurrentCluster));
+	return sdio_read_fat_pos(sdio_get_fat_pos(l_currentcluster));
 };
 
 /*
@@ -659,7 +659,7 @@ unsigned char sdio_read_next_sector_of_cluster(void)
 	else
 	{
 		//Get the entry of the FAT table
-		l_FATEntry = sdio_get_next_cluster();
+		l_FATEntry = sdio_get_next_cluster(SD->CurrentCluster);
 
 		if(SD->state & SD_IS_FAT16)					//If FAT16
 		{
@@ -988,7 +988,12 @@ void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
 		if(filehandler->DirAttr & (DIR_ATTR_DIR | DIR_ATTR_SYS))
 			SD->err = SD_ERROR_NOT_A_FILE;
 		else
+		{
+			//Read first cluster of file
+			sdio_read_cluster(filehandler->StartCluster);
+			//With first cluster loaded the end-of-file can be determined
 			sdio_read_end_sector_of_file(filehandler);
+		}
 	}
 };
 
@@ -1234,7 +1239,7 @@ void sdio_read_end_sector_of_file(FILE_T* filehandler)
 	//First get the cluster in which the end sector of the file is located
 	for(unsigned long l_count = 0; l_count<((filehandler->size/SDIO_BLOCKLEN)/SD->SecPerClus); l_count++)
 	{
-		l_cluster = sdio_get_next_cluster();
+		l_cluster = sdio_get_next_cluster(l_cluster);
 		l_usedcluster++;
 	}
 	//Second get the sector of the end cluster in which the file ends

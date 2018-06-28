@@ -160,7 +160,7 @@ unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum)
 unsigned long sdio_get_fat_pos(unsigned long l_cluster);
 unsigned long sdio_read_fat_pos(unsigned long l_pos);
 void sdio_write_fat_pos(unsigned long l_pos, unsigned long l_data);
-unsigned long sdio_get_next_cluster(void);
+unsigned long sdio_get_next_cluster(unsigned long l_currentcluster);
 void sdio_set_cluster(unsigned long l_cluster, unsigned long l_state);
 void sdio_clear_cluster(unsigned long l_cluster);
 void sdio_read_root(void);
