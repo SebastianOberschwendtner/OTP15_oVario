@@ -18,6 +18,8 @@ uint8_t submenu = 0;
 datafusion_T* p_ipc_gui_df_data;
 GPS_T* p_ipc_gui_gps_data;
 BMS_T* p_ipc_gui_bms_data;
+T_keypad p_ipc_gui_keypad_data;
+T_GUI_cmd Gui_cmd;
 
 //*********** Functions **************
 void gui_init (void)
@@ -25,6 +27,8 @@ void gui_init (void)
 	p_ipc_gui_df_data 	= ipc_memory_get(did_DATAFUSION);
 	p_ipc_gui_gps_data 	= ipc_memory_get(did_GPS);
 	p_ipc_gui_bms_data 	= ipc_memory_get(did_BMS);
+
+	ipc_register_queue(80,did_GUI);
 }
 
 
@@ -48,13 +52,16 @@ void gui_task (void)
 	case Gui_Settings:
 		fkt_Settings();
 		break;
-
+	case Gui_BMS:
+		fkt_BMS();
+		break;
 	default:
 		break;
 	}
 
 	// draw screen
 	lcd_send_buffer();
+	//lcd_dma_enable();
 }
 
 void fkt_Initscreen (void)
@@ -99,6 +106,28 @@ void fkt_Initscreen (void)
 
 
 	gui_gauge(p_ipc_gui_df_data->climbrate_filt, -2, 5);
+
+	// Keypad
+	while(ipc_get_queue_bytes(did_KEYPAD) > 4) 				// look for new command in keypad queue
+	{
+		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
+		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		{
+		case 0:		// next screen
+			menu = Gui_BMS;
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
+	}
+
+
 
 
 }
@@ -152,13 +181,38 @@ void fkt_Vario (void)
 	lcd_string2buffer(" ms");
 
 	draw_graph(138, 57);
+
+
+	// Keypad
+	while(ipc_get_queue_bytes(did_KEYPAD) > 4) 				// look for new command in keypad queue
+	{
+		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
+		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		{
+		case 0:		// next screen
+			menu = Gui_BMS;
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
+
+
+	}
 }
+
+uint8_t testipc = 0;
 
 void fkt_BMS(void)
 {
 	uint8_t y 	= 0;
-#define	ls	16		// Line step width
-#define	c1	30		// y Value of Value Column
+#define	ls	10		// Line step width
+#define	c1	100		// y Value of Value Column
 
 	// Set Fontsize
 	lcd_set_fontsize(1);
@@ -166,10 +220,13 @@ void fkt_BMS(void)
 	// Write Data to Screen
 	y +=ls;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("UBat: ");
+	lcd_string2buffer("OTG Status: ");
 	lcd_set_cursor(c1, y);
-	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
-	lcd_string2buffer(" mV");
+
+	if (p_ipc_gui_bms_data->charging_state == ON)
+		lcd_string2buffer("ON");
+	else
+		lcd_string2buffer("OFF");
 
 	y +=ls;
 	lcd_set_cursor(0, y);
@@ -247,8 +304,37 @@ void fkt_BMS(void)
 	lcd_set_cursor(c1, y);
 	lcd_num2buffer(p_ipc_gui_bms_data->temperature,4);
 	lcd_string2buffer(" C");
+	testipc = ipc_get_queue_bytes(did_KEYPAD);
 
+	// Keypad
+	while(testipc > 4) 				// look for new command in keypad queue
+	{
+		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
+		testipc = ipc_get_queue_bytes(did_KEYPAD);
+		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		{
+		case 0:		// next screen
+			menu = Gui_Vario;
+			break;
+		case 1:
+			Gui_cmd.did = did_BMS;
+			Gui_cmd.cmd = GUI_cmd_OTG_ON;
+			Gui_cmd.timestamp = TIM5->CNT;
+			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			break;
+		case 2:
+			Gui_cmd.did = did_BMS;
+			Gui_cmd.cmd = GUI_cmd_OTG_OFF;
+			Gui_cmd.timestamp = TIM5->CNT;
+			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
 
+	}
 }
 
 
@@ -281,9 +367,6 @@ void gui_gauge(float value, float min, float max)
 	// draw scale
 
 	//lcd_line2buffer(219,122,229,122);
-
-
-
 	lcd_set_fontsize(1);
 	lcd_line2buffer(219,6,239,6);
 	lcd_set_cursor(205, 11);
@@ -310,21 +393,17 @@ void gui_gauge(float value, float min, float max)
 		lcd_block2buffer(229,(122-8)/total*max+7,value/max*(122-6)/total*max,10);
 	else if(value < 0)
 		lcd_block2buffer(229,zeroline + value_min,value_min,10);
-
-
 }
 
 
 void draw_graph(uint8_t x, uint8_t y)
 {
-	float min = -1;
-	float max = 1;
-	uint8_t height = 61;
-	uint8_t xpixel = 0;
-	uint8_t ypixel = 0;
-	float temp = 0;
-
-
+	float min 		= -1;
+	float max 		= 1;
+	uint8_t height 	= 61;
+	uint8_t xpixel 	= 0;
+	uint8_t ypixel 	= 0;
+	float temp 		= 0;
 
 	for (uint8_t dcnt = 0; dcnt < 50; dcnt++)
 	{
@@ -356,7 +435,6 @@ void draw_graph(uint8_t x, uint8_t y)
 	lcd_line2buffer(x, y , x + 100 + 1, y);										// Top line
 	lcd_line2buffer(x, y + height / 2 + 1 , x + 100 + 1, y + height / 2 + 1);	// Middle line
 
-
 	lcd_set_cursor(x-25, y+8);
 	lcd_set_fontsize(1);
 	lcd_float2buffer((float)max,1,0);
@@ -366,14 +444,9 @@ void draw_graph(uint8_t x, uint8_t y)
 	lcd_float2buffer((float)0,1,0);
 	lcd_string2buffer("ms");
 
-
-
 	lcd_set_cursor(x-25, y + height+3);
 	lcd_float2buffer((float)min,1,0);
 	lcd_string2buffer("ms");
-
-
-
 }
 
 

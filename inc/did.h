@@ -20,6 +20,7 @@
 #define 	did_SDIO		7
 #define		did_SYS			8
 #define 	did_FILE		9
+#define		did_GUI			10
 
 
 #endif /* DID_H_ */
