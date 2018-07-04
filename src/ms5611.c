@@ -29,6 +29,7 @@ ms5611_T* msdata;
 
 void MS5611_init()
 {
+	i2c_reset_error();
 	// Perform Reset
 	wait_systick(5);
 	i2c_send_char(i2c_addr_MS5611, 0x1E);
