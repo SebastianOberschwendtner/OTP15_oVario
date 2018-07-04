@@ -32,6 +32,8 @@
 
 //Makro for SysTick status
 #define TICK_PASSED		(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+#define CURRENT_TICK	SysTick->VAL
+#define MS2TICK(x)		((F_CPU/8000)*x)
 
 //PLL variables
 #define PLL_M			25

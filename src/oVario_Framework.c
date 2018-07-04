@@ -132,7 +132,7 @@ void set_led_red(unsigned char ch_state)
  */
 void wait_ms(unsigned long l_time)
 {
-	unsigned long l_temp=SysTick->VAL;
+	unsigned long l_temp = CURRENT_TICK;
 	signed long l_target = l_temp-((F_CPU/8000)*l_time);
 	if(l_target<0)
 	{
