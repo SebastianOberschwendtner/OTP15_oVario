@@ -1098,7 +1098,10 @@ void sdio_mkfile(char* pch_name, char* pch_filetype)
 			sdio_set_cluster(l_emptycluster, 0xFFFFFFFF);
 
 		//Clear allocated Cluster
+		/*
+		 * => Not necessary anymore since the filesize to determine the end-of-file
 		sdio_clear_cluster(l_emptycluster);
+		*/
 	}
 	else
 		SD->err = SD_ERROR_FILE_ALLREADY_EXISTS;
