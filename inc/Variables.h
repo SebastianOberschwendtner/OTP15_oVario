@@ -11,6 +11,11 @@
 #define true 1
 #define false 0
 
+// GUI CMDs
+#define GUI_cmd_OTG_OFF		0
+#define GUI_cmd_OTG_ON		1
+
+
 
 // Sound
 #pragma pack(push, 1)
@@ -148,5 +153,20 @@ typedef struct
 	unsigned long time;
 }SYS_T;
 #pragma pack(pop)
+
+// GUI CMD
+#pragma pack(push, 1)
+typedef struct
+{
+	uint8_t	 did;
+	uint8_t  cmd;
+	uint32_t timestamp;
+}T_GUI_cmd;
+#pragma pack(pop)
+
+
+
+
+
 
 #endif /* VARIABLES_H_ */

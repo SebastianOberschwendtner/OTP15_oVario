@@ -138,8 +138,33 @@ void BMS_task(void)
 	// Read Values
 	BMS_get_adc();
 	BMS_gauge_get_adc();
+	BMS_get_status();
 
 	// Handle Commands
+	uint8_t ipc_no_bytes = ipc_get_queue_bytes(did_GUI);
+	T_GUI_cmd Gui_ipc_cmd;
+
+	while(ipc_no_bytes > 5)
+	{
+		ipc_queue_get(did_GUI,6,&Gui_ipc_cmd); 	// get new command
+		ipc_no_bytes = ipc_get_queue_bytes(did_GUI);
+
+		switch(Gui_ipc_cmd.cmd)					// switch for pad number
+		{
+		case GUI_cmd_OTG_ON:
+			BMS_set_otg(ON);
+			break;
+		case GUI_cmd_OTG_OFF:
+			BMS_set_otg(OFF);
+			break;
+		default:
+			break;
+		}
+	}
+
+
+
+
 }
 
 /*
@@ -151,8 +176,8 @@ float I_Gain    = 100;
 
 void BMS_SolarPanelController(void)
 {
-	#define	n_cells 6.0f	// Number of Serial Solar Cells Used
-	#define U_MPP	0.6f	// Voltage of Maximum Power Point of one Cell
+#define	n_cells 6.0f	// Number of Serial Solar Cells Used
+#define U_MPP	0.6f	// Voltage of Maximum Power Point of one Cell
 
 	// Solar Panel Controller (I Controller)
 	U_error 	= (float)pBMS->input_voltage - n_cells * U_MPP;

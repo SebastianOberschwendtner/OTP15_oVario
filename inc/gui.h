@@ -16,7 +16,8 @@ enum states
 	Gui_Initscreen,
 	Gui_Vario,
 	Gui_Menu,
-	Gui_Settings
+	Gui_Settings,
+	Gui_BMS
 };
 
 // Functions
