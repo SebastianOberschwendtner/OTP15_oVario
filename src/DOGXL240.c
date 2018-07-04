@@ -113,10 +113,13 @@ void init_lcd(void)
  */
 void lcd_dma_enable(void)
 {
+	//Clear DMA interrupts
+	DMA1->HIFCR = DMA_HIFCR_CTCIF4 | DMA_HIFCR_CHTIF4 | DMA_HIFCR_CTEIF4 | DMA_HIFCR_CDMEIF4 | DMA_HIFCR_CFEIF4;
+
 	lcd_set_cd(DATA);
 	if(!(DMA1_Stream4->CR & DMA_SxCR_EN))		//check if transfer is complete
 	{
-
+		set_led_green(TOGGLE);
 		DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;
 		DMA1_Stream4->CR |= DMA_SxCR_EN;
 	}
