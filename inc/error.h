@@ -10,8 +10,15 @@
 
 
 //*********** Errors **************
-#define err_no_memory_left  1u
-#define err_queue_overrun	2u
+#define err_no_memory_left  (1<<0)
+#define err_queue_overrun	(1<<1)
+#define err_bms_fault		(1<<2)
+#define err_coloumb_fault	(1<<3)
+#define err_baro_fault		(1<<4)
+#define err_sd_fault		(1<<5)
+
+//Bit defines
+#define SENSOR_ERROR		(1<<7)
 
 
 

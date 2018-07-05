@@ -22,6 +22,7 @@ int32_t ipc_pressure = 1;
 
 ms5611_T* msdata;
 
+extern unsigned long error_var;
 
 
 
@@ -50,7 +51,14 @@ void MS5611_init()
 	wait_systick(1);
 	wait_ms(100ul);
 
-	msdata = ipc_memory_register(12, did_MS5611);
+	msdata = ipc_memory_register(13, did_MS5611);
+	//Check communication status
+	if(i2c_get_error())
+	{
+		msdata->com_err = (unsigned char)0xFFFF;
+		error_var |= err_baro_fault;
+		i2c_reset_error();
+	}
 }
 
 // Task
@@ -66,58 +74,84 @@ void ms5611_task()
 int32_t get_pressure_MS()
 {
 	catch_temp_MS();
-	// Convert D1 OSR = 4096
-	i2c_send_char(i2c_addr_MS5611, 0x48);
-
-	wait_ms(10ul);
-
-	// ADC Read
-	uint32_t D1 = (int32_t)i2c_read_24bit(i2c_addr_MS5611,0x00);
-
-	// ADC Read
-
-	int64_t Off = (long long)C2 * 65536 + ((long long)C4 * dT ) / 128;
-	int64_t Sens = (long long)C1 * 32768 + ((long long)C3 * dT) / 256;
-
-	if (Temp < 2000)
+	//If no communication error occurred
+	if(!(msdata->com_err & SENSOR_ERROR))
 	{
-		uint64_t T2 = ((uint64_t) dT )>> 31;
-		uint64_t Off2 = (5 * (Temp - 2000)^2) >> 1;
-		uint64_t Sens2 = (5 * (Temp - 2000)) >> 2;
+		//Reset i2c error
+		i2c_reset_error();
+		// Convert D1 OSR = 4096
+		i2c_send_char(i2c_addr_MS5611, 0x48);
 
-		if (Temp < -15)
+		wait_ms(10ul);
+
+		// ADC Read
+		uint32_t D1 = (int32_t)i2c_read_24bit(i2c_addr_MS5611,0x00);
+
+		// ADC Read
+
+		int64_t Off = (long long)C2 * 65536 + ((long long)C4 * dT ) / 128;
+		int64_t Sens = (long long)C1 * 32768 + ((long long)C3 * dT) / 256;
+
+		if (Temp < 2000)
 		{
-			Off2 = Off2 + (7 * (Temp + 1500)^2);
-			Sens2 = Sens2 + ((11 * (Temp + 1500)^2) >> 1);
+			uint64_t T2 = ((uint64_t) dT )>> 31;
+			uint64_t Off2 = (5 * (Temp - 2000)^2) >> 1;
+			uint64_t Sens2 = (5 * (Temp - 2000)) >> 2;
+
+			if (Temp < -15)
+			{
+				Off2 = Off2 + (7 * (Temp + 1500)^2);
+				Sens2 = Sens2 + ((11 * (Temp + 1500)^2) >> 1);
+			}
 		}
+		else
+		{
+			uint64_t T2 = 0;
+			uint64_t Off2 = 0;
+			uint64_t Sens2 = 0;
+		}
+		Temp 	= Temp - T2;
+		Off 	= Off - Off2;
+		Sens 	= Sens - Sens2;
+
+		int32_t pressure 	= (D1*Sens/2097152 - Off)/32768;
+		return pressure;
+
+		//check communication error
+		msdata->com_err += i2c_get_error();
 	}
 	else
 	{
-		uint64_t T2 = 0;
-		uint64_t Off2 = 0;
-		uint64_t Sens2 = 0;
+		return 0;
+		error_var |= err_baro_fault;
 	}
-	Temp 	= Temp - T2;
-	Off 	= Off - Off2;
-	Sens 	= Sens - Sens2;
-
-	int32_t pressure 	= (D1*Sens/2097152 - Off)/32768;
-	return pressure;
 }
 
 
 // function to read temperature
 void catch_temp_MS()
 {
-	// Convert D2 OSR = 4096
-	i2c_send_char(i2c_addr_MS5611, 0x58);
-	wait_ms(10ul);
+	//If no communication error occurred
+	if(!(msdata->com_err & SENSOR_ERROR))
+	{
+		//Reset i2c error
+		i2c_reset_error();
+		// Convert D2 OSR = 4096
+		i2c_send_char(i2c_addr_MS5611, 0x58);
+		wait_ms(10ul);
 
-	// Read ADC
-	D2 = (int32_t)i2c_read_24bit(i2c_addr_MS5611,0x00);
+		// Read ADC
+		D2 = (int32_t)i2c_read_24bit(i2c_addr_MS5611,0x00);
 
-	dT = D2-((long)C5<<8);
-	Temp = 2000 + ((long long)dT * C6)/8388608;
+		dT = D2-((long)C5<<8);
+		Temp = 2000 + ((long long)dT * C6)/8388608;
+		//check communication error
+		msdata->com_err += i2c_get_error();
+	}
+	else
+	{
+		error_var |= err_baro_fault;
+	}
 }
 
 

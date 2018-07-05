@@ -15,7 +15,7 @@ unsigned long l_timeout = 0;
 /*
  * Makro for wait with timeout
  */
-#define TIMEOUT		10
+#define TIMEOUT		2	//ms
 
 #define WAIT_FOR(condition,timeout)		\
 		l_timeout = 0;\
@@ -76,6 +76,14 @@ void init_i2c(void)
 void i2c_reset_error(void)
 {
 	ch_i2c_error = 0;
+};
+
+/*
+ * read current error status
+ */
+unsigned char i2c_get_error(void)
+{
+	return ch_i2c_error;
 };
 
 /*

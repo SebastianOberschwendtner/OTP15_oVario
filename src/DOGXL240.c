@@ -104,7 +104,7 @@ void init_lcd(void)
 	DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;				//Number of transfers for the buffer
 	DMA1_Stream4->PAR = (unsigned long)&SPI2->DR;				//Set SPI2 as target peripheral address
 	DMA1_Stream4->M0AR = (unsigned long)&plcd_DOGXL->buffer[0];	//Set display buffer as start address
-	DMA1_Stream4->FCR = DMA_SxFCR_DMDIS;							//Enable FIFO with 4 bytes
+	DMA1_Stream4->FCR = 0;//DMA_SxFCR_DMDIS;							//Enable FIFO with 4 bytes
 
 	SPI2->CR2 |= SPI_CR2_TXDMAEN;								//Enable DMA request in SPI2
 }
@@ -119,8 +119,7 @@ void lcd_dma_enable(void)
 	lcd_set_cd(DATA);
 	if(!(DMA1_Stream4->CR & DMA_SxCR_EN))		//check if transfer is complete
 	{
-		set_led_green(TOGGLE);
-		DMA1_Stream4->NDTR = LCD_PIXEL_X*LCD_PIXEL_Y/8;
+		DMA1_Stream4->NDTR = (LCD_PIXEL_X*LCD_PIXEL_Y/8);
 		DMA1_Stream4->CR |= DMA_SxCR_EN;
 	}
 }

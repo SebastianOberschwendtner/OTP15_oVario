@@ -19,6 +19,7 @@
 // ***** Functions *****
 void init_i2c(void);
 void i2c_reset_error(void);
+unsigned char i2c_get_error(void);
 void i2c_send_char(unsigned char ch_address, unsigned char ch_data);
 void i2c_send_int(unsigned char ch_address, unsigned int i_data);
 void i2c_send_int_LSB(unsigned char ch_address, unsigned int i_data);

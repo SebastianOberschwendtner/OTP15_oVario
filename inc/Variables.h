@@ -80,6 +80,7 @@ typedef struct{
 	int32_t pressure;
 	int32_t temperature;
 	uint32_t timestamp;
+	uint8_t com_err;
 }ms5611_T;
 #pragma pack(pop)
 
@@ -109,6 +110,7 @@ typedef struct
 	signed int current;
 	signed int discharged_capacity;		//[mA]
 	unsigned int temperature;			//[degC]
+	unsigned char com_err;
 }BMS_T;
 #pragma pack(pop)
 
