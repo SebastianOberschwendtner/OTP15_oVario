@@ -21,7 +21,7 @@
 //Define SysTick time in ms
 #define SYSTICK			100
 //I2C clock speed
-#define I2C_CLOCK		10000UL
+#define I2C_CLOCK		100000UL
 
 //BMS parameters
 #define MAX_BATTERY_VOLTAGE	4200 //[mV]
@@ -30,10 +30,16 @@
 #define OTG_VOLTAGE			5000 //[mV]
 #define OTG_CURRENT			3000 //[mA]
 
-//Makro for SysTick status
+/*
+ * Makro for SysTick status and time conversion
+ * The conversion assumes that the systick timer is clocked by APB/8.
+ */
 #define TICK_PASSED		(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
 #define CURRENT_TICK	SysTick->VAL
 #define MS2TICK(x)		((F_CPU/8000)*x)
+#define US2TICK(x)		((F_CPU/8000000)*x)
+#define TICK2MS(x)		(x*8000)/F_CPU
+#define TICK2US(x)		(x*8000000)/F_CPU
 
 //PLL variables
 #define PLL_M			25

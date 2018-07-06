@@ -15,13 +15,13 @@ unsigned long l_timeout = 0;
 /*
  * Makro for wait with timeout
  */
-#define TIMEOUT		2	//ms
+#define TIMEOUT		100*(1000000/I2C_CLOCK)	//[us], wait for a transfer of 10 bits with current I2C-clock before timeout
 
 #define WAIT_FOR(condition,timeout)		\
 		l_timeout = 0;\
 		while(condition)\
 		{\
-			if(l_timeout++ >= MS2TICK(timeout))\
+			if(l_timeout++ >= US2TICK(timeout))\
 			{\
 				ch_i2c_error=1;\
 				return;\
@@ -35,7 +35,7 @@ unsigned long l_timeout = 0;
 		l_timeout = 0;\
 		while(condition)\
 		{\
-			if(l_timeout++ >= MS2TICK(timeout))\
+			if(l_timeout++ >= US2TICK(timeout))\
 			{\
 				ch_i2c_error=1;\
 				return 0;\
