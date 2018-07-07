@@ -90,7 +90,15 @@ typedef struct{
 typedef struct{
 	float speed_kmh;
 	float heading_deg;
+	float lat;
+	float lon;
+	float time_utc;
+	uint8_t n_sat;
+	float HDOP;
+	float msl;
+	float Altref;
 	uint8_t fix;
+	float msg_cnt;
 }GPS_T;
 #pragma pack(pop)
 
