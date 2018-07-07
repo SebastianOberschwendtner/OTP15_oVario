@@ -605,7 +605,7 @@ void sdio_clear_cluster(unsigned long l_cluster)
 /*
  * Read root directory
  */
-void sdio_read_root(void)
+unsigned char sdio_read_root(void)
 {
 	if(SD->state & SD_IS_FAT16)	//FAT16 uses a specific region for the root directory
 	{
@@ -613,10 +613,15 @@ void sdio_read_root(void)
 		SD->CurrentCluster = 0;
 		SD->CurrentSector = 1;
 	}
-
 	else
 		sdio_read_cluster(SD->RootDirClus);
-}
+
+	//Return 0 if error ocurred
+	if(SD->err)
+		return 0;
+	//Return 1 if read was successful
+	return 1;
+};
 
 /*
  * Read the first sector of a specific cluster from sd-card
@@ -949,7 +954,7 @@ unsigned int sdio_get_time(void)
  * Change the current directory within one directory.
  * For longer paths the function has to be called repeatedly.
  */
-void sdio_cd(FILE_T* filehandler, char* pch_dirname)
+unsigned char sdio_cd(FILE_T* filehandler, char* pch_dirname)
 {
 	//Get the file id of the desired directory
 	filehandler->id = sdio_get_fileid(pch_dirname, " ");
@@ -965,14 +970,18 @@ void sdio_cd(FILE_T* filehandler, char* pch_dirname)
 		if(!(filehandler->DirAttr & DIR_ATTR_DIR))
 			SD->err = SD_ERROR_NOT_A_DIR;
 		else
+		{
 			sdio_read_cluster(filehandler->StartCluster);
+			return 1;
+		}
 	}
+	return 0;
 }
 
 /*
  * Open file in current directory
  */
-void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
+unsigned char sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
 {
 	//Get the file id of the desired file
 	filehandler->id = sdio_get_fileid(pch_name, pch_extension);
@@ -993,8 +1002,10 @@ void sdio_fopen(FILE_T* filehandler, char* pch_name, char* pch_extension)
 			sdio_read_cluster(filehandler->StartCluster);
 			//With first cluster loaded the end-of-file can be determined
 			sdio_read_end_sector_of_file(filehandler);
+			return 1;
 		}
 	}
+	return 0;
 };
 
 /*
@@ -1072,7 +1083,7 @@ void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype
 /*
  * Create new file in current directory
  */
-void sdio_mkfile(char* pch_name, char* pch_filetype)
+unsigned char sdio_mkfile(char* pch_name, char* pch_filetype)
 {
 	//Remember root cluster
 	unsigned long l_rootcluster = SD->CurrentCluster;
@@ -1101,16 +1112,18 @@ void sdio_mkfile(char* pch_name, char* pch_filetype)
 		/*
 		 * => Not necessary anymore since the filesize to determine the end-of-file
 		sdio_clear_cluster(l_emptycluster);
-		*/
+		 */
+		return 1;
 	}
 	else
 		SD->err = SD_ERROR_FILE_ALLREADY_EXISTS;
+	return 0;
 };
 
 /*
  * Create new directory in current directory
  */
-void sdio_mkdir(char* pch_name)
+unsigned char sdio_mkdir(char* pch_name)
 {
 	//remember root cluster
 	unsigned long l_rootcluster = SD->CurrentCluster;
@@ -1148,9 +1161,11 @@ void sdio_mkdir(char* pch_name)
 
 		//Read root cluster again
 		sdio_read_cluster(l_rootcluster);
+		return 1;
 	}
 	else
 		SD->err = SD_ERROR_FILE_ALLREADY_EXISTS;
+	return 0;
 };
 
 /*
@@ -1231,6 +1246,52 @@ void sdio_set_filesize(FILE_T* filehandler)
 	//Write entry
 	sdio_write_current_sector();
 };
+
+/*
+ * Set current file as empty
+ */
+void sdio_fclear(FILE_T* filehandler)
+{
+	//Set entry in directory
+	filehandler->CurrentByte = 0;
+	filehandler->size = 1;
+	sdio_set_filesize(filehandler);
+
+	//Clear FAT
+	unsigned long l_nextcluster = sdio_get_next_cluster(filehandler->StartCluster);
+	if(SD->state & SD_IS_FAT16)						//If FAT16
+	{
+		//Set start cluster as end-of-file
+		sdio_set_cluster(filehandler->StartCluster, 0xFFFF);
+
+		while(l_nextcluster != 0xFFFF)				//While not end-of-file
+		{
+			//Set current cluster empty
+			sdio_set_cluster(l_nextcluster, 0);
+
+			//Read next cluster
+			l_nextcluster = sdio_get_next_cluster(l_nextcluster);
+		}
+
+	}
+	else											//If FAT32
+	{
+		//Set start cluster as end-of-file
+		sdio_set_cluster(filehandler->StartCluster, 0xFFFFFFFF);
+
+		while(l_nextcluster != 0xFFFFFFFF)			//While not end-of-file
+		{
+			//Set current cluster empty
+			sdio_set_cluster(l_nextcluster, 0);
+
+			//Read next cluster
+			l_nextcluster = sdio_get_next_cluster(l_nextcluster);
+		}
+	}
+
+	//Read first cluster of file
+	sdio_read_cluster(filehandler->StartCluster);
+}
 
 /*
  * Read the sector of a file which contains the current end of file using the stored filesize.
@@ -1331,4 +1392,69 @@ void sdio_byte2file(FILE_T* filehandler, unsigned char ch_byte)
 		sdio_write_file(filehandler);
 };
 
+/*
+ * Write integer to sd-buffer at current byte position after file is opened
+ */
+void sdio_int2file(FILE_T* filehandler, unsigned int i_data)
+{
+	//Write first 8 bytes of data
+	sdio_byte2file(filehandler, (i_data>>8) && 0xFFFF);
 
+	//Write second 8 bytes of data
+	sdio_byte2file(filehandler, (i_data>>0) && 0xFFFF);
+};
+
+/*
+ * Write 32bit to sd-buffer at current byte position after file is opened
+ */
+void sdio_long2file(FILE_T* filehandler, unsigned long l_data)
+{
+	//Write first 8 bytes of data
+	sdio_byte2file(filehandler, (l_data>>24) && 0xFFFF);
+
+	//Write second 8 bytes of data
+	sdio_byte2file(filehandler, (l_data>>16) && 0xFFFF);
+
+	//Write third 8 bytes of data
+	sdio_byte2file(filehandler, (l_data>>8) && 0xFFFF);
+
+	//Write forth 8 bytes of data
+	sdio_byte2file(filehandler, (l_data>>0) && 0xFFFF);
+};
+
+/*
+ * Write string to sd-buffer at current byte position after file is opened
+ */
+void sdio_string2file(FILE_T* filehandler, char* ch_string)
+{
+	//While the end of the string is not reched
+	while(*ch_string)
+	{
+		//Write the content of string
+		sdio_byte2file(filehandler, *ch_string);
+
+		//Get the next character of the string
+		ch_string++;
+	}
+};
+
+/*
+ * Write number as string to file
+ */
+void sdio_num2file(FILE_T* filehandler, unsigned long l_number, unsigned char ch_predecimal)
+{
+	//String for number
+	char ch_number[ch_predecimal+1];
+	ch_number[ch_predecimal] = 0;
+
+	//Compute the string content
+	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
+	{
+		ch_number[ch_predecimal - ch_count -1] = (unsigned char)(l_number%10)+48;
+		l_number /=10;
+	}
+
+	//Write to file
+	for(unsigned char ch_count = 0; ch_count<ch_predecimal;ch_count++)
+		sdio_byte2file(filehandler, ch_number[ch_count]);
+}
