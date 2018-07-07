@@ -31,7 +31,7 @@ void init_BMS(void)
 
 	//***********************Setup the coulomb counter**********************************************
 	//save the desired manufacturer status init register value
-	//FIXME At startup without the battery the i2c command waits for a response. Use timeouts?
+	//At startup without the battery the i2c command waits for a response. Use timeouts? -> Fixed
 
 	unsigned int i_config = IGNORE_SD_EN | ACCHG_EN | ACDSG_EN;
 	//check the configuration value on the flash
@@ -93,14 +93,14 @@ void init_BMS(void)
 	 * -Out-of-audio enable
 	 */
 	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_0_addr,
-			(PWM_FREQ | IADPT_GAIN | IBAT_GAIN | EN_LDO | EN_IDPM | EN_OOA));
+			(PWM_FREQ | IADPT_GAIN | IBAT_GAIN | EN_OOA));
 	/*
 	 * Set ADC options:
 	 * 	-One shot update
 	 * 	-Enable VBAT, VBUS, I_IN, I_charge, I_Discharge
 	 */
 	i2c_send_int_register_LSB(i2c_addr_BMS,ADC_OPTION_addr,
-			(EN_ADC_VBAT | EN_ADC_VBUS | EN_ADC_IIN | EN_ADC_ICHG | EN_ADC_IDCHG));
+			(EN_ADC_VBAT | EN_ADC_VBUS | EN_ADC_IIN | EN_LDO | EN_ADC_ICHG | EN_ADC_IDCHG));
 
 	/*
 	 * Set max charge voltage
@@ -118,7 +118,7 @@ void init_BMS(void)
 	 *
 	 * The 6-bit value is bitshifted by 8
 	 */
-	//i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE-1024)/256)<<8));
+	i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE-1024)/256)<<8));
 
 	/*
 	 * Set max input current
@@ -133,7 +133,7 @@ void init_BMS(void)
 	pBMS = ipc_memory_register(49,did_BMS);
 
 	//Set charging current
-	pBMS->max_charge_current = 1000;
+	pBMS->max_charge_current = 2000;
 
 	//Set OTG parameters
 	pBMS->otg_voltage = OTG_VOLTAGE;
@@ -325,14 +325,17 @@ void BMS_get_status(void)
 			pBMS->charging_state |= STATUS_INPUT_PRESENT;
 		else
 			pBMS->charging_state &= ~(STATUS_INPUT_PRESENT);
+
 		if(i_temp & IN_FCHRG)
 			pBMS->charging_state |= STATUS_FAST_CHARGE;
 		else
 			pBMS->charging_state &= ~(STATUS_FAST_CHARGE);
+
 		if(i_temp & IN_PCHRG)
 			pBMS->charging_state |= STATUS_PRE_CHARGE;
 		else
 			pBMS->charging_state &= ~(STATUS_PRE_CHARGE);
+
 		if(i_temp & IN_OTG)
 			pBMS->charging_state |= STATUS_OTG_EN;
 		else
@@ -371,8 +374,9 @@ void BMS_charge_start(void)
 	{
 		i2c_reset_error();
 
-		//Check input source
-		if(pBMS->charging_state & STATUS_CHRG_OK)
+
+		//Check input source and if in OTG mode
+		if((pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
 		{
 			//Check if allready charging
 			if(!(pBMS->charging_state & STATUS_FAST_CHARGE))
@@ -399,7 +403,6 @@ void BMS_charge_start(void)
 /*
  * Set battery charging current.
  * Checks whether input is present or not.
- * This function doesn't save the set current!
  */
 void BMS_set_charge_current(unsigned  int i_current)
 {
@@ -408,8 +411,8 @@ void BMS_set_charge_current(unsigned  int i_current)
 	{
 		i2c_reset_error();
 
-		//Check input source
-		if(pBMS->charging_state & STATUS_CHRG_OK)
+		//Check input source and if in OTG mode
+		if((pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
 		{
 			/*
 			 * Set charge current in mA. Note that the actual resolution is only 64 mA/bit.

@@ -25,7 +25,7 @@
 
 //BMS parameters
 #define MAX_BATTERY_VOLTAGE	4200 //[mV]
-#define MIN_BATTERY_VOLTAGE	2800 //[mV]
+#define MIN_BATTERY_VOLTAGE	3000 //[mV]
 #define MAX_CURRENT			3000 //[mA]
 #define OTG_VOLTAGE			5000 //[mV]
 #define OTG_CURRENT			3000 //[mA]
