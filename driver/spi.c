@@ -26,10 +26,10 @@ void init_spi(void)
 	GPIOB->AFR[1] |= (5<<28) | (5<<20) | (5<<16);
 
 	GPIOB->BSRRL  = GPIO_BSRR_BS_12;
-	//Init SPI2, SCK = 1.3125 MHz
+	//Init SPI2, SCK = 5.25 MHz
 	//Set baudrate, Master mode and frameformat (clock high idle, sample on rising edge)
 	//TODO Increase Baudrate
-	SPI2->CR1 = (0b101<<3) | SPI_CR1_MSTR | SPI_CR1_CPOL | SPI_CR1_CPHA;
+	SPI2->CR1 = (0b011<<3) | SPI_CR1_MSTR | SPI_CR1_CPOL | SPI_CR1_CPHA;
 	SPI2->CR2 = SPI_CR2_SSOE;
 	SPI2->CR1 |= SPI_CR1_SPE;   //Enable SPI
 
