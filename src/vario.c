@@ -9,7 +9,7 @@
 #include "vario.h"
 #include "sound.h"
 #include "Variables.h"
-
+#include "arm_math.h"
 
 //Git ist scheiße!
 
@@ -131,5 +131,24 @@ sound = 500;
 	}
 
 
+
+
+
+}
+// Function to calculate an estimate for the distance between two points
+float vario_wgs84_distance(float lat1, float lon1, float lat2, float lon2)
+{
+	float dist = 0;
+
+	float u_1 = 2 * pi * r_earth * arm_cos_f32(lat1 / 360 * pi);				// earth radius on lat1
+	float u_2 = 2 * pi * r_earth * arm_cos_f32(lat2 / 360 * pi);				// earth radius on lat2
+
+	float d_lon_12 = (lon1 - lon2) / 360 * (u_1 + u_2) / 2;			// lon distance between p1 and p2
+	float d_lat_12 = 2 * pi * r_earth * (lat1 - lat2) / 360;		// lat distance between p1 and p2
+
+
+	arm_sqrt_f32((d_lon_12 * d_lon_12 + d_lat_12 * d_lat_12),&dist);	// pythagoras between these distances
+
+	return dist; //[m]
 }
 

@@ -55,6 +55,9 @@ void gui_task (void)
 	case Gui_BMS:
 		fkt_BMS();
 		break;
+	case Gui_GPS:
+		fkt_GPS();
+		break;
 	default:
 		break;
 	}
@@ -134,6 +137,21 @@ void fkt_Initscreen (void)
 
 void fkt_Vario (void)
 {
+
+	float temp1 = (uint32_t)p_ipc_gui_gps_data->time_utc / 10000;
+	float temp2 = ((uint32_t)p_ipc_gui_gps_data->time_utc - (temp1) * 10000) / 100;
+	float temp3 = (uint32_t)p_ipc_gui_gps_data->time_utc - (uint32_t)temp1 * 10000 - (uint32_t)temp2 * 100;
+
+	lcd_set_cursor(190, 8);
+	lcd_set_fontsize(1);
+	lcd_num2buffer(temp1,2);
+	lcd_string2buffer(":");
+	lcd_num2buffer(temp2,2);
+	lcd_string2buffer(":");
+	lcd_num2buffer(temp3,2);
+
+
+
 	lcd_set_cursor(0, 16);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
@@ -314,6 +332,139 @@ void fkt_BMS(void)
 		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
 		{
 		case 0:		// next screen
+			menu = Gui_GPS;
+			break;
+		case 1:
+			Gui_cmd.did = did_BMS;
+			Gui_cmd.cmd = GUI_cmd_OTG_ON;
+			Gui_cmd.timestamp = TIM5->CNT;
+			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			break;
+		case 2:
+			Gui_cmd.did = did_BMS;
+			Gui_cmd.cmd = GUI_cmd_OTG_OFF;
+			Gui_cmd.timestamp = TIM5->CNT;
+			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
+
+	}
+}
+
+
+void fkt_GPS(void)
+{
+	uint8_t y 	= 0;
+#define	ls	10		// Line step width
+#define	c1	100		// y Value of Value Column
+
+	// Set Fontsize
+	lcd_set_fontsize(1);
+
+	// Write Data to Screen
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Fix Status: ");
+	lcd_set_cursor(c1, y);
+
+	if (p_ipc_gui_gps_data->fix != 0)
+		lcd_string2buffer("Fix");
+	else
+		lcd_string2buffer("No Fix");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Latitude: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->lat,4,4);
+
+	if(p_ipc_gui_gps_data->lat > 0)
+		lcd_string2buffer(" North");
+	else
+		lcd_string2buffer(" South");
+
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Longitude: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->lon,5,4);
+
+	if(p_ipc_gui_gps_data->lon > 0)
+		lcd_string2buffer(" East");
+	else
+		lcd_string2buffer(" West");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("MSL: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
+	lcd_string2buffer(" m");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Num Sat: ");
+	lcd_set_cursor(c1, y);
+	lcd_num2buffer ((unsigned long)p_ipc_gui_gps_data->n_sat,2);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("UTC:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->time_utc,6,2);
+	lcd_string2buffer(" s");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("GPS vel:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->speed_kmh,2,1);
+	lcd_string2buffer(" kmh");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("AltRef:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->Altref,4,4);
+	lcd_string2buffer(" m");
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("HDOP:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->HDOP,4,4);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("HDG:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg,3,1);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("MSG CNT:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->msg_cnt,6,0);
+
+
+
+
+
+	testipc = ipc_get_queue_bytes(did_KEYPAD);
+
+	// Keypad
+	while(testipc > 4) 				// look for new command in keypad queue
+	{
+		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
+		testipc = ipc_get_queue_bytes(did_KEYPAD);
+		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		{
+		case 0:		// next screen
 			menu = Gui_Vario;
 			break;
 		case 1:
@@ -336,6 +487,7 @@ void fkt_BMS(void)
 
 	}
 }
+
 
 
 

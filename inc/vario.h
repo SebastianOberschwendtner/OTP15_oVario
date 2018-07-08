@@ -14,12 +14,14 @@
 #include "did.h"
 
 //*********** Defines **************
-
-
+#define pi 			3.1415926
+#define r_earth		6378137
 
 //*********** Functions **************
 void vario_init (void);
 void vario_task (void);
+
+float vario_wgs84_distance(float lat1, float lon1, float lat2, float lon2);
 
 
 #endif /* VARIO_H_ */

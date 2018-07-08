@@ -162,6 +162,7 @@ void gps_init (){
 
 
 	p_GPS_data = ipc_memory_register(50, did_GPS);
+	p_GPS_data->msg_cnt = 0;
 }
 
 
@@ -169,8 +170,8 @@ void gps_init (){
 uint8_t cnt 		= 0;
 //uint8_t new_flag 	= 0;
 uint8_t decflag 	= 1;
-uint8_t predec[5];
-uint8_t dedec[5];
+uint8_t predec[10];
+uint8_t dedec[10];
 uint8_t predeccnt = 0;
 uint8_t dedeccnt = 0;
 
@@ -214,115 +215,32 @@ void gps_task ()
 
 				if((*((uint8_t*)pDMABuff + (Rd_Idx + msg_cnt2) % dma_buf_size)) == 0x0A)	// find end of message
 				{
-					test1 = *((uint8_t*)pDMABuff + (msg_cnt + Rd_Idx) % dma_buf_size);
-					test2 = *((uint8_t*)pDMABuff + (msg_cnt2 + Rd_Idx) % dma_buf_size);
-
 					// Parse message
 					for (uint8_t cnt = 0; cnt < (msg_cnt2 - msg_cnt + 1); cnt++)	// copy message to buffer
 					{
 						msg_buff[cnt] = *((uint8_t*)pDMABuff + (msg_cnt + Rd_Idx + cnt)%dma_buf_size);
 					}
 
-					if((p_HDR_nmea->msgContID[0]== 'V') &&
+
+					// Handle VTG Message
+					if(		(p_HDR_nmea->msgContID[0]== 'V') &&
 							(p_HDR_nmea->msgContID[1]== 'T') &&
 							(p_HDR_nmea->msgContID[2]== 'G'))
 					{
-						test3 = p_HDR_nmea->msgContID[0];
-						test4 = p_HDR_nmea->msgContID[1];
-						test5 = p_HDR_nmea->msgContID[2];
-
-
-
-						cnt = 6;
-						while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
-						{
-
-							if(msg_buff[cnt] == ',') // Wenn Komma, �berspringen
-							{
-								;
-							}
-							else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
-							{
-								decflag = 1;
-								predeccnt = 0;
-								dedeccnt = 0;
-								while(msg_buff[cnt] != ',')
-								{
-									if(msg_buff[cnt] == '.')
-									{
-										decflag = 0;
-									}
-									else
-									{
-										if(decflag == 1)
-										{
-											predec[predeccnt] = msg_buff[cnt]; 			// Vorkommastellen
-											predeccnt++;
-										}
-										else
-										{
-											dedec[dedeccnt] = msg_buff[cnt];			// Nachkommastellen
-											dedeccnt++;
-										}
-									}
-
-									cnt++;
-
-								}
-								// Zahl done
-								uint32_t pow = 10;
-								value = 0;
-								value2 = 0;
-
-								for(uint8_t fcnt = 0; fcnt < predeccnt; fcnt++)
-								{
-									uint8_t temptest2 = predec[predeccnt - fcnt - 1]-48;
-									value2 += ((float)temptest2)*(pow/10);
-									pow *= 10;
-								}
-
-								pow = 10;
-
-								for(uint8_t fcnt2 = 0; fcnt2 < dedeccnt; fcnt2++)
-								{
-									uint8_t temptest = dedec[fcnt2]-48;
-									value += ((float)temptest)/(pow);
-									pow *= 10;
-								}
-
-								value = value + value2;
-								set_led_green(TOGGLE);
-
-							}
-							else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
-							{
-								uint8_t id = msg_buff[cnt];
-								switch(id)
-								{
-								case 'K':
-									p_GPS_data->speed_kmh = value;
-									break;
-								case 'T':
-									if(value <900)
-										p_GPS_data->heading_deg = value;
-									break;
-								case 'A':
-									p_GPS_data->fix = true;
-									break;
-								case 'V':
-									p_GPS_data->fix = false;
-									break;
-
-								default:
-									break;
-								}
-								value = 999;
-
-							}
-
-							cnt++;
-						}
+						p_GPS_data->msg_cnt++;
+						gps_handle_vtg();
 					}
+
+					// Handle VTG Message
+					if(		(p_HDR_nmea->msgContID[0]== 'G') &&
+							(p_HDR_nmea->msgContID[1]== 'G') &&
+							(p_HDR_nmea->msgContID[2]== 'A'))
+					{
+						volatile uint16_t msglen = (msg_cnt2 - msg_cnt + dma_buf_size)%dma_buf_size;
+						p_GPS_data->msg_cnt = (float)msglen;
+						gps_handle_gga();
+					}
+
 
 
 					Rd_Idx = (Rd_Idx + msg_cnt2  + 1) % dma_buf_size;
@@ -342,7 +260,7 @@ void gps_task ()
 
 
 
-
+// DMAInterrupt Handling
 void DMA1_Stream1_IRQHandler(void) // USART3_RX
 {
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_FEIF1))
@@ -364,16 +282,217 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
 	{
 		Wr_Idx = (Wr_Idx + dma_buf_size / 4) % dma_buf_size;
-		/*Rd_Cnt = (Rd_Cnt + dma_buf_size / 4);
 
-
-		if(Rd_Cnt > dma_buf_size)
-		{
-			Rd_Cnt = dma_buf_size;
-			Rd_Idx = (Wr_Idx + 1) % dma_buf_size ;
-		}
-		 */
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
+	}
+}
+
+
+
+// get float number from msg buff
+float gps_getf()
+{
+	float val = 0;
+	float val2 = 0;
+
+	decflag = 1;
+	predeccnt = 0;
+	dedeccnt = 0;
+	while(msg_buff[cnt] != ',')
+	{
+		if(msg_buff[cnt] == '.')
+		{
+			decflag = 0;
+		}
+		else
+		{
+			if(decflag == 1)
+			{
+				predec[predeccnt] = msg_buff[cnt]; 			// Vorkommastellen
+				predeccnt++;
+			}
+			else
+			{
+				dedec[dedeccnt] = msg_buff[cnt];			// Nachkommastellen
+				dedeccnt++;
+			}
+		}
+		cnt++;
+	}
+	cnt--;
+	// Zahl done
+	uint32_t pow = 10;
+	val = 0;
+	val2 = 0;
+
+	for(uint8_t fcnt = 0; fcnt < predeccnt; fcnt++)
+	{
+		uint8_t temptest2 = predec[predeccnt - fcnt - 1]-48;
+		val2 += ((float)temptest2)*(pow/10);
+		pow *= 10;
+	}
+
+	pow = 10;
+
+	for(uint8_t fcnt2 = 0; fcnt2 < dedeccnt; fcnt2++)
+	{
+		uint8_t temptest = dedec[fcnt2]-48;
+		val += ((float)temptest)/(pow);
+		pow *= 10;
+	}
+
+	val = val + val2;
+
+	return val;
+}
+
+// Handle gga message
+void gps_handle_gga()
+{
+	int8_t field_cnt = 0;
+	uint8_t id = 0;
+	cnt = 7;
+	while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
+	{
+		if(msg_buff[cnt] == ',') // Wenn Komma, ueberspringen
+		{
+			field_cnt++;
+		}
+		else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
+		{
+			value = gps_getf();
+		}
+		else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
+		{
+			id = msg_buff[cnt];
+		}
+
+		if(msg_buff[cnt] == ',')
+		{
+			switch(field_cnt)
+			{
+			case 1:
+				p_GPS_data->time_utc = value;
+				break;
+
+			case 3:
+				if(id == 'N')
+					p_GPS_data->lat = value;
+				if(id == 'S')
+					p_GPS_data->lat = -value;
+				break;
+
+			case 5:
+				if(id == 'E')
+					p_GPS_data->lon = value;
+				if(id == 'W')
+					p_GPS_data->lon = -value;
+				break;
+
+			case 7:
+				p_GPS_data->n_sat = (uint8_t)value;
+				break;
+
+			case 8:
+				p_GPS_data->HDOP = value;
+				break;
+
+			case 9:
+				p_GPS_data->msl = value;
+				break;
+
+			case 11:
+				p_GPS_data->Altref = value;
+				break;
+
+			default:
+				break;
+			}
+		}
+
+
+
+		cnt++;
+	}
+}
+//cnt = 6;
+//						while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
+//						{
+//
+//							if(msg_buff[cnt] == ',') // Wenn Komma, ueberspringen
+//							{
+//								;
+//							}
+//							else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
+//							{
+//								value = gps_getf();
+//							}
+//							else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
+//							{
+//								uint8_t id = msg_buff[cnt];
+//								switch(id)
+//								{
+//								case 'K':
+//									p_GPS_data->speed_kmh = value;
+//									break;
+//								case 'T':
+//									if(value < 900)
+//										p_GPS_data->heading_deg = value;
+//									break;
+//								case 'A':
+//									p_GPS_data->fix = true;
+//									break;
+//								case 'V':
+//									p_GPS_data->fix = false;
+//									break;
+//								default:
+//									break;
+//								}
+//								value = 999;
+//							}
+//							cnt++;
+//						}
+//}
+
+// Handle vtg message
+void gps_handle_vtg()
+{
+	cnt = 6;
+	while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
+	{
+
+		if(msg_buff[cnt] == ',') // Wenn Komma, ueberspringen
+		{
+			;
+		}
+		else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
+		{
+			value = gps_getf();
+		}
+		else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
+		{
+			uint8_t id = msg_buff[cnt];
+			switch(id)
+			{
+			case 'K':
+				p_GPS_data->speed_kmh = value;
+				break;
+			case 'T':
+				if(value < 900)
+					p_GPS_data->heading_deg = value;
+				break;
+			case 'A':
+				p_GPS_data->fix = true;
+				break;
+			case 'V':
+				p_GPS_data->fix = false;
+				break;
+			default:
+				break;
+			}
+			value = 999;
+		}
+		cnt++;
 	}
 }

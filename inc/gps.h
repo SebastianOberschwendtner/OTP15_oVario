@@ -16,4 +16,10 @@
 void gps_init ();
 void gps_task ();
 
+float gps_getf();
+
+void gps_handle_vtg();
+void gps_handle_gga();
+
+
 #endif /* GPS_H_ */
