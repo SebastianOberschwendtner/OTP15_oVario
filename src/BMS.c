@@ -93,32 +93,42 @@ void init_BMS(void)
 	 * -Out-of-audio enable
 	 */
 	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_0_addr,
-			(PWM_FREQ | IADPT_GAIN | IBAT_GAIN | EN_OOA));
+			(PWM_FREQ | IADPT_GAIN | IBAT_GAIN));
+
+	/*
+	 * Set Charge Option 1 register
+	 */
+	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_1_addr,0);
+	/*
+	 * Set Charge Option 2 register
+	 */
+	//i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_2_addr,0);
+
 	/*
 	 * Set ADC options:
 	 * 	-One shot update
 	 * 	-Enable VBAT, VBUS, I_IN, I_charge, I_Discharge
 	 */
 	i2c_send_int_register_LSB(i2c_addr_BMS,ADC_OPTION_addr,
-			(EN_ADC_VBAT | EN_ADC_VBUS | EN_ADC_IIN | EN_LDO | EN_ADC_ICHG | EN_ADC_IDCHG));
+			(EN_ADC_VBAT | EN_ADC_VBUS | EN_ADC_IIN | EN_ADC_ICHG | EN_ADC_IDCHG));
 
 	/*
 	 * Set max charge voltage
 	 * Resolution is 16 mV with this formula:
-	 * VMAX = Register * 16 mV/bit + 1024
+	 * VMAX = Register * 16 mV/bit
 	 *
 	 * The 11-bit value is bitshifted by 4
 	 */
-	i2c_send_int_register_LSB(i2c_addr_BMS,MAX_CHARGE_VOLTAGE_addr,(((MAX_BATTERY_VOLTAGE-1024)/16)<<4));
+	i2c_send_int_register_LSB(i2c_addr_BMS,MAX_CHARGE_VOLTAGE_addr,(((MAX_BATTERY_VOLTAGE)/16)<<4));
 
 	/*
 	 * Set min sys voltage
 	 * Resolution is 256 mV with this formula:
-	 * VMIN = Register * 256 mV/bit + 1024
+	 * VMIN = Register * 256 mV/bit
 	 *
 	 * The 6-bit value is bitshifted by 8
 	 */
-	i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE-1024)/256)<<8));
+//		i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE)/256)<<8));
 
 	/*
 	 * Set max input current
@@ -133,7 +143,7 @@ void init_BMS(void)
 	pBMS = ipc_memory_register(49,did_BMS);
 
 	//Set charging current
-	pBMS->max_charge_current = 2000;
+	pBMS->max_charge_current = 800;
 
 	//Set OTG parameters
 	pBMS->otg_voltage = OTG_VOLTAGE;
@@ -389,6 +399,9 @@ void BMS_charge_start(void)
 				if(pBMS->max_charge_current > 8128)
 					pBMS->max_charge_current = 8128;
 
+				//Set max charge voltage
+				i2c_send_int_register_LSB(i2c_addr_BMS,MAX_CHARGE_VOLTAGE_addr,(((MAX_BATTERY_VOLTAGE)/16)<<4));
+				//Set charge current
 				i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((pBMS->max_charge_current/64)<<6));
 			}
 		}
