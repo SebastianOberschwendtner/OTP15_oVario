@@ -98,7 +98,12 @@ typedef struct{
 	float msl;
 	float Altref;
 	uint8_t fix;
-	float msg_cnt;
+	float Rd_cnt;
+	float Rd_Idx;
+	float currentDMA;
+	float hours;
+	float min;
+	float sec;
 }GPS_T;
 #pragma pack(pop)
 

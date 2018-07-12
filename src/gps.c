@@ -12,7 +12,7 @@
 #include "did.h"
 #include "oVario_Framework.h"
 #include "Variables.h"
-//Git ist scheiße!
+
 // Variables
 #pragma pack(push, 1)
 typedef struct{
@@ -29,9 +29,43 @@ typedef struct{
 	uint16_t checksum;
 }T_VTG_nmea;
 
+typedef struct{
+	uint16_t sync;
+	uint8_t class;
+	uint8_t id;
+	uint16_t length;
+}T_UBX_hdr;
+
+typedef struct{
+	uint32_t 	iTow;		// GPS Millisecond Time of Week
+	int32_t		velN;		// NED north velocity
+	int32_t		velE;		// NED east velocity
+	int32_t		velD;		// NED down velocity
+	uint32_t 	speed;		// Speed (3-D)
+	uint32_t 	gspeed;		// Ground Speed (2-D)
+	int32_t 	heading;	// Heading of motion 2-D
+	uint32_t 	sAcc;		// Speed Accuracy Estimate
+	uint32_t 	cAcc;		// Course / Heading Accuracy Estimate
+}T_UBX_VELNED;
+
+
+typedef struct{
+	uint32_t 	iTow;
+	uint32_t 	fTow;
+	uint16_t 	week;
+	uint8_t		GPSFix;
+}T_UBX_SOL;
+
+typedef struct{
+	uint32_t iTow;
+	int32_t lon;
+	int32_t lat;
+	int32_t height;	// Above Ellipsoid
+	int32_t hMSL;	// MSL
+	uint32_t hAcc;
+	uint32_t vAcc;
+}T_UBX_POSLLH;
 #pragma pack(pop)
-
-
 
 
 uint8_t msg_buff[255];
@@ -44,6 +78,7 @@ GPS_T *p_GPS_data;
 void *pDMABuff;
 uint8_t DMABuff[dma_buf_size];
 
+T_UBX_hdr *UBX_beg;
 
 
 uint32_t			Rd_Idx = 0;
@@ -61,15 +96,15 @@ float value2 = 1000;
 
 // ***** Functions *****
 
-void gps_init (){
+void gps_init ()
+{
 
-	pDMABuff = ipc_memory_register(dma_buf_size, did_GPS);
+	// get memory
+	pDMABuff 	= ipc_memory_register(dma_buf_size, did_GPS_DMA);
+	p_GPS_data 	= ipc_memory_register(80, did_GPS);
 
-
-	//Sbus_data = (struct Ausgabe*)Sbus_Buffer;
 
 	GPIO_InitTypeDef GPIO_InitStructure;
-	USART_InitTypeDef USART_InitStructure;
 
 	/* USART IOs configuration ***********************************/
 	/* Enable GPIOC clock */
@@ -90,17 +125,10 @@ void gps_init (){
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 
-	/* USART configuration ***************************************/
-	/* USART3 configured as follow:
-		- BaudRate = 9600 baud
-		- Word Length = 8 Bits
-		- 1 Stop Bit
-		- Even parity
-		- Hardware flow control disabled (RTS and CTS signals)
-		- Receive and transmit enabled
-	 */
 	/* Enable USART3 clock */
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+
+	USART_InitTypeDef USART_InitStructure;
 	USART_InitStructure.USART_BaudRate 				= 9600;
 	USART_InitStructure.USART_WordLength 			= USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits 				= USART_StopBits_1;
@@ -109,13 +137,10 @@ void gps_init (){
 	USART_InitStructure.USART_Mode 					= USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(USART3, &USART_InitStructure);
 
-
 	/* Enable USART3 */
 	USART_Cmd(USART3, ENABLE);
 
 	NVIC_InitTypeDef NVIC_InitStructure;
-
-
 
 	// Configure the Priority Group to 2 bits */
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
@@ -148,7 +173,7 @@ void gps_init (){
 	DMA_InitStructure.DMA_Channel 				= DMA_Channel_4;
 	DMA_InitStructure.DMA_DIR 					= DMA_DIR_PeripheralToMemory;
 	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)pDMABuff;
-	//DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)&DMABuff[0];
+	//	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)&DMABuff[0];
 	DMA_Init(DMA1_Stream1,&DMA_InitStructure);
 
 	// Enable DMA Stream Transfer Complete interrupt */
@@ -161,14 +186,16 @@ void gps_init (){
 	DMA_Cmd(DMA1_Stream1, ENABLE);
 
 
-	p_GPS_data = ipc_memory_register(50, did_GPS);
-	p_GPS_data->msg_cnt = 0;
+	p_GPS_data->Rd_Idx 	= 0;
+	p_GPS_data->Rd_cnt = 0;
+	p_GPS_data->currentDMA = 0;
+
+
+	// Config GPS
+	gps_config();
 }
 
-
-
 uint8_t cnt 		= 0;
-//uint8_t new_flag 	= 0;
 uint8_t decflag 	= 1;
 uint8_t predec[10];
 uint8_t dedec[10];
@@ -176,91 +203,254 @@ uint8_t predeccnt = 0;
 uint8_t dedeccnt = 0;
 
 uint8_t deccnt = 0;
-uint8_t gnflag = 0;
 
 uint16_t currentDMA = 0;
 uint16_t lastDMA = 0;
 
-uint8_t test = 0;
-uint16_t test02 = 0;
+
+uint8_t buff[50];
+
+
+void* ptr = 0;
 
 void gps_task ()
 {
+	// Something else
+	volatile uint16_t msg_cnt = 0;
+
+	currentDMA = dma_buf_size - DMA_GetCurrDataCounter(DMA1_Stream1);	// get current pos of dma pointer
+
+	Rd_Cnt += (currentDMA + dma_buf_size - lastDMA) % dma_buf_size;		// Increase Rd_Cnt for additional bytes
+
+	if(Rd_Cnt > dma_buf_size) Rd_Cnt = dma_buf_size;					// Limit Rd_Cnt to DMA Buff Size
+
+	lastDMA = currentDMA;												// Save position of DMA counter for next round
+
+	Rd_Idx = (dma_buf_size + currentDMA - Rd_Cnt) % dma_buf_size;		// calc Rd_Idx position
 
 
-	uint16_t msg_cnt = 0;
-	uint16_t msg_cnt2 = 0;
-
-	currentDMA = dma_buf_size - DMA_GetCurrDataCounter(DMA1_Stream1);
-
-	Rd_Cnt += (currentDMA + dma_buf_size - lastDMA) % dma_buf_size;
-
-	if(Rd_Cnt > dma_buf_size) Rd_Cnt = dma_buf_size;
-	lastDMA = currentDMA;
-
-
-
-
-
-
-
-
-	while(msg_cnt <= Rd_Cnt)
+	for(msg_cnt = 0; msg_cnt < Rd_Cnt; msg_cnt++)
 	{
-		if((*((uint8_t*)pDMABuff + (Rd_Idx + msg_cnt) % dma_buf_size)) == '$')	// find beginning of message
+		UBX_beg = (T_UBX_hdr*)(pDMABuff + ((msg_cnt + Rd_Idx) % dma_buf_size));		// Put on Mask
+
+		if(UBX_beg->sync == 0x62B5)	// look for beginning of message
 		{
-			msg_cnt2 = msg_cnt;
-			while(msg_cnt2 <= Rd_Cnt)
+			if((Rd_Cnt - msg_cnt) > (UBX_beg->length + 8))
 			{
-
-				if((*((uint8_t*)pDMABuff + (Rd_Idx + msg_cnt2) % dma_buf_size)) == 0x0A)	// find end of message
+				for(uint8_t mcnt = 0; mcnt < UBX_beg->length; mcnt++)	// copy to buffer for debugging
 				{
-					// Parse message
-					for (uint8_t cnt = 0; cnt < (msg_cnt2 - msg_cnt + 1); cnt++)	// copy message to buffer
-					{
-						msg_buff[cnt] = *((uint8_t*)pDMABuff + (msg_cnt + Rd_Idx + cnt)%dma_buf_size);
-					}
-
-
-					// Handle VTG Message
-					if(		(p_HDR_nmea->msgContID[0]== 'V') &&
-							(p_HDR_nmea->msgContID[1]== 'T') &&
-							(p_HDR_nmea->msgContID[2]== 'G'))
-					{
-						p_GPS_data->msg_cnt++;
-						gps_handle_vtg();
-					}
-
-					// Handle VTG Message
-					if(		(p_HDR_nmea->msgContID[0]== 'G') &&
-							(p_HDR_nmea->msgContID[1]== 'G') &&
-							(p_HDR_nmea->msgContID[2]== 'A'))
-					{
-						volatile uint16_t msglen = (msg_cnt2 - msg_cnt + dma_buf_size)%dma_buf_size;
-						p_GPS_data->msg_cnt = (float)msglen;
-						gps_handle_gga();
-					}
-
-
-
-					Rd_Idx = (Rd_Idx + msg_cnt2  + 1) % dma_buf_size;
-					msg_cnt = 0;
-					msg_cnt2 = 0;
-
-					Rd_Cnt = Rd_Cnt - msg_cnt2;// if message found, decrease rd cnt
-					break;
+					msg_buff[mcnt] = *(uint8_t*)(pDMABuff + ((msg_cnt + Rd_Idx + mcnt + 6) % dma_buf_size));
 				}
-				msg_cnt2++;
+
+				Rd_Cnt--;
+
+				// look which class in message
+				switch(UBX_beg->class)
+				{
+				case nav:
+					gps_handle_nav();
+					break;
+				default:
+					;
+				}
 			}
-			break;
+			else
+			{
+				break;
+			}
 		}
-		msg_cnt++;
+		else
+		{
+			Rd_Cnt--;
+		}
+	}
+
+
+	p_GPS_data->Rd_Idx = (float)Rd_Idx;
+	p_GPS_data->Rd_cnt = (float)Rd_Cnt;
+	p_GPS_data->currentDMA = (float)currentDMA;
+}
+
+
+
+// Handle GPS NAV
+void gps_handle_nav()
+{
+	T_UBX_VELNED* pVN;
+	T_UBX_SOL* pSOL;
+	T_UBX_POSLLH* pPOS;
+	switch(UBX_beg->id)
+	{
+	case velned:
+		pVN = (void*)&msg_buff[0];
+		p_GPS_data->speed_kmh 	= (float)pVN->gspeed * 3.6/100;
+		p_GPS_data->heading_deg = (float)pVN->heading / 100000;
+
+		uint32_t temp = pVN->iTow/1000;
+		p_GPS_data->sec = (float)(temp % 60);
+		p_GPS_data->min = (float)((temp - (uint32_t)p_GPS_data->sec) / 60 % 60);
+		p_GPS_data->hours   = (float)(((temp - (uint32_t)p_GPS_data->sec - (uint32_t)p_GPS_data->min * 60) / 3600 + 2) % 24);
+		break;
+	case sol:
+		pSOL = (void*)&msg_buff[0];
+		p_GPS_data->fix = pSOL->GPSFix;
+		break;
+	case posllh:
+		pPOS = (void*)&msg_buff[0];
+		p_GPS_data->lat = ((float)pPOS->lat)/10000000;
+		p_GPS_data->lon = ((float)pPOS->lon)/10000000;
+		p_GPS_data->msl = ((float)pPOS->hMSL)/1000;
+		break;
+	default:
+		;
+	}
+}
+
+
+void gps_config()
+{
+	// Poll CFG PORT
+	buff[0] = 0xB5;		// Sync
+	buff[1] = 0x62;		// Sync
+	buff[2] = 0x06;		// Class
+	buff[3] = 0x00;		// ID
+
+	buff[4] = 0x00;		// Length
+	buff[5] = 0x00;		// Length
+
+	// Checksum
+	uint8_t CK_A 	= 0;
+	uint8_t CK_B 	= 0;
+
+	for(uint8_t I = 2; I < 6 ; I++)
+	{
+		CK_A = CK_A + buff[I];
+		CK_B = CK_B + CK_A;
+	}
+
+	buff[6] = CK_A;
+	buff[7] = CK_B;
+
+	//gps_send_bytes(buff, 8);
+
+
+
+	buff[4] = 20;		// Length
+	buff[5] = 0x00;		// Length
+
+	buff[6] = 1;
+	buff[7] = 0;
+	buff[8] = 0;
+	buff[9] = 0;
+
+	*((uint32_t*)&buff[10]) = 0x000008D0;
+
+	*((uint32_t*)&buff[14]) = 9600;
+
+	buff[18] = 0x01; // inProtoMask X2 bitfield
+	buff[19] = 0x00;
+
+	buff[20] = 0x01; // outProtoMask X2 bitfield
+	buff[21] = 0x00;
+
+	buff[22] = 0; // U2 unsigned short
+	buff[23] = 0;
+
+	buff[24] = 0; // U2 unsigned short
+	buff[25] = 0;
+
+	// Checksum
+	CK_A 	= 0;
+	CK_B 	= 0;
+
+	for(uint8_t I = 2; I < 26; I++)
+	{
+		CK_A = CK_A + buff[I];
+		CK_B = CK_B + CK_A;
+	}
+
+	buff[26] = CK_A;
+	buff[27] = CK_B;
+	gps_send_bytes(buff, 28);
+
+
+	//	gps_set_baud(115200);
+
+	wait_ms(100);
+
+		gps_set_msg_rate(nav, posllh, 1);
+		wait_ms(60);
+
+	//	gps_set_msg_rate(nav, timeutc, 1);
+	//	wait_ms(60);
+
+	//	gps_set_msg_rate(nav, clock, 1);
+	//	wait_ms(60);
+	//
+	gps_set_msg_rate(nav, sol, 1);
+	wait_ms(60);
+
+	gps_set_msg_rate(nav, velned, 1);
+	wait_ms(60);
+
+	//	gps_set_msg_rate(nav, svinfo, 1);
+	//	wait_ms(60);
+
+	//	gps_set_msg_rate(mon, hw, 1);
+	//	wait_ms(60);
+}
+
+
+
+void gps_set_msg_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate)
+{
+
+	// Set MSG Rate
+	buff[0] = 0xB5;			// Sync
+	buff[1] = 0x62;			// Sync
+	buff[2] = 0x06;			// Class
+	buff[3] = 0x01;			// ID
+
+	buff[4] = 3;			// Length
+	buff[5] = 0x00;			// Length
+
+	buff[6] = msg_class;	// msg class
+	buff[7] = msg_id;		// msg id
+
+	buff[8] = rate;			// rate
+
+
+	// Checksum
+	uint8_t CK_A 	= 0;
+	uint8_t CK_B 	= 0;
+
+	for(uint8_t I = 2; I < 9 ; I++)
+	{
+		CK_A = CK_A + buff[I];
+		CK_B = CK_B + CK_A;
+	}
+
+	buff[9] = CK_A;
+	buff[10] = CK_B;
+
+	gps_send_bytes(buff, 11);
+}
+
+
+void gps_send_bytes(void* ptr, uint8_t no_bytes)
+{
+	for(uint8_t i = 0; i < no_bytes; i++)
+	{
+		while(USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);	// wait for TX Data empty
+		USART_SendData(USART3, *(uint8_t*)(ptr + i));					// send data
 	}
 }
 
 
 
-// DMAInterrupt Handling
+
+
+//***** DMAInterrupt Handling *****
 void DMA1_Stream1_IRQHandler(void) // USART3_RX
 {
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_FEIF1))
@@ -269,14 +459,11 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_FEIF1);
 	}
 
-
-
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_HTIF1))
 	{
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_HTIF1);
 	}
-
 
 	/* Test on DMA Stream Transfer Complete interrupt */
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
@@ -290,209 +477,20 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
 
 
 
-// get float number from msg buff
-float gps_getf()
+
+void gps_set_baud(unsigned int baud)
 {
-	float val = 0;
-	float val2 = 0;
+	USART_Cmd(USART3, DISABLE);
 
-	decflag = 1;
-	predeccnt = 0;
-	dedeccnt = 0;
-	while(msg_buff[cnt] != ',')
-	{
-		if(msg_buff[cnt] == '.')
-		{
-			decflag = 0;
-		}
-		else
-		{
-			if(decflag == 1)
-			{
-				predec[predeccnt] = msg_buff[cnt]; 			// Vorkommastellen
-				predeccnt++;
-			}
-			else
-			{
-				dedec[dedeccnt] = msg_buff[cnt];			// Nachkommastellen
-				dedeccnt++;
-			}
-		}
-		cnt++;
-	}
-	cnt--;
-	// Zahl done
-	uint32_t pow = 10;
-	val = 0;
-	val2 = 0;
+	USART_DeInit(USART3);
+	USART_InitTypeDef USART_InitStructure;
+	USART_InitStructure.USART_BaudRate 				= baud;
+	USART_InitStructure.USART_WordLength 			= USART_WordLength_8b;
+	USART_InitStructure.USART_StopBits 				= USART_StopBits_1;
+	USART_InitStructure.USART_Parity 				= USART_Parity_No;
+	USART_InitStructure.USART_HardwareFlowControl 	= USART_HardwareFlowControl_None;
+	USART_InitStructure.USART_Mode 					= USART_Mode_Rx | USART_Mode_Tx;
+	USART_Init(USART3, &USART_InitStructure);
 
-	for(uint8_t fcnt = 0; fcnt < predeccnt; fcnt++)
-	{
-		uint8_t temptest2 = predec[predeccnt - fcnt - 1]-48;
-		val2 += ((float)temptest2)*(pow/10);
-		pow *= 10;
-	}
-
-	pow = 10;
-
-	for(uint8_t fcnt2 = 0; fcnt2 < dedeccnt; fcnt2++)
-	{
-		uint8_t temptest = dedec[fcnt2]-48;
-		val += ((float)temptest)/(pow);
-		pow *= 10;
-	}
-
-	val = val + val2;
-
-	return val;
-}
-
-// Handle gga message
-void gps_handle_gga()
-{
-	int8_t field_cnt = 0;
-	uint8_t id = 0;
-	cnt = 7;
-	while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
-	{
-		if(msg_buff[cnt] == ',') // Wenn Komma, ueberspringen
-		{
-			field_cnt++;
-		}
-		else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
-		{
-			value = gps_getf();
-		}
-		else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
-		{
-			id = msg_buff[cnt];
-		}
-
-		if(msg_buff[cnt] == ',')
-		{
-			switch(field_cnt)
-			{
-			case 1:
-				p_GPS_data->time_utc = value;
-				break;
-
-			case 3:
-				if(id == 'N')
-					p_GPS_data->lat = value;
-				if(id == 'S')
-					p_GPS_data->lat = -value;
-				break;
-
-			case 5:
-				if(id == 'E')
-					p_GPS_data->lon = value;
-				if(id == 'W')
-					p_GPS_data->lon = -value;
-				break;
-
-			case 7:
-				p_GPS_data->n_sat = (uint8_t)value;
-				break;
-
-			case 8:
-				p_GPS_data->HDOP = value;
-				break;
-
-			case 9:
-				p_GPS_data->msl = value;
-				break;
-
-			case 11:
-				p_GPS_data->Altref = value;
-				break;
-
-			default:
-				break;
-			}
-		}
-
-
-
-		cnt++;
-	}
-}
-//cnt = 6;
-//						while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
-//						{
-//
-//							if(msg_buff[cnt] == ',') // Wenn Komma, ueberspringen
-//							{
-//								;
-//							}
-//							else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
-//							{
-//								value = gps_getf();
-//							}
-//							else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
-//							{
-//								uint8_t id = msg_buff[cnt];
-//								switch(id)
-//								{
-//								case 'K':
-//									p_GPS_data->speed_kmh = value;
-//									break;
-//								case 'T':
-//									if(value < 900)
-//										p_GPS_data->heading_deg = value;
-//									break;
-//								case 'A':
-//									p_GPS_data->fix = true;
-//									break;
-//								case 'V':
-//									p_GPS_data->fix = false;
-//									break;
-//								default:
-//									break;
-//								}
-//								value = 999;
-//							}
-//							cnt++;
-//						}
-//}
-
-// Handle vtg message
-void gps_handle_vtg()
-{
-	cnt = 6;
-	while((msg_buff[cnt] != '*')&&(cnt < 255)) 					// Solange vor Checksumme
-	{
-
-		if(msg_buff[cnt] == ',') // Wenn Komma, ueberspringen
-		{
-			;
-		}
-		else if((msg_buff[cnt] >= 48)&&(msg_buff[cnt] <= 57)) // Wenn Zahl, dann hole Zahl
-		{
-			value = gps_getf();
-		}
-		else if((msg_buff[cnt] >= 64)) // If Buchstabe, do something special
-		{
-			uint8_t id = msg_buff[cnt];
-			switch(id)
-			{
-			case 'K':
-				p_GPS_data->speed_kmh = value;
-				break;
-			case 'T':
-				if(value < 900)
-					p_GPS_data->heading_deg = value;
-				break;
-			case 'A':
-				p_GPS_data->fix = true;
-				break;
-			case 'V':
-				p_GPS_data->fix = false;
-				break;
-			default:
-				break;
-			}
-			value = 999;
-		}
-		cnt++;
-	}
+	USART_Cmd(USART3, ENABLE);
 }

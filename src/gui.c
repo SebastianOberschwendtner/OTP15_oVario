@@ -13,7 +13,7 @@
 #include "Variables.h"
 
 //*********** Variables **************
-uint8_t menu = Gui_Vario;//Gui_Initscreen;
+uint8_t menu = Gui_Vario;
 uint8_t submenu = 0;
 datafusion_T* p_ipc_gui_df_data;
 GPS_T* p_ipc_gui_gps_data;
@@ -137,18 +137,18 @@ void fkt_Initscreen (void)
 
 void fkt_Vario (void)
 {
-
-	float temp1 = (uint32_t)p_ipc_gui_gps_data->time_utc / 10000;
-	float temp2 = ((uint32_t)p_ipc_gui_gps_data->time_utc - (temp1) * 10000) / 100;
-	float temp3 = (uint32_t)p_ipc_gui_gps_data->time_utc - (uint32_t)temp1 * 10000 - (uint32_t)temp2 * 100;
+//
+//	float temp1 = (uint32_t)p_ipc_gui_gps_data->time_utc / 10000;
+//	float temp2 = ((uint32_t)p_ipc_gui_gps_data->time_utc - (temp1) * 10000) / 100;
+//	float temp3 = (uint32_t)p_ipc_gui_gps_data->time_utc - (uint32_t)temp1 * 10000 - (uint32_t)temp2 * 100;
 
 	lcd_set_cursor(190, 8);
 	lcd_set_fontsize(1);
-	lcd_num2buffer(temp1,2);
+	lcd_num2buffer(p_ipc_gui_gps_data->hours,2);
 	lcd_string2buffer(":");
-	lcd_num2buffer(temp2,2);
+	lcd_num2buffer(p_ipc_gui_gps_data->min,2);
 	lcd_string2buffer(":");
-	lcd_num2buffer(temp3,2);
+	lcd_num2buffer(p_ipc_gui_gps_data->sec,2);
 
 
 
@@ -157,6 +157,11 @@ void fkt_Vario (void)
 	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" m");
+
+	lcd_set_cursor(100, 12);
+	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
+	lcd_string2buffer(" m MSL");
+
 
 	lcd_set_cursor(0, 36);
 	lcd_set_fontsize(2);
@@ -366,21 +371,23 @@ void fkt_GPS(void)
 	lcd_set_fontsize(1);
 
 	// Write Data to Screen
-	y +=ls;
+	y +=ls - 1;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Fix Status: ");
 	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->fix,1,0);
 
-	if (p_ipc_gui_gps_data->fix != 0)
-		lcd_string2buffer("Fix");
-	else
-		lcd_string2buffer("No Fix");
+
+//	if (p_ipc_gui_gps_data->fix != 0)
+//		lcd_string2buffer("Fix");
+//	else
+//		lcd_string2buffer("No Fix");
 
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Latitude: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->lat,4,4);
+	lcd_float2buffer(p_ipc_gui_gps_data->lat,3,7);
 
 	if(p_ipc_gui_gps_data->lat > 0)
 		lcd_string2buffer(" North");
@@ -392,7 +399,7 @@ void fkt_GPS(void)
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Longitude: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->lon,5,4);
+	lcd_float2buffer(p_ipc_gui_gps_data->lon,3,7);
 
 	if(p_ipc_gui_gps_data->lon > 0)
 		lcd_string2buffer(" East");
@@ -414,10 +421,20 @@ void fkt_GPS(void)
 
 	y +=ls;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("UTC:");
+	lcd_string2buffer("Time:");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->time_utc,6,2);
-	lcd_string2buffer(" s");
+//	lcd_float2buffer(p_ipc_gui_gps_data->time_utc,6,0);
+//	lcd_string2buffer(" s");
+//
+//	lcd_set_cursor(190, 8);
+//	lcd_set_fontsize(1);
+	lcd_num2buffer(p_ipc_gui_gps_data->hours,2);
+	lcd_string2buffer(":");
+	lcd_num2buffer(p_ipc_gui_gps_data->min,2);
+	lcd_string2buffer(":");
+	lcd_num2buffer(p_ipc_gui_gps_data->sec,2);
+
+
 
 	y +=ls;
 	lcd_set_cursor(0, y);
@@ -447,13 +464,21 @@ void fkt_GPS(void)
 
 	y +=ls;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("MSG CNT:");
+	lcd_string2buffer("MSG RdIdx:");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->msg_cnt,6,0);
+	lcd_float2buffer(p_ipc_gui_gps_data->Rd_Idx,6,0);
 
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("MSG Rd_cnt:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->Rd_cnt,6,0);
 
-
-
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("MSG current DMA:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);
 
 	testipc = ipc_get_queue_bytes(did_KEYPAD);
 
