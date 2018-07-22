@@ -126,7 +126,7 @@ void* ipc_queue_look(uint8_t did)
 
 
 // return no bytes in queue
-uint8_t ipc_get_queue_bytes(uint8_t did)
+uint16_t ipc_get_queue_bytes(uint8_t did)
 {
 	return queues[did].cnt;
 }

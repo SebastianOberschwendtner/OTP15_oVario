@@ -136,6 +136,7 @@
 #define SD_ERROR_FILE_ALLREADY_EXISTS	0x0C
 
 //*********** Functions **************
+void sdio_task(void);
 void init_sdio(void);
 void sdio_set_clock(unsigned long l_clock);
 void sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg);

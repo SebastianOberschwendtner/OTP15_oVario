@@ -38,7 +38,7 @@ void  	ipc_register_queue	(uint16_t size_queue, uint8_t did);
 uint8_t ipc_queue_push		(void* p_data, uint8_t no_bytes, uint8_t did);
 uint8_t ipc_queue_get(uint8_t did, uint8_t no_bytes, void* pData);
 void* 	ipc_queue_look		(uint8_t did);
-uint8_t ipc_get_queue_bytes	(uint8_t did);
+uint16_t ipc_get_queue_bytes	(uint8_t did);
 
 extern uint32_t error_var;
 

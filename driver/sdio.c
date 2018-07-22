@@ -6,10 +6,47 @@
  */
 #include "sdio.h"
 #include "Variables.h"
+#include "ipc.h"
 
 SYS_T* sys;
 SDIO_T* SD;
 FILE_T* file;
+
+
+
+/*
+ * Task SDIO
+ */
+
+char fopen = 0;
+FILE_T fHandler;
+
+void sdio_task(void)
+{
+	if(!fopen)
+	{
+		sdio_fopen(&fHandler, "Log", "obi");
+	}
+
+	uint16_t num_bytes = ipc_get_queue_bytes(did_SDIO);
+	if(num_bytes > 0)
+	{
+		for(uint8_t cnt = 0; cnt < num_bytes; cnt++)
+		{
+			uint8_t* pbyte;
+			ipc_queue_get(did_SDIO, 1, pbyte);
+			sdio_byte2file(&fHandler, *pbyte);
+		}
+	}
+}
+
+
+
+
+
+
+
+
 
 /*
  * initialize sdio and sd-card
@@ -132,6 +169,8 @@ void init_sdio(void)
 		sdio_select_card();
 		sdio_init_filesystem();
 	}
+
+	ipc_register_queue(1024,did_SDIO);
 };
 
 /*
