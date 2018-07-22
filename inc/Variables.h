@@ -104,6 +104,9 @@ typedef struct{
 	float hours;
 	float min;
 	float sec;
+	float alt_max;
+	float alt_min;
+	float v_max;
 }GPS_T;
 #pragma pack(pop)
 

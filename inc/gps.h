@@ -14,7 +14,6 @@
 // ***** DEFINES *****
 #define dma_buf_size	512
 
-
 // neo 6m
 // classes
 #define nav 0x01
@@ -38,6 +37,9 @@
 
 // MON ID
 #define hw			0x09
+
+// ID CFG
+#define id_cfg		0x00
 
 
 // ***** FUNCTIONS *****

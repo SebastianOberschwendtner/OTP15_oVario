@@ -13,7 +13,7 @@
 #include "oVario_Framework.h"
 #include "Variables.h"
 
-// Variables
+// Typedefs
 #pragma pack(push, 1)
 typedef struct{
 	uint8_t start;
@@ -65,6 +65,25 @@ typedef struct{
 	uint32_t hAcc;
 	uint32_t vAcc;
 }T_UBX_POSLLH;
+
+
+typedef struct{
+	uint16_t sync;
+	uint8_t class;
+	uint8_t id;
+	uint16_t length;
+	uint8_t portID;
+	uint8_t reserved;
+	uint16_t txReady;
+	uint32_t Mode;
+	uint32_t baudrate;
+	uint16_t inProtomask;
+	uint16_t outProtomask;
+	uint16_t flags;
+	uint16_t reserved2;
+	uint8_t CK_A;
+	uint8_t CK_B;
+}T_CFG_PRT;
 #pragma pack(pop)
 
 
@@ -84,15 +103,6 @@ T_UBX_hdr *UBX_beg;
 uint32_t			Rd_Idx = 0;
 uint32_t			Rd_Cnt = 0;
 volatile uint32_t 	Wr_Idx = 0;
-
-uint8_t test1, test2, test3, test4, test5;
-
-
-float value = 0;
-float value2 = 1000;
-
-
-
 
 // ***** Functions *****
 
@@ -186,9 +196,14 @@ void gps_init ()
 	DMA_Cmd(DMA1_Stream1, ENABLE);
 
 
+	// Initialize p_GPS_data
 	p_GPS_data->Rd_Idx 	= 0;
 	p_GPS_data->Rd_cnt = 0;
 	p_GPS_data->currentDMA = 0;
+
+	p_GPS_data->alt_max = 0;
+	p_GPS_data->alt_min = 9999;
+	p_GPS_data->v_max 	= 0;
 
 
 	// Config GPS
@@ -233,25 +248,28 @@ void gps_task ()
 	{
 		UBX_beg = (T_UBX_hdr*)(pDMABuff + ((msg_cnt + Rd_Idx) % dma_buf_size));		// Put on Mask
 
-		if(UBX_beg->sync == 0x62B5)	// look for beginning of message
+		if(UBX_beg->sync == 0x62B5)													// look for beginning of message
 		{
-			if((Rd_Cnt - msg_cnt) > (UBX_beg->length + 8))
+			if((Rd_Cnt - msg_cnt) > (UBX_beg->length + 8))							// look for complete message in buffer
 			{
-				for(uint8_t mcnt = 0; mcnt < UBX_beg->length; mcnt++)	// copy to buffer for debugging
+				if(UBX_beg->length < 255)											// look for length of message smaller as buffer
 				{
-					msg_buff[mcnt] = *(uint8_t*)(pDMABuff + ((msg_cnt + Rd_Idx + mcnt + 6) % dma_buf_size));
-				}
+					for(uint8_t mcnt = 0; mcnt < UBX_beg->length; mcnt++)			// copy to buffer for debugging
+					{
+						msg_buff[mcnt] = *(uint8_t*)(pDMABuff + ((msg_cnt + Rd_Idx + mcnt + 6) % dma_buf_size));
+					}
 
-				Rd_Cnt--;
+					Rd_Cnt--;														// decrease read count
 
-				// look which class in message
-				switch(UBX_beg->class)
-				{
-				case nav:
-					gps_handle_nav();
-					break;
-				default:
-					;
+					// look which class in message
+					switch(UBX_beg->class)
+					{
+					case nav:
+						gps_handle_nav();
+						break;
+					default:
+						;
+					}
 				}
 			}
 			else
@@ -261,14 +279,19 @@ void gps_task ()
 		}
 		else
 		{
-			Rd_Cnt--;
+			Rd_Cnt--;																// decrease read count
 		}
 	}
 
 
-	p_GPS_data->Rd_Idx = (float)Rd_Idx;
-	p_GPS_data->Rd_cnt = (float)Rd_Cnt;
-	p_GPS_data->currentDMA = (float)currentDMA;
+	p_GPS_data->Rd_Idx 		= (float)Rd_Idx;
+	p_GPS_data->Rd_cnt 		= (float)Rd_Cnt;
+	p_GPS_data->currentDMA 	= (float)currentDMA;
+
+	// Min/Max values
+	if(p_GPS_data->msl > p_GPS_data->alt_max) 		p_GPS_data->alt_max 	= p_GPS_data->msl;
+	if(p_GPS_data->msl < p_GPS_data->alt_min) 		p_GPS_data->alt_min 	= p_GPS_data->msl;
+	if(p_GPS_data->speed_kmh < p_GPS_data->v_max) 	p_GPS_data->v_max 		= p_GPS_data->speed_kmh;
 }
 
 
@@ -297,9 +320,9 @@ void gps_handle_nav()
 		break;
 	case posllh:
 		pPOS = (void*)&msg_buff[0];
-		p_GPS_data->lat = ((float)pPOS->lat)/10000000;
-		p_GPS_data->lon = ((float)pPOS->lon)/10000000;
-		p_GPS_data->msl = ((float)pPOS->hMSL)/1000;
+		p_GPS_data->lat = ((float)pPOS->lat) / 10000000;
+		p_GPS_data->lon = ((float)pPOS->lon) / 10000000;
+		p_GPS_data->msl = ((float)pPOS->hMSL) / 1000;
 		break;
 	default:
 		;
@@ -309,59 +332,28 @@ void gps_handle_nav()
 
 void gps_config()
 {
-	// Poll CFG PORT
-	buff[0] = 0xB5;		// Sync
-	buff[1] = 0x62;		// Sync
-	buff[2] = 0x06;		// Class
-	buff[3] = 0x00;		// ID
+	// Set new baudrate
+	//const unsigned baudrates[] = {9600, 19200, 38400, 57600, 115200};
 
-	buff[4] = 0x00;		// Length
-	buff[5] = 0x00;		// Length
+	wait_ms(100);
+	//gps_set_baud(baudrates[j]);
 
-	// Checksum
+	T_CFG_PRT* cfgmsg = (void*)&buff[0];
+	cfgmsg->sync 			= 0x62B5;
+	cfgmsg->class 			= cfg;
+	cfgmsg->id 				= id_cfg;
+	cfgmsg->length 			= 20;
+	cfgmsg->portID 			= 1;
+	cfgmsg->txReady 		= 0;
+	cfgmsg->Mode 			= 0x000008D0;
+	cfgmsg->baudrate 		= 9600;
+	cfgmsg->inProtomask 	= 1;
+	cfgmsg->outProtomask 	= 1;
+	cfgmsg->flags 			= 0;
+
+	// Calc Checksum
 	uint8_t CK_A 	= 0;
 	uint8_t CK_B 	= 0;
-
-	for(uint8_t I = 2; I < 6 ; I++)
-	{
-		CK_A = CK_A + buff[I];
-		CK_B = CK_B + CK_A;
-	}
-
-	buff[6] = CK_A;
-	buff[7] = CK_B;
-
-	//gps_send_bytes(buff, 8);
-
-
-
-	buff[4] = 20;		// Length
-	buff[5] = 0x00;		// Length
-
-	buff[6] = 1;
-	buff[7] = 0;
-	buff[8] = 0;
-	buff[9] = 0;
-
-	*((uint32_t*)&buff[10]) = 0x000008D0;
-
-	*((uint32_t*)&buff[14]) = 9600;
-
-	buff[18] = 0x01; // inProtoMask X2 bitfield
-	buff[19] = 0x00;
-
-	buff[20] = 0x01; // outProtoMask X2 bitfield
-	buff[21] = 0x00;
-
-	buff[22] = 0; // U2 unsigned short
-	buff[23] = 0;
-
-	buff[24] = 0; // U2 unsigned short
-	buff[25] = 0;
-
-	// Checksum
-	CK_A 	= 0;
-	CK_B 	= 0;
 
 	for(uint8_t I = 2; I < 26; I++)
 	{
@@ -369,17 +361,89 @@ void gps_config()
 		CK_B = CK_B + CK_A;
 	}
 
-	buff[26] = CK_A;
-	buff[27] = CK_B;
+	cfgmsg->CK_A 			= CK_A;
+	cfgmsg->CK_B 			= CK_B;
+
+
+
 	gps_send_bytes(buff, 28);
-
-
-	//	gps_set_baud(115200);
 
 	wait_ms(100);
 
-		gps_set_msg_rate(nav, posllh, 1);
-		wait_ms(60);
+//
+//
+//	CK_A = 0;
+//	CK_B = 0;
+//
+//	cfgmsg->sync 			= 0x62B5;
+//	cfgmsg->class 			= cfg;
+//	cfgmsg->id 				= id_cfg;
+//	cfgmsg->length 			= 20;
+//	cfgmsg->portID 			= 1;
+//	cfgmsg->txReady 		= 0;
+//	cfgmsg->Mode 			= 0x000008D0;
+//	cfgmsg->baudrate 		= 9600;
+//	cfgmsg->inProtomask 	= 1;
+//	cfgmsg->outProtomask 	= 1;
+//	cfgmsg->flags 			= 0;
+//
+//	for(uint8_t I = 2; I < 26; I++)
+//	{
+//		CK_A = CK_A + buff[I];
+//		CK_B = CK_B + CK_A;
+//	}
+//
+//	cfgmsg->CK_A 			= CK_A;
+//	cfgmsg->CK_B 			= CK_B;
+//	gps_send_bytes(buff, 28);
+//
+//	gps_set_baud(9600);
+
+	// sniffed message
+	//0xB5
+	//0x62
+	//
+	//0x06
+	//0x00
+	//
+	//0x14
+	//0x00	// Length
+	//
+	//0x01	// portID
+	//0x00	// res
+	//
+	//0x00	// txready
+	//0x00
+	//
+	//0xD0	// mode
+	//0x08
+	//0x00
+	//0x00
+	//
+	//0x00	// baud
+	//0xC2
+	//0x01
+	//0x00
+	//
+	//0x01
+	//0x00
+	//
+	//0x01
+	//0x00
+	//0x00
+	//0x00
+	//
+	//0x00
+	//0x00
+	//0xB8
+	//0x42
+
+
+
+	// Set new rates for UBX messages
+	wait_ms(100);
+	gps_set_msg_rate(nav, posllh, 1);
+	wait_ms(60);
 
 	//	gps_set_msg_rate(nav, timeutc, 1);
 	//	wait_ms(60);
@@ -482,7 +546,7 @@ void gps_set_baud(unsigned int baud)
 {
 	USART_Cmd(USART3, DISABLE);
 
-	USART_DeInit(USART3);
+	//USART_DeInit(USART3);
 	USART_InitTypeDef USART_InitStructure;
 	USART_InitStructure.USART_BaudRate 				= baud;
 	USART_InitStructure.USART_WordLength 			= USART_WordLength_8b;
