@@ -50,6 +50,7 @@
 #define ACMD41_BUSY			(1<<31)		//Card indicates whether initialization is completed
 #define ACMD41_CCS			(1<<30)		//Card Capacity Status
 #define ACMD41_HCS			(1<<30)		//Host Capacity Support
+#define ACMD41_XPC			(1<<28)		//Power Control (0: 0.36W; 1: 0.54W)
 
 //Response bits
 #define R1_APP_CMD			(1<<5)		//Card will accept ACMD as next command

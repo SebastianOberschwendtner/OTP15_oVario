@@ -140,7 +140,7 @@ void init_sdio(void)
 		{
 			SD->response = sdio_send_cmd_short(CMD55,0);
 			if(SD->response & R1_APP_CMD)
-				SD->response = sdio_send_cmd_short_no_crc(ACMD41,OCR_3_0V);
+				SD->response = sdio_send_cmd_short_no_crc(ACMD41,ACMD41_HCS | ACMD41_XPC | OCR_3_0V); //Set Voltage Range, Host Capacity Status and Power Control
 		}while(!(SD->response & ACMD41_BUSY));
 
 		//Check whether SDHC-Card or not
