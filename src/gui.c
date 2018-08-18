@@ -137,10 +137,10 @@ void fkt_Initscreen (void)
 
 void fkt_Vario (void)
 {
-//
-//	float temp1 = (uint32_t)p_ipc_gui_gps_data->time_utc / 10000;
-//	float temp2 = ((uint32_t)p_ipc_gui_gps_data->time_utc - (temp1) * 10000) / 100;
-//	float temp3 = (uint32_t)p_ipc_gui_gps_data->time_utc - (uint32_t)temp1 * 10000 - (uint32_t)temp2 * 100;
+	//
+	//	float temp1 = (uint32_t)p_ipc_gui_gps_data->time_utc / 10000;
+	//	float temp2 = ((uint32_t)p_ipc_gui_gps_data->time_utc - (temp1) * 10000) / 100;
+	//	float temp3 = (uint32_t)p_ipc_gui_gps_data->time_utc - (uint32_t)temp1 * 10000 - (uint32_t)temp2 * 100;
 
 	lcd_set_cursor(190, 8);
 	lcd_set_fontsize(1);
@@ -154,9 +154,9 @@ void fkt_Vario (void)
 
 	lcd_set_cursor(0, 16);
 	lcd_set_fontsize(2);
-	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
+	lcd_float2buffer(p_ipc_gui_df_data->glide,2,1);
 	lcd_set_fontsize(1);
-	lcd_string2buffer(" m");
+	lcd_string2buffer(" gz");
 
 	lcd_set_cursor(100, 12);
 	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
@@ -171,9 +171,9 @@ void fkt_Vario (void)
 
 	lcd_set_cursor(0, 56);
 	lcd_set_fontsize(2);
-	lcd_float2buffer(p_ipc_gui_df_data->glide,2,1);
+	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
 	lcd_set_fontsize(1);
-	lcd_string2buffer(" gz");
+	lcd_string2buffer(" m");
 
 	lcd_set_cursor(0, 76);
 	lcd_set_fontsize(2);
@@ -378,10 +378,10 @@ void fkt_GPS(void)
 	lcd_float2buffer((float)p_ipc_gui_gps_data->fix,1,0);
 
 
-//	if (p_ipc_gui_gps_data->fix != 0)
-//		lcd_string2buffer("Fix");
-//	else
-//		lcd_string2buffer("No Fix");
+	//	if (p_ipc_gui_gps_data->fix != 0)
+	//		lcd_string2buffer("Fix");
+	//	else
+	//		lcd_string2buffer("No Fix");
 
 	y +=ls;
 	lcd_set_cursor(0, y);
@@ -423,11 +423,11 @@ void fkt_GPS(void)
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Time:");
 	lcd_set_cursor(c1, y);
-//	lcd_float2buffer(p_ipc_gui_gps_data->time_utc,6,0);
-//	lcd_string2buffer(" s");
-//
-//	lcd_set_cursor(190, 8);
-//	lcd_set_fontsize(1);
+	//	lcd_float2buffer(p_ipc_gui_gps_data->time_utc,6,0);
+	//	lcd_string2buffer(" s");
+	//
+	//	lcd_set_cursor(190, 8);
+	//	lcd_set_fontsize(1);
 	lcd_num2buffer(p_ipc_gui_gps_data->hours,2);
 	lcd_string2buffer(":");
 	lcd_num2buffer(p_ipc_gui_gps_data->min,2);

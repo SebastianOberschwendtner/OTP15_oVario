@@ -52,12 +52,12 @@ sound = 500;
 	if(temp_climb > 5)
 		temp_climb = 5;
 
-	if(temp_climb < -2)
-		temp_climb = -2;
+	if(temp_climb < -4)
+		temp_climb = -4;
 
 
 
-	if(temp_climb > 0.2)
+	if(temp_climb > 0.2)		// Climbing
 	{
 		// Set Unmute
 		vario_command.command 	= sound_cmd_set_unmute;
@@ -92,14 +92,13 @@ sound = 500;
 
 		ipc_queue_push(&vario_command, 5, did_SOUND);
 	}
-	else if(0)//(temp_climb < 0.3)&&(temp_climb > -1))
+	else if(temp_climb < -2) 		// Huge Sink  --> Turn on Thermals
 	{
 		// Set Unmute
 		vario_command.command 	= sound_cmd_set_unmute;
 		vario_command.data		= 0;
 
 		ipc_queue_push(&vario_command, 5, did_SOUND);
-
 
 		// Set Continous
 		vario_command.command 	= sound_cmd_set_cont;
@@ -109,7 +108,7 @@ sound = 500;
 
 
 		// Set Frequency
-		freque = (uint16_t)((temp_climb)/5*1500 + 300);
+		freque = (uint16_t)((temp_climb + 2) * 50 + 350);
 		volu = 100;
 
 		vario_command.command 	= sound_cmd_set_frequ;
@@ -117,11 +116,11 @@ sound = 500;
 
 		ipc_queue_push(&vario_command, 5, did_SOUND);
 
-		// Set Volume
-		vario_command.command 	= sound_cmd_set_vol;
-		vario_command.data		= (uint32_t)volu;
+//		// Set Volume
+//		vario_command.command 	= sound_cmd_set_vol;
+//		vario_command.data		= (uint32_t)volu;
 
-		ipc_queue_push(&vario_command, 5, did_SOUND);
+		//ipc_queue_push(&vario_command, 5, did_SOUND);
 	}
 	else
 	{

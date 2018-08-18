@@ -22,6 +22,7 @@
 #include "Variables.h"
 #include "gps.h"
 #include "BMS.h"
+#include "sdio.h"
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
@@ -32,6 +33,7 @@ int32_t testmain = 0;
 
 int main(void)
 {
+
 	init_clock();
 	init_systick_ms(SYSTICK);
 	init_led();
@@ -42,8 +44,11 @@ int main(void)
 	sound_init();
 	timer_init();
 	init_i2c();
+
+
 	MS5611_init();
 
+	//init_sdio();
 
 	wait_systick(10);
 	init_BMS();
@@ -59,19 +64,17 @@ int main(void)
 	{
 		if(TICK_PASSED)
 		{
+			i2c_reset_error();
 			sound_task();
 			ms5611_task();
 			datafusion_task();
 			vario_task();
 			gui_task();
 			gps_task();
+			BMS_task();
+			//sdio_task();
 
-
-			BMS_get_adc();
-			BMS_gauge_get_adc();
-
-
-
+			// Geblinke
 			set_led_green(TOGGLE);
 			l_count_tick++;
 			if(l_count_tick == 5)
