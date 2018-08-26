@@ -160,6 +160,7 @@ typedef struct
 	unsigned long size;
 	unsigned int CurrentByte;
 	char name[12];
+	unsigned long buffer[128];
 }FILE_T;
 #pragma pack(pop)
 

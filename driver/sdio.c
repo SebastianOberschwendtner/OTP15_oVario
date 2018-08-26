@@ -89,7 +89,7 @@ void init_sdio(void)
 
 	//Register Memory
 	SD = ipc_memory_register(552,did_SDIO);
-	file = ipc_memory_register(34, did_FILE);
+	file = ipc_memory_register(546, did_FILE);
 	file->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
 
@@ -187,7 +187,7 @@ void sdio_set_clock(unsigned long l_clock)
 }
 
 /*
- * send command to card without espected response
+ * send command to card without expected response
  */
 void sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg)
 {
@@ -198,7 +198,7 @@ void sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg)
 };
 
 /*
- * send command to card with espected short response
+ * send command to card with expected short response
  */
 unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg)
 {
@@ -220,7 +220,7 @@ unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg)
 };
 
 /*
- * send command to card with espected short response and no CRC ckeck
+ * send command to card with expected short response and no CRC ckeck
  */
 unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_arg)
 {
@@ -241,7 +241,7 @@ unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_a
 };
 
 /*
- * send command to card with espected long response. The long response isn't returned!
+ * send command to card with expected long response. The long response isn't returned!
  */
 unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg)
 {
