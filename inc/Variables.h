@@ -131,15 +131,13 @@ typedef struct
 #pragma pack(pop)
 
 //SDIO
+//TODO Add SDIO_BLOCKLEN to buffer defines.
 #pragma pack(push, 1)
 typedef struct
 {
-	unsigned long buffer[128];
 	unsigned long response;
 	unsigned long state;
 	unsigned int RCA;
-	unsigned long CurrentCluster;
-	unsigned char CurrentSector;
 	unsigned long LBAFATBegin;
 	unsigned long FATSz;
 	unsigned long FirstDataSecNum;
@@ -149,7 +147,7 @@ typedef struct
 }SDIO_T;
 #pragma pack(pop)
 
-//fileid
+//filehandler
 #pragma pack(push, 1)
 typedef struct
 {
@@ -161,6 +159,8 @@ typedef struct
 	unsigned int CurrentByte;
 	char name[12];
 	unsigned long buffer[128];
+	unsigned long CurrentCluster;
+	unsigned char CurrentSector;
 }FILE_T;
 #pragma pack(pop)
 
