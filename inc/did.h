@@ -19,8 +19,10 @@
 #define		did_GPS			6
 #define 	did_SDIO		7
 #define		did_SYS			8
-#define 	did_FILE		9
+#define 	did_DIRFILE		9
 #define		did_GUI			10
 #define		did_GPS_DMA		11
+#define		did_FILE1		12
+#define		did_FILE2		13
 
 #endif /* DID_H_ */

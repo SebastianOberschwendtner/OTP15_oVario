@@ -119,7 +119,7 @@ void datafusion_task(void)
 		df_data->hist_ptr = (df_data->hist_ptr + 1) % 50;
 
 		// height history
-		df_data->hist_h[df_data->hist_ptr] = df_data->height;
+		df_data->hist_h[df_data->histh_ptr] = df_data->height;
 
 		df_data->climbrate_av = (df_data->height - df_data->hist_h[(df_data->hist_ptr + 1) % 30])/15;
 
