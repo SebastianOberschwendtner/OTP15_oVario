@@ -156,6 +156,7 @@ unsigned int sdio_read_int(unsigned long* databuffer, unsigned int i_address);
 void sdio_write_int(unsigned long* databuffer, unsigned int i_address, unsigned int i_data);
 unsigned long sdio_read_long(unsigned long* databuffer, unsigned int i_address);
 void sdio_write_long(unsigned long* databuffer, unsigned int i_address, unsigned long l_data);
+FILE_T* sdio_register_handler(unsigned char did);
 void sdio_init_filesystem(void);
 unsigned long sdio_get_lba(unsigned long l_cluster);
 unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum);

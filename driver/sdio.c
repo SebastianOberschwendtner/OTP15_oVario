@@ -89,7 +89,7 @@ void init_sdio(void)
 
 	//Register Memory
 	SD = ipc_memory_register(30,did_SDIO);
-	dir = ipc_memory_register(552, did_FILE);
+	dir = ipc_memory_register(552, did_DIRFILE);
 	dir->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
 
@@ -451,6 +451,22 @@ void sdio_write_long(unsigned long* databuffer, unsigned int i_address, unsigned
 	sdio_write_byte(databuffer, i_address+3,(unsigned char)((l_data>>24)&0xFF));
 };
 
+/*
+ * initialize filehandler
+ */
+
+FILE_T* sdio_register_handler(unsigned char did)
+{
+	// Register memory
+	FILE_T* temp = ipc_memory_register(552, did);
+	// Set important values
+	temp->name[11] = 0;			//End of name string
+	temp->CurrentCluster = 0;
+	temp->CurrentSector = 0;
+	temp->id = 0;
+
+	return temp;
+}
 /*
  * Initialize file system.
  * Gets the type and begin of the file system
