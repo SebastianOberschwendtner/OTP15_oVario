@@ -89,7 +89,7 @@ void init_sdio(void)
 
 	//Register Memory
 	SD = ipc_memory_register(30,did_SDIO);
-	dir = ipc_memory_register(552, did_DIRFILE);
+	dir = ipc_memory_register(556, did_DIRFILE);
 	dir->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
 
@@ -102,11 +102,13 @@ void init_sdio(void)
 	 * -Peripheral:	32bit	fixed
 	 * -Peripheral flow control
 	 */
-	DMA2_Stream6->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_MSIZE_1 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL;
+#define DMA_CONFIG_SDIO (DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL)
+
+	DMA2_Stream6->CR = DMA_CONFIG_SDIO;
 	//DMA2_Stream3->NDTR = 128;							//128*4bytes to transmit
 	DMA2_Stream6->PAR = (unsigned long)&SDIO->FIFO;		//Peripheral address
 	DMA2_Stream6->M0AR = (unsigned long)&dir->buffer[0];	//Buffer start address
-	DMA2_Stream6->FCR = DMA_SxFCR_DMDIS | DMA_SxFCR_FTH_1 | DMA_SxFCR_FTH_0;
+	DMA2_Stream6->FCR = DMA_SxFCR_DMDIS;// | DMA_SxFCR_FTH_1 | DMA_SxFCR_FTH_0;
 
 	wait_ms(1);			//Wait for powerup of card
 
@@ -359,8 +361,7 @@ void sdio_dma_receive(unsigned long* databuffer)
 	if(!(DMA2_Stream6->CR & DMA_SxCR_EN))		//check if transfer is complete
 	{
 		DMA2_Stream6->M0AR = (unsigned long)databuffer;		//Buffer start address
-		DMA2_Stream6->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_MSIZE_1 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL |
-		DMA_SxCR_EN;
+		DMA2_Stream6->CR = DMA_CONFIG_SDIO | DMA_SxCR_EN;
 	}
 };
 
@@ -374,8 +375,7 @@ void sdio_dma_transmit(unsigned long* databuffer)
 	if(!(DMA2_Stream6->CR & DMA_SxCR_EN))		//check if transfer is complete
 	{
 		DMA2_Stream6->M0AR = (unsigned long)databuffer;		//Buffer start address
-		DMA2_Stream6->CR = DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_MSIZE_1 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL |
-		DMA_SxCR_DIR_0 | DMA_SxCR_EN;
+		DMA2_Stream6->CR = DMA_CONFIG_SDIO | DMA_SxCR_DIR_0 | DMA_SxCR_EN; //DMA Config + Dir: from memory to peripheral
 	}
 };
 
@@ -458,7 +458,7 @@ void sdio_write_long(unsigned long* databuffer, unsigned int i_address, unsigned
 FILE_T* sdio_register_handler(unsigned char did)
 {
 	// Register memory
-	FILE_T* temp = ipc_memory_register(552, did);
+	FILE_T* temp = ipc_memory_register(557, did);
 	// Set important values
 	temp->name[11] = 0;			//End of name string
 	temp->CurrentCluster = 0;
@@ -690,7 +690,7 @@ unsigned char sdio_read_root(void)
 void sdio_read_cluster(FILE_T* filehandler, unsigned long l_cluster)
 {
 	//Get the LBA address of cluster and the read the corresponding first sector
-	sdio_read_block(filehandler->buffer, sdio_get_lba(l_cluster));
+	sdio_read_block(&filehandler->buffer[0], sdio_get_lba(l_cluster));
 	//Set the current sector and cluster
 	filehandler->CurrentCluster = l_cluster;
 	filehandler->CurrentSector = 1;

@@ -158,6 +158,7 @@ typedef struct
 	unsigned long size;
 	unsigned int CurrentByte;
 	char name[12];
+	unsigned long placeholder;
 	unsigned long buffer[128];
 	unsigned long CurrentCluster;
 	unsigned char CurrentSector;
