@@ -33,9 +33,10 @@
 #define CMD4		4
 #define CMD5		5
 #define CMD6		6
-#define CMD7		7
+#define CMD7		7		//Selected/deselect card
 #define CMD8		8
 #define CMD13		13
+#define CMD15		15		//Set card inactive
 #define CMD16		16
 #define CMD17		17
 #define CMD24		24
@@ -145,6 +146,7 @@ unsigned long sdio_send_cmd_short(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_short_no_crc(unsigned char ch_cmd, unsigned long l_arg);
 unsigned long sdio_send_cmd_long(unsigned char ch_cmd, unsigned long l_arg);
 void sdio_select_card(void);
+void sdio_set_inactive(void);
 void sdio_read_block(unsigned long* databuffer, unsigned long l_block_address);
 void sdio_write_block(unsigned long* databuffer, unsigned long l_block_address);
 void sdio_set_wait(unsigned char ch_state);

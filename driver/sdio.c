@@ -277,7 +277,16 @@ void sdio_select_card(void)
 			SD->state |= SD_CARD_SELECTED;
 	}
 };
-
+/*
+ * Set card inactive for save removal of card
+ */
+void sdio_set_inactive(void)
+{
+	//got to inactive state
+	sdio_send_cmd(CMD15,(SD->RCA<<16)); 	//Send command
+	//Delete flags for seleted card
+	SD->state &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
+}
 /*
  * Read block data from card at specific block address. Data is stored in buffer specified at function call.
  * The addressing uses block number and adapts to SDSC and SDHC cards.
@@ -673,9 +682,15 @@ unsigned char sdio_read_root(void)
 		sdio_read_block(dir->buffer, SD->LBAFATBegin + (2 * SD->FATSz));
 		dir->CurrentCluster = 0;
 		dir->CurrentSector = 1;
+		dir->DirCluster = 0;
+		dir->StartCluster = 0;
 	}
 	else
+	{
 		sdio_read_cluster(dir, SD->RootDirClus);
+		dir->DirCluster = SD->RootDirClus;
+		dir->StartCluster = SD->RootDirClus;
+	}
 
 	//Return 0 if error occurred
 	if(SD->err)
@@ -812,8 +827,8 @@ unsigned char sdio_check_filetype(FILE_T* filehandler, char* pch_type)
  */
 void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid)
 {
-	//Read current cluster
-	sdio_read_cluster(dir, dir->CurrentCluster);
+	//Read start cluster of directory
+	sdio_read_cluster(dir, dir->StartCluster);
 
 	//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
 	for(unsigned long l_count = 0; l_count<(l_fileid/(SDIO_BLOCKLEN/32)); l_count++)
@@ -958,7 +973,7 @@ void sdio_get_fileid(FILE_T* filehandler, char* pch_name, char* pch_extension)
 	}
 	l_id = 0;
 
-	sdio_read_cluster(dir,dir->CurrentCluster);
+	sdio_read_cluster(dir,dir->StartCluster);
 
 	//Read entries until the end of the directory is reched
 	while(!SD->err)
@@ -1140,15 +1155,13 @@ void sdio_make_entry(unsigned long l_emptyid, char* pch_name, char* pch_filetype
  */
 unsigned char sdio_mkfile(FILE_T* filehandler, char* pch_name, char* pch_filetype)
 {
-	//Remember root cluster
-	unsigned long l_rootcluster = dir->CurrentCluster;
 	//Check if file already exists
 	sdio_get_fileid(filehandler, pch_name, pch_filetype);
 
 	//Create file if it does not exist
 	if(SD->err == SD_ERROR_NO_SUCH_FILE)
 	{
-		sdio_read_cluster(dir, l_rootcluster);
+		sdio_read_cluster(dir, dir->StartCluster);
 		SD->err = 0;
 		//Get empty space
 		unsigned long l_emptycluster = sdio_get_empty_cluster(filehandler);
@@ -1159,15 +1172,20 @@ unsigned char sdio_mkfile(FILE_T* filehandler, char* pch_name, char* pch_filetyp
 
 		//Load and set the entry in FAT of new cluster to end of file
 		if(SD->state & SD_IS_FAT16)							//FAT16
-			sdio_set_cluster(dir->buffer, l_emptycluster, 0xFFFF);
+			sdio_set_cluster(filehandler->buffer, l_emptycluster, 0xFFFF);
 		else												//FAT32
-			sdio_set_cluster(dir->buffer, l_emptycluster, 0xFFFFFFFF);
+			sdio_set_cluster(filehandler->buffer, l_emptycluster, 0xFFFFFFFF);
 
 		//Clear allocated Cluster
 		/*
-		 * => Not necessary anymore since the filesize to determine the end-of-file
+		 * => Not necessary anymore since the filesize i used to determine the end-of-file
 		sdio_clear_cluster(l_emptycluster);
 		 */
+		//Open file and read first cluster of file
+		sdio_get_file(filehandler, filehandler->id);
+		sdio_read_cluster(filehandler, filehandler->StartCluster);
+
+		//exit function
 		return 1;
 	}
 	else
