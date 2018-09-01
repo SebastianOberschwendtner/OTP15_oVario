@@ -167,4 +167,56 @@ void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_s
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
 {
 	sys->date = (unsigned int)(((unsigned char)(i_year-1980)<<SYS_DATE_YEAR_pos) | (ch_month<<SYS_DATE_MONTH_pos) | (ch_day<<SYS_DATE_DAY_pos));
+};
+
+/*
+ * Compare two strings. The first string sets the compare length
+ */
+unsigned char sys_strcmp(char* pch_string1, char* pch_string2)
+{
+	while(*pch_string1 != 0)
+	{
+		if(*pch_string1++ != *pch_string2++)
+			return 0;
+	}
+	return 1;
+};
+
+/*
+ * Copy one string to another. The second string is copied to the first string.
+ * The functions returns 0 if string2 did not fit completely in string1.
+ */
+unsigned char sys_strcpy(char* pch_string1, char* pch_string2)
+{
+	while(*pch_string2 != 0)
+	{
+		//check for end of string1
+		if(*pch_string1 == 0)
+			return 0;
+		//If the end of string1 is not reached fill it with the next character of string2
+		*pch_string1 = *pch_string2;
+		//Increase pointers
+		pch_string1++;
+		pch_string2++;
+	}
+	return 1;
+};
+
+/*
+ * Write a number with a specific amount of digits to a string.
+ */
+unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits)
+{
+	//String for number
+	char ch_number[ch_digits+1];
+	ch_number[ch_digits] = 0;
+
+	//Compute the string content
+	for(unsigned char ch_count = 0; ch_count<ch_digits;ch_count++)
+	{
+		ch_number[ch_digits - ch_count -1] = (unsigned char)(l_number%10)+48;
+		l_number /=10;
+	}
+	//Copy number string to string
+	return sys_strcpy(string,ch_number);
 }

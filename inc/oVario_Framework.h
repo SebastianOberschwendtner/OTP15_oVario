@@ -84,5 +84,8 @@ void wait_ms(unsigned long l_time);
 void wait_systick(unsigned long l_ticks);
 void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second);
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year);
+unsigned char sys_strcmp(char* pch_string1, char* pch_string2);
+unsigned char sys_strcpy(char* pch_string1, char* pch_string2);
+unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits);
 
 #endif /* OVARIO_FRAMEWORK_H_ */
