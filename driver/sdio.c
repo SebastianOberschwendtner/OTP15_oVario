@@ -467,7 +467,7 @@ void sdio_write_long(unsigned long* databuffer, unsigned int i_address, unsigned
 FILE_T* sdio_register_handler(unsigned char did)
 {
 	// Register memory
-	FILE_T* temp = ipc_memory_register(557, did);
+	FILE_T* temp = ipc_memory_register(556, did);
 	// Set important values
 	temp->name[11] = 0;			//End of name string
 	temp->CurrentCluster = 0;
@@ -948,7 +948,7 @@ unsigned long sdio_get_empty_cluster(FILE_T* filehandler)
  * Get fileid of specific file or directory.
  * The directory cluster of the file/directory has to be loaded in the buffer!
  */
-void sdio_get_fileid(FILE_T* filehandler, char* pch_name, char* pch_extension)
+unsigned char sdio_get_fileid(FILE_T* filehandler, char* pch_name, char* pch_extension)
 {
 	unsigned long l_id = 0;
 
@@ -1003,7 +1003,9 @@ void sdio_get_fileid(FILE_T* filehandler, char* pch_name, char* pch_extension)
 	{
 		SD->err = SD_ERROR_NO_SUCH_FILE;
 		filehandler->id = 0;
+		return 0;
 	}
+	return 1;
 };
 
 /*

@@ -179,7 +179,7 @@ void sdio_get_file(FILE_T* filehandler, unsigned long l_fileid);
 unsigned long sdio_get_empty_id(void);
 void sdio_set_empty_id(unsigned long l_id);
 unsigned long sdio_get_empty_cluster(FILE_T* filehandler);
-void sdio_get_fileid(FILE_T* filehandler, char* pch_name, char* pch_extension);
+unsigned char sdio_get_fileid(FILE_T* filehandler, char* pch_name, char* pch_extension);
 unsigned int sdio_get_date(void);
 unsigned int sdio_get_time(void);
 unsigned char sdio_cd(char* pch_dirname);
