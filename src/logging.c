@@ -9,10 +9,12 @@
 #include "Variables.h"
 #include "ipc.h"
 
-FILE_T Log;
+//ipc structs
 SDIO_T* sd;
 SYS_T* sys;
-//Create sensors
+
+//private structs
+FILE_T Log;
 LOG_SENSOR_T sensor[LOG_MAX_SENSORS];
 LOG_INFO_T LogInfo;
 
@@ -118,7 +120,16 @@ void log_exe(void)
 			}
 		}
 	}
-}
+};
+
+/*
+ * Write an additional character to current log stream.
+ * Intended for csv-formats etc.
+ */
+void log_write_char(unsigned char ch_byte)
+{
+	sdio_byte2file(&Log, ch_byte);
+};
 
 /*
  * Finish log and save to sd-card

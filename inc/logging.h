@@ -31,6 +31,7 @@
 void log_include(void* pointer, unsigned char length, unsigned char intervall, char* sensor_name);
 void log_create(void);
 void log_exe(void);
+void log_write_char(unsigned char ch_byte);
 void log_finish(void);
 
 #endif /* LOGGING_H_ */
