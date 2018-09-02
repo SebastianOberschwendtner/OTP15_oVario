@@ -183,9 +183,25 @@ typedef struct
 }T_GUI_cmd;
 #pragma pack(pop)
 
+//Sensor information for logging
+#pragma pack(push, 1)
+typedef struct
+{
+	char* address;
+	unsigned char size;
+	unsigned char intervall;
+}LOG_SENSOR_T;
+#pragma pack(pop)
 
-
-
-
+//Log information for logging
+#pragma pack(push, 1)
+typedef struct
+{
+	unsigned char ch_sensor_count;
+	unsigned char ch_log_open;
+	unsigned char max_intervall;
+	char header[9*3];
+}LOG_INFO_T;
+#pragma pack(pop)
 
 #endif /* VARIABLES_H_ */
