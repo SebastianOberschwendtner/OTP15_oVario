@@ -93,5 +93,6 @@ unsigned int get_year(void);
 unsigned char sys_strcmp(char* pch_string1, char* pch_string2);
 unsigned char sys_strcpy(char* pch_string1, char* pch_string2);
 unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits);
+void sys_memcpy(void* data1, void* data2, unsigned char length);
 
 #endif /* OVARIO_FRAMEWORK_H_ */

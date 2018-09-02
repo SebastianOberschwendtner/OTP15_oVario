@@ -267,4 +267,21 @@ unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch
 	}
 	//Copy number string to string
 	return sys_strcpy(string,ch_number);
+};
+
+/*
+ * Copy memory.
+ * length euqals the whole data length in bytes!
+ */
+void sys_memcpy(void* data1, void* data2, unsigned char length)
+{
+	unsigned char* temp1 = (unsigned char*)data1;
+	unsigned char* temp2 = (unsigned char*)data2;
+
+	for(unsigned char count = 0; count < length; count++)
+	{
+		*temp1 = *temp2;
+		temp1++;
+		temp2++;
+	}
 }
