@@ -162,11 +162,59 @@ void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_s
 };
 
 /*
+ * Get seconds of time
+ */
+unsigned char get_seconds(void)
+{
+	return (unsigned char)((sys->time>>SYS_TIME_SECONDS_pos) & 0x3F);
+};
+
+/*
+ * Get minutes of time
+ */
+unsigned char get_minutes(void)
+{
+	return (unsigned char)((sys->time>>SYS_TIME_MINUTE_pos) & 0x3F);
+};
+
+/*
+ * Get hours of time
+ */
+unsigned char get_hours(void)
+{
+	return (unsigned char)((sys->time>>SYS_TIME_HOUR_pos) & 0x1F);
+};
+
+/*
  * Set the date
  */
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
 {
 	sys->date = (unsigned int)(((unsigned char)(i_year-1980)<<SYS_DATE_YEAR_pos) | (ch_month<<SYS_DATE_MONTH_pos) | (ch_day<<SYS_DATE_DAY_pos));
+};
+
+/*
+ * Get Day of date
+ */
+unsigned char get_day(void)
+{
+	return (unsigned char)((sys->date>>SYS_DATE_DAY_pos) & 0x1F);
+};
+
+/*
+ * Get Month of date
+ */
+unsigned char get_month(void)
+{
+	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0x1F);
+};
+
+/*
+ * Get Day of date
+ */
+unsigned int get_year(void)
+{
+	return (unsigned int)(((sys->date>>SYS_DATE_YEAR_pos) & 0x3F) + 1980);
 };
 
 /*
