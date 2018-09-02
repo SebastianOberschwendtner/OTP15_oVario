@@ -105,6 +105,7 @@ void log_create(void)
 /*
  * Log data
  */
+//TODO Add support for error variable.
 void log_exe(void)
 {
 	//Check if sd-card is inserted and log is not finished
