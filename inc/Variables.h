@@ -210,7 +210,7 @@ typedef struct
 {
 	unsigned char buff512[64];
 	unsigned long state[4];
-	unsigned long message_length;
+	unsigned long long message_length;
 }MD5_T;
 #pragma pack(pop)
 #endif /* VARIABLES_H_ */

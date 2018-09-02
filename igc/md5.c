@@ -96,5 +96,84 @@ void md5_initialize(MD5_T* hash,unsigned long* key)
 	//Initialize the buffer with all 0s
 	for(unsigned char count = 0; count<64; count++)
 		hash->buff512[count] = 0;
+};
+
+/*
+ * leftrotate input bits.
+ */
+unsigned long md5_leftrotate(unsigned long x, unsigned long c)
+{
+    return (x << c) | (x >> (32 - c));
+};
+
+/*
+ * Append character to hash
+ */
+void md5_append_char(MD5_T* hash, unsigned char character)
+{
+	//Get position of buffer to be written to
+	unsigned char position = (unsigned char)(hash->message_length % 64);
+	//Write character
+	hash->buff512[position] = character;
+	//Increase message length
+	hash->message_length++;
+	//If buffer is full, calculate hash
+	if(position == 63)
+		md5_process512(hash);
 }
+/*
+ * Calculate hash.
+ * Code adapted from XCSOAR project.
+ * Only works on little endian MCUs!
+ * (STM32 is little endian)
+ */
+void md5_process512(MD5_T* hash)
+{
+  // assume exactly 512 bits
+
+  // copy the 64 chars into the 16 longs
+  unsigned long w[16];
+  sys_memcpy(w, hash->buff512, 64);
+
+  // Initialize hash value for this chunk:
+  unsigned long a = hash->state[0], b = hash->state[1], c = hash->state[2], d = hash->state[3];
+
+  // Main loop:
+  for (int i = 0; i < 64; i++)
+  {
+    unsigned long f, g;
+    if (i <= 15)
+    {
+      f = (b & c) | ((~b) & d);
+      g = i;
+    }
+    else if (i <= 31)
+    {
+      f = (d & b) | ((~d) & c);
+      g = (5 * i + 1) % 16;
+    }
+    else if (i <= 47)
+    {
+      f = b ^ c ^ d;
+      g = (3 * i + 5) % 16;
+    }
+    else
+    {
+      f = c ^ (b | (~d));
+      g = (7 * i) % 16;
+    }
+
+    unsigned long temp = d;
+    d = c;
+    c = b;
+    b += md5_leftrotate((a + f + k[i] + w[g]), r[i]);
+    a = temp;
+  }
+
+  // Add this chunk's hash to result so far:
+  hash->state[0] += a;
+  hash->state[1] += b;
+  hash->state[2] += c;
+  hash->state[3] += d;
+};
 
