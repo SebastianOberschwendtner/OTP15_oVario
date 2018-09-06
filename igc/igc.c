@@ -117,19 +117,89 @@ void igc_create(void)
 		//initialize hashes with custom key
 		for(unsigned char count = 0; count < 4; count++)
 			md5_initialize(&IgcInfo.md5[count], (unsigned long*)(&(g_key[4*count]))); //TODO Is the construct with the const_cast desirable?
-		//Write header
+		//Write header as required in FAI Chapter A3.2.4
 		//Manufacturer ID
 		igc_NewRecord('A');
 		igc_AppendString(IGC_MANUF_ID);
 		igc_AppendString(IGC_LOGGER_ID);
 		igc_WriteLine();
 
-		//Log date
+		/*
+		 * FR type
+		 * This has to come second, because this mimics the XCSOAR behaviour and enables that commas are included in G-records.
+		 * Very important! Otherwise the G-record will be invalid.
+		 */
+		igc_NewRecord('H');
+		igc_AppendString("FFTYFRTYPE:");
+		igc_AppendString(IGC_FR_TYPE);
+		igc_WriteLine();
+
+		//Log date and flight number
 		igc_NewRecord('H');
 		igc_AppendString("FDTEDATE");
 		igc_AppendNumber(get_day(), 2);
 		igc_AppendNumber(get_month(), 2);
 		igc_AppendNumber(get_year(), 4);
+		igc_AppendString(",");
+		igc_AppendNumber(l_count, 2);
+		igc_WriteLine();
+
+		//Pilot in Charge
+		igc_NewRecord('H');
+		igc_AppendString("FPLTPILOTINCHARGE:");
+		igc_AppendString(IGC_PILOT_NAME);
+		igc_WriteLine();
+
+		//Co-Pilot --> not yet applicable :P
+		igc_NewRecord('H');
+		igc_AppendString("FCM2CREW2:");
+		igc_AppendString("None");
+		igc_WriteLine();
+
+		//Glider type
+		igc_NewRecord('H');
+		igc_AppendString("FGTYGLIDERTYPE:");
+		igc_AppendString(IGC_GLIDER_TYPE);
+		igc_WriteLine();
+
+		//Glider ID
+		igc_NewRecord('H');
+		igc_AppendString("FGIDGLIDERID:");
+		igc_AppendString(IGC_GLIDER_ID);
+		igc_WriteLine();
+
+		//GPS DATUM
+		igc_NewRecord('H');
+		igc_AppendString("FDTMGPSDATUM:WG84");
+		igc_WriteLine();
+
+		//Firmware version
+		igc_NewRecord('H');
+		igc_AppendString("FRFWFIRMWAREVERSION:");
+		igc_AppendString(IGC_FIRMWARE_VER);
+		igc_WriteLine();
+
+		//Hardware version
+		igc_NewRecord('H');
+		igc_AppendString("FRHWHARDWAREVERSION:");
+		igc_AppendString(IGC_HARDWARE_VER);
+		igc_WriteLine();
+
+		//GPD receiver
+		igc_NewRecord('H');
+		igc_AppendString("FGPSRECEIVER:");
+		igc_AppendString(IGC_GPS_RX);
+		igc_WriteLine();
+
+		//barometer
+		igc_NewRecord('H');
+		igc_AppendString("FPRSPRESSALTSENSOR:");
+		igc_AppendString(IGC_BARO_MANUF);
+		igc_WriteLine();
+
+		//add fix accuracy to B-record from byte 36 to byte 38
+		igc_NewRecord('I');
+		igc_AppendString("013638FXA");
 		igc_WriteLine();
 
 		sdio_write_file(&IGC);
