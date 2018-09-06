@@ -87,7 +87,7 @@ const unsigned long r[64] = {
 /*
  * initialize md5 hash with custom key
  */
-void md5_initialize(MD5_T* hash,unsigned long* key)
+void md5_initialize(MD5_T* hash, unsigned long* key)
 {
 	//Set initial message length to 0
 	hash->message_length = 0;
