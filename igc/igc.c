@@ -9,6 +9,7 @@
 
 
 
+
 //Typedef for IGC
 #pragma pack(push, 1)
 typedef struct
@@ -22,6 +23,8 @@ typedef struct
 
 //ipc structs
 SDIO_T* sd;
+GPS_T* GpsData;
+datafusion_T* BaroData;
 
 //private structs
 FILE_T IGC;
@@ -88,6 +91,10 @@ void igc_create(void)
 {
 	//get sd handler
 	sd = ipc_memory_get(did_SDIO);
+	//get gps handler
+	GpsData = ipc_memory_get(did_GPS);
+	//get the datafusion handler
+	BaroData = ipc_memory_get(did_DATAFUSION);
 
 	//only create igc if sd-card is detected
 	if(sd->state & SD_CARD_DETECTED)
@@ -136,10 +143,10 @@ void igc_create(void)
 
 		//Log date and flight number
 		igc_NewRecord('H');
-		igc_AppendString("FDTEDATE");
+		igc_AppendString("FDTE");
 		igc_AppendNumber(get_day(), 2);
 		igc_AppendNumber(get_month(), 2);
-		igc_AppendNumber(get_year(), 4);
+		igc_AppendNumber(get_year(), 2);
 		igc_AppendString(",");
 		igc_AppendNumber(l_count, 2);
 		igc_WriteLine();
@@ -185,7 +192,7 @@ void igc_create(void)
 		igc_AppendString(IGC_HARDWARE_VER);
 		igc_WriteLine();
 
-		//GPD receiver
+		//GPS receiver
 		igc_NewRecord('H');
 		igc_AppendString("FGPSRECEIVER:");
 		igc_AppendString(IGC_GPS_RX);
@@ -203,9 +210,6 @@ void igc_create(void)
 		igc_WriteLine();
 
 		sdio_write_file(&IGC);
-		sdio_set_inactive();
-
-
 	}
 };
 
@@ -253,7 +257,7 @@ void igc_WriteLine(void)
 {
 	/*
 	 * Write LF at end of line and thus include it in the linecommit, although we know LF is an invalid character.
-	 * Just to be sure in case the FAI or XCSOAR decide that the LF is valid character.
+	 * Just to be sure in case the FAI or XCSOAR decide that the LF is a valid character.
 	 */
 	IgcInfo.linebuffer[IgcInfo.linepointer] = '\n';
 	IgcInfo.linepointer++;
@@ -272,7 +276,6 @@ void igc_WriteLine(void)
  */
 void igc_NewRecord(unsigned char type)
 {
-	IgcInfo.linepointer = 0;
 	IgcInfo.linebuffer[0] = type;
 	IgcInfo.linepointer=1;
 }
@@ -317,4 +320,84 @@ void igc_AppendNumber(unsigned long number, unsigned char digits)
 	}
 };
 
+/*
+ * Write F-record. This records contains the current count of satellites used and their id.
+ * TODO Add id support
+ */
+void igc_FRecord(void)
+{
+	igc_NewRecord('F');
+	//Write UTC time
+	igc_AppendNumber(get_hours(), 2);
+	igc_AppendNumber(get_minutes(), 2);
+	igc_AppendNumber(get_seconds(), 2);
+	for(unsigned char count = 0; count < GpsData->n_sat; count++)
+		igc_AppendNumber(count, 2);
+	igc_WriteLine();
+};
 
+/*
+ * Write B-record. This records the gps fixes.
+ */
+void igc_BRecord(void)
+{
+	unsigned long temp = 0;
+
+	igc_NewRecord('B');
+	//Write UTC time
+	igc_AppendNumber(get_hours(), 2);
+	igc_AppendNumber(get_minutes(), 2);
+	igc_AppendNumber(get_seconds(), 2);
+
+	//Write latitude
+	temp = (unsigned long)(GpsData->lat*100000);
+	igc_AppendNumber(temp, 7);
+	igc_AppendString("N"); //TODO How do i know whether S or N?
+
+	//Write longitude
+	temp = (unsigned long)(GpsData->lon*100000);
+	igc_AppendNumber(temp, 8);
+	igc_AppendString("E"); //TODO How do i know whether W or E?
+
+	//Write fix validity
+	if(GpsData->fix == 3)
+		igc_AppendString("A");	//3D fix
+	else
+		igc_AppendString("V");	//2D fix or no GPS data
+
+	//Write pressure altitude
+	igc_AppendNumber((unsigned long)BaroData->height, 5);
+
+	//Write GNSS altitude
+	igc_AppendNumber((unsigned long)GpsData->msl, 5);
+
+	//Write fix accuracy
+	igc_AppendNumber((unsigned long)GpsData->HDOP, 3); //TODO Get real accuracy
+
+	//Write line
+	igc_WriteLine();
+};
+
+/*
+ * Plot current line in display for debugging
+ */
+#include "DOGXL240.h"
+unsigned char linecount = 1;
+void igc_PlotLine(void)
+{
+	if(linecount == 17)
+	{
+		lcd_clear_buffer();
+		linecount = 1;
+	}
+	lcd_set_cursor(0, linecount*8);
+	for(unsigned char count= 0; count < IgcInfo.linepointer; count++)
+	{
+		if(count>39)
+			break;
+		lcd_char2buffer(IgcInfo.linebuffer[count]);
+	}
+	linecount++;
+	lcd_send_buffer();
+	wait_systick(5);
+};

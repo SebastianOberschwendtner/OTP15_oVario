@@ -279,6 +279,7 @@ void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_v
  * The size is fixed to 12x16, when ch_fontsize is 0.
  * For other ch_fontsize the size is variable as a multiple of 6x8.
  */
+//TODO The function checks the maximum cursor size after writing to buffer => this can cause problem if cursor is manually increased to the maximum position
 void lcd_char2buffer(unsigned char ch_data)
 {
 	if(plcd_DOGXL->ch_fontsize){

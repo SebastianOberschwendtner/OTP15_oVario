@@ -177,3 +177,49 @@ void md5_process512(MD5_T* hash)
   hash->state[3] += d;
 };
 
+/*
+ * Write message length in bits to the last 8 bytes of buffer
+ */
+void md5_WriteLength(MD5_T* hash)
+{
+	//Compute bit length
+	unsigned long long BitLength = hash->message_length*8;
+
+	//Write length to buffer
+	unsigned long long* pointer = (unsigned long long*)&hash->buff512[56];
+	*pointer = BitLength;
+};
+
+/*
+ * Finalize buffer for hash computation
+ */
+void md5_finalize(MD5_T* hash)
+{
+	//Get current buffer position
+	unsigned char BufferPosition = (unsigned char)(hash->message_length%64);
+
+	//Fill unused buffer with 0s
+	for(unsigned char count = 63; count >= BufferPosition; count--)
+		hash->buff512[count] = 0;
+
+	//Write 0x80 at end of buffer
+	hash->buff512[BufferPosition] = 0x80;
+
+	//Decide whether message length fits in remaining buffer or not
+	if(BufferPosition >= 56)
+	{
+		//Message length does not fit
+		//Process buffer
+		md5_process512(hash);
+
+		//Fill buffer with all 0s
+		for(unsigned char count = 0; count < 64; count++)
+			hash->buff512[count] = 0;
+	}
+
+	//Append message length to last bytes of buffer
+	md5_WriteLength(hash);
+
+	//Process new buffer
+	md5_process512(hash);
+};

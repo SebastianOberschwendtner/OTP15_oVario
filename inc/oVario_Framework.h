@@ -84,7 +84,7 @@ void wait_ms(unsigned long l_time);
 void wait_systick(unsigned long l_ticks);
 void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second);
 unsigned char get_seconds(void);
-unsigned char get_minutess(void);
+unsigned char get_minutes(void);
 unsigned char get_hours(void);
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year);
 unsigned char get_day(void);
