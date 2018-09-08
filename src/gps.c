@@ -92,7 +92,6 @@ T_hdr_nmea* p_HDR_nmea = (void*)&msg_buff[0];
 T_VTG_nmea act_VTG;
 
 
-GPS_T *p_GPS_data;
 
 void *pDMABuff;
 uint8_t DMABuff[dma_buf_size];
@@ -104,6 +103,10 @@ uint32_t			Rd_Idx = 0;
 uint32_t			Rd_Cnt = 0;
 volatile uint32_t 	Wr_Idx = 0;
 
+//Puplic Variables
+GPS_T *p_GPS_data;
+SYS_T* sys;
+
 // ***** Functions *****
 
 void gps_init ()
@@ -112,6 +115,7 @@ void gps_init ()
 	// get memory
 	pDMABuff 	= ipc_memory_register(dma_buf_size, did_GPS_DMA);
 	p_GPS_data 	= ipc_memory_register(80, did_GPS);
+	sys			= ipc_memory_get(did_SYS);
 
 
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -557,4 +561,19 @@ void gps_set_baud(unsigned int baud)
 	USART_Init(USART3, &USART_InitStructure);
 
 	USART_Cmd(USART3, ENABLE);
-}
+};
+
+/*
+ * This function sets the system time according to the gps time.
+ * Timezone is UTC.
+ */
+void gps_SetSysTime(void)
+{
+	//Hour
+	unsigned char ch_hour = (unsigned char)(p_GPS_data->hours);
+	//Minutes
+	unsigned char ch_minute = (unsigned char)(p_GPS_data->min);
+	//Seconds
+	unsigned char ch_second = (unsigned char)(p_GPS_data->sec);
+	set_time(ch_hour, ch_minute, ch_second);
+};
