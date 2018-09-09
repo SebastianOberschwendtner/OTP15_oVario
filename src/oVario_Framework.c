@@ -251,22 +251,18 @@ unsigned char sys_strcpy(char* pch_string1, char* pch_string2)
 };
 
 /*
- * Write a number with a specific amount of digits to a string.
+ * Write a number with a specific amount of digits to a stringin dec format.
+ * This function copies directly to the input string.
  */
 unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits)
 {
-	//String for number
-	char ch_number[ch_digits+1];
-	ch_number[ch_digits] = 0;
-
 	//Compute the string content
 	for(unsigned char ch_count = 0; ch_count<ch_digits;ch_count++)
 	{
-		ch_number[ch_digits - ch_count -1] = (unsigned char)(l_number%10)+48;
+		string[ch_digits - ch_count -1] = (unsigned char)(l_number%10)+48;
 		l_number /=10;
 	}
-	//Copy number string to string
-	return sys_strcpy(string,ch_number);
+	return 1;
 };
 
 /*
@@ -284,4 +280,27 @@ void sys_memcpy(void* data1, void* data2, unsigned char length)
 		temp1++;
 		temp2++;
 	}
-}
+};
+
+/*
+ * Write a number with a specific amount of digits to a string in hex format.
+ * This function copies directly to the input string.
+ */
+unsigned char sys_hex2str(char* string, unsigned long l_number, unsigned char ch_digits)
+{
+	unsigned char result = 0;
+
+	//Compute the string content
+	for(unsigned char ch_count = 0; ch_count<ch_digits;ch_count++)
+	{
+		result = (unsigned char)(l_number%16);
+
+		//If hex character is required increase result with 7.
+		if(result > 9)
+			result += 39;
+
+		string[ch_digits - ch_count -1] = result + 48;
+		l_number /=16;
+	}
+	return 1;
+};
