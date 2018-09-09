@@ -66,6 +66,19 @@ typedef struct{
 	uint32_t vAcc;
 }T_UBX_POSLLH;
 
+typedef struct{
+	uint32_t 	iTOW;
+	uint32_t 	tAcc;
+	int32_t 	nano;
+	uint16_t 	year;
+	uint8_t 	month;
+	uint8_t 	day;
+	uint8_t 	hour;
+	uint8_t 	min;
+	uint8_t 	sec;
+	uint8_t	 	valid;
+}T_UBX_TIMEUTC;
+
 
 typedef struct{
 	uint16_t sync;
@@ -84,6 +97,7 @@ typedef struct{
 	uint8_t CK_A;
 	uint8_t CK_B;
 }T_CFG_PRT;
+
 #pragma pack(pop)
 
 
@@ -287,6 +301,9 @@ void gps_task ()
 		}
 	}
 
+	gps_SetSysDate();
+	if(p_GPS_data->fix) // if fix -> set Sys Date
+		gps_SetSysTime();
 
 	p_GPS_data->Rd_Idx 		= (float)Rd_Idx;
 	p_GPS_data->Rd_cnt 		= (float)Rd_Cnt;
@@ -306,6 +323,8 @@ void gps_handle_nav()
 	T_UBX_VELNED* pVN;
 	T_UBX_SOL* pSOL;
 	T_UBX_POSLLH* pPOS;
+	T_UBX_TIMEUTC* pTIME;
+
 	switch(UBX_beg->id)
 	{
 	case velned:
@@ -314,8 +333,8 @@ void gps_handle_nav()
 		p_GPS_data->heading_deg = (float)pVN->heading / 100000;
 
 		uint32_t temp = pVN->iTow/1000;
-		p_GPS_data->sec = (float)(temp % 60);
-		p_GPS_data->min = (float)((temp - (uint32_t)p_GPS_data->sec) / 60 % 60);
+		p_GPS_data->sec 	= (float)(temp % 60);
+		p_GPS_data->min 	= (float)((temp - (uint32_t)p_GPS_data->sec) / 60 % 60);
 		p_GPS_data->hours   = (float)(((temp - (uint32_t)p_GPS_data->sec - (uint32_t)p_GPS_data->min * 60) / 3600 + 2) % 24);
 		break;
 	case sol:
@@ -324,9 +343,17 @@ void gps_handle_nav()
 		break;
 	case posllh:
 		pPOS = (void*)&msg_buff[0];
-		p_GPS_data->lat = ((float)pPOS->lat) / 10000000;
-		p_GPS_data->lon = ((float)pPOS->lon) / 10000000;
-		p_GPS_data->msl = ((float)pPOS->hMSL) / 1000;
+		p_GPS_data->lat 	= ((float)pPOS->lat) / 10000000;
+		p_GPS_data->lon 	= ((float)pPOS->lon) / 10000000;
+		p_GPS_data->msl 	= ((float)pPOS->hMSL) / 1000;
+		p_GPS_data->height  = ((float)pPOS->height) / 1000;
+		p_GPS_data->hAcc 	= ((float)pPOS->hAcc) / 1000;
+		break;
+	case timeutc:
+		pTIME = (void*)&msg_buff[0];
+		p_GPS_data->year 	= pTIME->year;
+		p_GPS_data->month 	= pTIME->month;
+		p_GPS_data->day 	= pTIME->day;
 		break;
 	default:
 		;
@@ -369,88 +396,17 @@ void gps_config()
 	cfgmsg->CK_B 			= CK_B;
 
 
-
 	gps_send_bytes(buff, 28);
 
 	wait_ms(100);
-
-//
-//
-//	CK_A = 0;
-//	CK_B = 0;
-//
-//	cfgmsg->sync 			= 0x62B5;
-//	cfgmsg->class 			= cfg;
-//	cfgmsg->id 				= id_cfg;
-//	cfgmsg->length 			= 20;
-//	cfgmsg->portID 			= 1;
-//	cfgmsg->txReady 		= 0;
-//	cfgmsg->Mode 			= 0x000008D0;
-//	cfgmsg->baudrate 		= 9600;
-//	cfgmsg->inProtomask 	= 1;
-//	cfgmsg->outProtomask 	= 1;
-//	cfgmsg->flags 			= 0;
-//
-//	for(uint8_t I = 2; I < 26; I++)
-//	{
-//		CK_A = CK_A + buff[I];
-//		CK_B = CK_B + CK_A;
-//	}
-//
-//	cfgmsg->CK_A 			= CK_A;
-//	cfgmsg->CK_B 			= CK_B;
-//	gps_send_bytes(buff, 28);
-//
-//	gps_set_baud(9600);
-
-	// sniffed message
-	//0xB5
-	//0x62
-	//
-	//0x06
-	//0x00
-	//
-	//0x14
-	//0x00	// Length
-	//
-	//0x01	// portID
-	//0x00	// res
-	//
-	//0x00	// txready
-	//0x00
-	//
-	//0xD0	// mode
-	//0x08
-	//0x00
-	//0x00
-	//
-	//0x00	// baud
-	//0xC2
-	//0x01
-	//0x00
-	//
-	//0x01
-	//0x00
-	//
-	//0x01
-	//0x00
-	//0x00
-	//0x00
-	//
-	//0x00
-	//0x00
-	//0xB8
-	//0x42
-
-
 
 	// Set new rates for UBX messages
 	wait_ms(100);
 	gps_set_msg_rate(nav, posllh, 1);
 	wait_ms(60);
 
-	//	gps_set_msg_rate(nav, timeutc, 1);
-	//	wait_ms(60);
+	gps_set_msg_rate(nav, timeutc, 1);
+	wait_ms(60);
 
 	//	gps_set_msg_rate(nav, clock, 1);
 	//	wait_ms(60);
@@ -544,8 +500,6 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
 }
 
 
-
-
 void gps_set_baud(unsigned int baud)
 {
 	USART_Cmd(USART3, DISABLE);
@@ -576,4 +530,15 @@ void gps_SetSysTime(void)
 	//Seconds
 	unsigned char ch_second = (unsigned char)(p_GPS_data->sec);
 	set_time(ch_hour, ch_minute, ch_second);
+};
+
+void gps_SetSysDate(void)
+{
+	//Year
+	unsigned int i_year = (unsigned int)(p_GPS_data->year);
+	//Month
+	unsigned char ch_month = (unsigned char)(p_GPS_data->month);
+	//Day
+	unsigned char ch_day = (unsigned char)(p_GPS_data->day);
+	set_date(ch_day, ch_month, i_year);
 };

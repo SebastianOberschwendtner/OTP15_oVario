@@ -60,6 +60,7 @@ void gps_set_msg_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate);
 
 void gps_set_baud(unsigned int baud);
 void gps_SetSysTime(void);
+void gps_SetSysDate(void);
 
 
 #endif /* GPS_H_ */

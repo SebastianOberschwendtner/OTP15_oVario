@@ -95,7 +95,8 @@ typedef struct{
 	float time_utc;
 	uint8_t n_sat;
 	float HDOP;
-	float msl;
+	float msl;		// height above MSL			[m]
+	float height; 	// height above ellipsoid 	[m]
 	float Altref;
 	uint8_t fix;
 	float Rd_cnt;
@@ -107,6 +108,10 @@ typedef struct{
 	float alt_max;
 	float alt_min;
 	float v_max;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	float 	hAcc;	//[m]
 }GPS_T;
 #pragma pack(pop)
 
