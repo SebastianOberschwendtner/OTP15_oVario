@@ -25,6 +25,7 @@ typedef struct
 SDIO_T* sd;
 GPS_T* GpsData;
 datafusion_T* BaroData;
+T_keypad p_ipc_gui_keypad_data;
 
 //private structs
 FILE_T IGC;
@@ -37,6 +38,68 @@ unsigned long const g_key[16] = {
 		0x67452301,0xefcdab89,0x98badcfe,0x10325476 ,
 		0xc8e899e8,0x9321c28a,0x438eba12,0x8cbe0aee };
 
+/*
+ * Igc task.
+ * Systime has to be up to date.
+ */
+
+void igc_task(void)
+{
+	//Perform igc task
+	switch(IgcInfo.open)
+	{
+	case IGC_CLOSED:
+		//If gps has a fix start logging
+		if(GpsData->fix)
+		{
+			//Create log
+			igc_create();
+
+			set_led_green(ON);
+			//If start of logging was succesful
+			if(IgcInfo.open != IGC_ERROR)
+				IgcInfo.open = IGC_RECORDING;
+		}
+		break;
+	case IGC_RECORDING:
+		igc_BRecord();
+		set_led_green(TOGGLE);
+		break;
+	case IGC_LANDING:
+		igc_close();
+		IgcInfo.open = IGC_FINISHED;
+		sdio_set_inactive();
+		set_led_green(OFF);
+		break;
+	case IGC_FINISHED:
+		break;
+	case IGC_ERROR:
+		break;
+	default:
+		break;
+	}
+
+	// Keypad
+	while(ipc_get_queue_bytes(did_KEYPAD) > 4) 				// look for new command in keypad queue
+	{
+		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
+		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		{
+		case 0:
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			if(IgcInfo.open == IGC_RECORDING)
+				IgcInfo.open = IGC_LANDING;
+			break;
+		default:
+			break;
+		}
+	}
+}
 /*
  * Check if current character is a valid igc character and therefore included in the grecord
  */
@@ -85,9 +148,9 @@ unsigned char igc_IncludeInGrecord(char* in)
 };
 
 /*
- * Create new IGC log
+ * init igc
  */
-void igc_create(void)
+void init_igc(void)
 {
 	//get sd handler
 	sd = ipc_memory_get(did_SDIO);
@@ -95,7 +158,13 @@ void igc_create(void)
 	GpsData = ipc_memory_get(did_GPS);
 	//get the datafusion handler
 	BaroData = ipc_memory_get(did_DATAFUSION);
+}
 
+/*
+ * Create new IGC log
+ */
+void igc_create(void)
+{
 	//only create igc if sd-card is detected
 	if(sd->state & SD_CARD_DETECTED)
 	{
@@ -209,8 +278,11 @@ void igc_create(void)
 		igc_AppendString("013638FXA");
 		igc_WriteLine();
 
+		//Write file
 		sdio_write_file(&IGC);
 	}
+	else
+		IgcInfo.open = IGC_ERROR;
 };
 
 /*
@@ -413,6 +485,9 @@ void igc_close(void)
 
 	//Close file
 	sdio_fclose(&IGC);
+
+	//Set state
+	IgcInfo.open = IGC_FINISHED;
 };
 
 /*

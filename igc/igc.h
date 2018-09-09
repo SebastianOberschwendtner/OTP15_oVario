@@ -35,11 +35,14 @@
 #define IGC_CLOSED			0
 #define IGC_RECORDING		1
 #define IGC_LANDING			2
+#define IGC_FINISHED		3
 #define IGC_ERROR			255
 
 //*********** Functions **************
+void igc_task(void);
 unsigned char igc_IsValidCharacter(unsigned char character);
 unsigned char igc_IncludeInGrecord(char* in);
+void init_igc(void);
 void igc_create(void);
 void igc_CommitCharacter(unsigned char character);
 void igc_CommitLine(char* line);
