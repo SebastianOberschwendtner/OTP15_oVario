@@ -82,6 +82,7 @@ void init_sdio(void)
 	 * Configure sdio
 	 */
 	sdio_set_clock(400000);										//set sdio clock
+	SDIO->CLKCR |= SDIO_CLKCR_CLKEN;							//enable clock
 	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0;	//Enable SD_CLK
 	SDIO->DTIMER = 0xFFFFF;										//Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
 	SDIO->DLEN	=	SDIO_BLOCKLEN;								//Numbers of bytes per block
@@ -132,7 +133,7 @@ void init_sdio(void)
 	}
 
 	//If card is detected
-	//TODO Optionally switch to 4-wire mode
+	//DONE Optionally switch to 4-wire mode
 	//TODO Read Card capacity
 
 	if(SD->state & SD_CARD_DETECTED)
@@ -154,21 +155,27 @@ void init_sdio(void)
 			SD->RCA = (unsigned int)(sdio_send_cmd_short(CMD3,0)>>16);
 
 		//Set Blocklen to 512 bytes
-		SD->response = sdio_send_cmd_short(CMD16,SDIO_BLOCKLEN);
+		//SD->response = sdio_send_cmd_short(CMD16,SDIO_BLOCKLEN);
 
-		/*Set bus mode to 4 bit
-		if(!(sdio_send_cmd_short(CMD7,(SD->RCA<<16)) & R1_ERROR))
+		//Set bus mode to 4 bit
+
+		sdio_select_card();
+		if(SD->state & SD_CARD_SELECTED)
 		{
+			//send command for bus mode
 			SD->response = sdio_send_cmd_short(CMD55,(SD->RCA<<16));
 			if(SD->response & R1_APP_CMD)
 				SD->response = sdio_send_cmd_short(ACMD6,0b10);
-			SD->response = sdio_send_cmd_short(CMD7,(SD->RCA<<16));
-		}*/
+			//If bus mode is available, switch to this mode
+			if(!(SD->response & R1_ERROR))
+				SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
+		}
 
 		wait_ms(1);
+		//Increase clock speed to 4 MHz
+		sdio_set_clock(4000000);
 
-		//Select the card and initialize the filesystem
-		sdio_select_card();
+		//initialize the filesystem
 		sdio_init_filesystem();
 	}
 
@@ -185,7 +192,12 @@ void sdio_set_clock(unsigned long l_clock)
 		l_clock = 400000;
 	else if(l_clock > 25000000)
 		l_clock = 25000000;
-	SDIO->CLKCR = SDIO_CLKCR_CLKEN | ((SDIOCLK/l_clock)-2);
+
+	//Save current CLKCR
+	unsigned long config = SDIO->CLKCR;
+
+	//Write new CLKDIV
+	SDIO->CLKCR = (config & (127<<8)) | ((SDIOCLK/l_clock)-2);
 }
 
 /*
