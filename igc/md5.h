@@ -20,6 +20,8 @@ unsigned long md5_leftrotate(unsigned long x, unsigned long c);
 void md5_append_char(MD5_T* hash, unsigned char character);
 void md5_process512(MD5_T* hash);
 void md5_WriteLength(MD5_T* hash);
+void md5_finalize(MD5_T* hash);
+void md5_GetDigest(MD5_T* hash, char* digest);
 
 
 #endif /* MD5_H_ */

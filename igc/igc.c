@@ -17,7 +17,7 @@ typedef struct
 	char linebuffer[77];	//Maximum record length + LF (see FAI Appendix A2.1)
 	unsigned char linepointer;
 	unsigned char open;
-	MD5_T md5[4];
+	MD5_T md5[IGC_HASH_NUMBER];
 }IGCINFO_T;
 #pragma pack(pop)
 
@@ -222,7 +222,7 @@ void igc_CommitCharacter(unsigned char character)
 	if(igc_IsValidCharacter(character))
 	{
 		//Commit character to the hashes
-		for(unsigned char count = 0; count < 4; count++)
+		for(unsigned char count = 0; count < IGC_HASH_NUMBER; count++)
 			md5_append_char(&IgcInfo.md5[count], character);
 	}
 };
@@ -311,11 +311,7 @@ void igc_AppendNumber(unsigned long number, unsigned char digits)
 	if(IgcInfo.linepointer < (76-digits))
 	{
 		//Compute the string content
-		for(unsigned char ch_count = 0; ch_count<digits;ch_count++)
-		{
-			IgcInfo.linebuffer[IgcInfo.linepointer + digits - ch_count - 1] = (unsigned char)(number%10)+48;
-			number /=10;
-		}
+		sys_num2str(&IgcInfo.linebuffer[IgcInfo.linepointer], number, digits);
 		IgcInfo.linepointer += digits;
 	}
 };
@@ -376,6 +372,47 @@ void igc_BRecord(void)
 
 	//Write line
 	igc_WriteLine();
+};
+
+/*
+ * Sign log with G-Record
+ */
+void igc_sign(void)
+{
+	//Finalize buffers
+	for(unsigned char count = 0; count < IGC_HASH_NUMBER; count++)
+		md5_finalize(&IgcInfo.md5[count]);
+
+	//Get digest and write to file
+	for(unsigned char count = 0; count < IGC_HASH_NUMBER; count++)
+	{
+		md5_GetDigest(&IgcInfo.md5[count], IgcInfo.linebuffer);
+
+		//Every digest is split into n lines
+		for(unsigned char LineCount = 0; LineCount < 32/IGC_DIGEST_CHARPERLINE; LineCount++)
+		{
+			//Write G-Record with IGC_DIGEST_CHARPERLINE characters until the complete digest is written.
+			sdio_byte2file(&IGC, 'G');
+			for(unsigned char character = 0; character < IGC_DIGEST_CHARPERLINE; character++)
+				sdio_byte2file(&IGC, IgcInfo.linebuffer[character + LineCount*IGC_DIGEST_CHARPERLINE]);
+			sdio_byte2file(&IGC, '\n');
+		}
+	}
+};
+
+/*
+ * Close IGC log, sign it and write to sd-card.
+ */
+void igc_close(void)
+{
+	//Sign log
+	igc_sign();
+
+	//Write file
+	sdio_write_file(&IGC);
+
+	//Close file
+	sdio_fclose(&IGC);
 };
 
 /*

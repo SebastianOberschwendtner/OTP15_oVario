@@ -27,6 +27,10 @@
 #define IGC_GPS_RX			"uBlox, NEO-6M,16,max9000m"				//TODO Add correct GPS information (MaxAlt + Channels)
 #define IGC_BARO_MANUF		"MS5611,max10000m"						//TODO Add correct Baro information (MaxAlt)
 
+//G-Record
+#define IGC_HASH_NUMBER			4
+#define IGC_DIGEST_CHARPERLINE	16
+
 //States for igc file
 #define IGC_CLOSED			0
 #define IGC_RECORDING		1
@@ -45,6 +49,8 @@ void igc_AppendString(char* string);
 void igc_AppendNumber(unsigned long number, unsigned char digits);
 void igc_FRecord(void);
 void igc_BRecord(void);
+void igc_sign(void);
+void igc_close(void);
 void igc_PlotLine(void);
 
 #endif /* IGC_H_ */
