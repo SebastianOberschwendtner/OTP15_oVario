@@ -31,6 +31,7 @@ void gui_init (void)
 }
 
 
+//*********** Task **************
 void gui_task (void)
 {
 	lcd_clear_buffer();
@@ -112,14 +113,14 @@ void fkt_Initscreen (void)
 		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
 		switch(GUI_cmd.data)					// switch for pad number
 		{
-		case 0:		// next screen
+		case data_KEYPAD_pad_LEFT:		// next screen
 			menu = Gui_BMS;
 			break;
-		case 1:
+		case data_KEYPAD_pad_DOWN:
 			break;
-		case 2:
+		case data_KEYPAD_pad_UP:
 			break;
-		case 3:
+		case data_KEYPAD_pad_RIGHT:
 			break;
 		default:
 			break;
@@ -208,15 +209,23 @@ void fkt_Vario (void)
 		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
 		switch(GUI_cmd.data)					// switch for pad number
 		{
-		case 0:		// next screen
+		case data_KEYPAD_pad_LEFT:		// next screen
 			menu = Gui_BMS;
 			break;
-		case 1:
+
+		case data_KEYPAD_pad_DOWN:
 			break;
-		case 2:
+
+		case data_KEYPAD_pad_UP:
 			break;
-		case 3:
+
+		case data_KEYPAD_pad_RIGHT:		// toggle sinktone
+			GUI_cmd.did 		= did_GUI;
+			GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+			GUI_cmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 			break;
+
 		default:
 			break;
 		}
@@ -333,22 +342,22 @@ void fkt_BMS(void)
 		testipc = ipc_get_queue_bytes(did_GUI);
 		switch(GUI_cmd.data)					// switch for pad number
 		{
-		case 0:		// next screen
+		case data_KEYPAD_pad_LEFT:		// next screen
 			menu = Gui_GPS;
 			break;
-		case 1:
+		case data_KEYPAD_pad_DOWN:
 			GUI_cmd.did 		= did_GUI;
 			GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
-		case 2:
+		case data_KEYPAD_pad_UP:
 			GUI_cmd.did 		= did_GUI;
 			GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
-		case 3:
+		case data_KEYPAD_pad_RIGHT:
 			break;
 		default:
 			break;
@@ -486,22 +495,22 @@ void fkt_GPS(void)
 		testipc = ipc_get_queue_bytes(did_GUI);
 		switch(GUI_cmd.data)					// switch for pad number
 		{
-		case 0:		// next screen
+		case data_KEYPAD_pad_LEFT:		// next screen
 			menu = Gui_Vario;
 			break;
-		case 1:
+		case data_KEYPAD_pad_DOWN:
 			GUI_cmd.did 		= did_GUI;
 			GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
-		case 2:
+		case data_KEYPAD_pad_UP:
 			GUI_cmd.did 		= did_GUI;
 			GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
-		case 3:
+		case data_KEYPAD_pad_RIGHT:
 			break;
 		default:
 			break;

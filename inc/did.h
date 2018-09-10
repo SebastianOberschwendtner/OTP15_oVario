@@ -24,5 +24,6 @@
 #define		did_GPS_DMA		11
 #define		did_FILE1		12
 #define		did_FILE2		13
+#define 	did_VARIO		14
 
 #endif /* DID_H_ */

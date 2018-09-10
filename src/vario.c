@@ -21,6 +21,7 @@ T_command vario_command;
 uint8_t  volu 	= 0;
 uint16_t freque = 0;
 uint8_t  peri 	= 0;
+uint8_t state_sinktone = 1;
 
 
 
@@ -28,6 +29,7 @@ uint8_t  peri 	= 0;
 void vario_init(void)
 {
 	p_ipc_v_df_data = ipc_memory_get(did_DATAFUSION);
+	ipc_register_queue(200, did_VARIO);
 }
 
 
@@ -46,7 +48,31 @@ sound = 500;
 
 	 */
 
+	// Handle Queue Commands
+		T_command IPC_cmd;
+		while(ipc_get_queue_bytes(did_VARIO))
+		{
+			ipc_queue_get(did_VARIO, 10, &IPC_cmd); 	// get new command
+			switch(IPC_cmd.cmd)					// switch for pad number
+			{
+			case cmd_vario_set_sinktone:
+				state_sinktone = 1;
+				break;
 
+			case cmd_vario_clear_sinktone:
+				state_sinktone = 0;
+				break;
+
+			case cmd_vario_toggle_sinktone:
+				state_sinktone ^= 1;
+				break;
+
+			default:
+				break;
+			}
+		}
+
+	// Sound creation
 	temp_climb = p_ipc_v_df_data->climbrate_filt;
 
 	if(temp_climb > 5)
@@ -92,7 +118,7 @@ sound = 500;
 
 		ipc_queue_push(&vario_command, 10, did_SOUND);
 	}
-	else if(temp_climb < -2) 		// Huge Sink  --> Turn on Thermals
+	else if((temp_climb < -2) && state_sinktone) 		// Huge Sink  --> Turn on Thermals
 	{
 		// Set Unmute
 		vario_command.cmd 	= cmd_sound_set_unmute;

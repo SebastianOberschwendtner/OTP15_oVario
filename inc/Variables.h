@@ -13,13 +13,17 @@
 
 
 // ******* QUEUE MESSAGES *******
+// KEYPAD
+#define data_KEYPAD_pad_LEFT	0
+#define data_KEYPAD_pad_DOWN	1
+#define data_KEYPAD_pad_UP		2
+#define data_KEYPAD_pad_RIGHT	3
 
 // BMS
-#define cmd_BMS_OTG_OFF		0
-#define cmd_BMS_OTG_ON		1
+#define cmd_BMS_OTG_OFF			0
+#define cmd_BMS_OTG_ON			1
 
-
-// Sound cmd
+// Sound
 #define cmd_sound_set_frequ 	1
 #define cmd_sound_set_vol		2
 #define cmd_sound_set_louder 	3
@@ -30,8 +34,13 @@
 #define cmd_sound_set_cont		8
 #define cmd_sound_set_period	9
 
+// Vario
+#define cmd_vario_set_sinktone		0
+#define cmd_vario_clear_sinktone	1
+#define cmd_vario_toggle_sinktone	2
 
 
+// ******* TYPEDEF *******
 // Sound
 #pragma pack(push, 1)
 typedef struct
@@ -54,8 +63,6 @@ typedef struct
 	uint8_t beep;
 }T_sound_state;
 #pragma pack(pop)
-
-
 
 
 // Keypad
