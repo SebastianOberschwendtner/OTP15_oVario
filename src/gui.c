@@ -15,11 +15,10 @@
 //*********** Variables **************
 uint8_t menu = Gui_Vario;
 uint8_t submenu = 0;
-datafusion_T* p_ipc_gui_df_data;
-GPS_T* p_ipc_gui_gps_data;
-BMS_T* p_ipc_gui_bms_data;
-T_keypad p_ipc_gui_keypad_data;
-T_GUI_cmd Gui_cmd;
+datafusion_T* 	p_ipc_gui_df_data;
+GPS_T* 			p_ipc_gui_gps_data;
+BMS_T* 			p_ipc_gui_bms_data;
+T_command 		GUI_cmd;
 
 //*********** Functions **************
 void gui_init (void)
@@ -28,7 +27,7 @@ void gui_init (void)
 	p_ipc_gui_gps_data 	= ipc_memory_get(did_GPS);
 	p_ipc_gui_bms_data 	= ipc_memory_get(did_BMS);
 
-	ipc_register_queue(80,did_GUI);
+	ipc_register_queue(200, did_GUI);
 }
 
 
@@ -40,15 +39,12 @@ void gui_task (void)
 	case Gui_Initscreen:
 		fkt_Initscreen();
 		break;
-
 	case Gui_Vario:
 		fkt_Vario();
 		break;
-
 	case Gui_Menu:
 		fkt_Menu();
 		break;
-
 	case Gui_Settings:
 		fkt_Settings();
 		break;
@@ -111,10 +107,10 @@ void fkt_Initscreen (void)
 	gui_gauge(p_ipc_gui_df_data->climbrate_filt, -2, 5);
 
 	// Keypad
-	while(ipc_get_queue_bytes(did_KEYPAD) > 4) 				// look for new command in keypad queue
+	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
 	{
-		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
-		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
+		switch(GUI_cmd.data)					// switch for pad number
 		{
 		case 0:		// next screen
 			menu = Gui_BMS;
@@ -207,10 +203,10 @@ void fkt_Vario (void)
 
 
 	// Keypad
-	while(ipc_get_queue_bytes(did_KEYPAD) > 4) 				// look for new command in keypad queue
+	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
 	{
-		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
-		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
+		switch(GUI_cmd.data)					// switch for pad number
 		{
 		case 0:		// next screen
 			menu = Gui_BMS;
@@ -327,29 +323,30 @@ void fkt_BMS(void)
 	lcd_set_cursor(c1, y);
 	lcd_num2buffer(p_ipc_gui_bms_data->temperature,4);
 	lcd_string2buffer(" C");
-	testipc = ipc_get_queue_bytes(did_KEYPAD);
+
 
 	// Keypad
-	while(testipc > 4) 				// look for new command in keypad queue
+	testipc = ipc_get_queue_bytes(did_GUI);
+	while(testipc > 9) 							// look for new command in keypad queue
 	{
-		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
-		testipc = ipc_get_queue_bytes(did_KEYPAD);
-		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		ipc_queue_get(did_GUI, 10, &GUI_cmd); 	// get new command
+		testipc = ipc_get_queue_bytes(did_GUI);
+		switch(GUI_cmd.data)					// switch for pad number
 		{
 		case 0:		// next screen
 			menu = Gui_GPS;
 			break;
 		case 1:
-			Gui_cmd.did = did_BMS;
-			Gui_cmd.cmd = GUI_cmd_OTG_ON;
-			Gui_cmd.timestamp = TIM5->CNT;
-			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			GUI_cmd.did 		= did_GUI;
+			GUI_cmd.cmd 		= GUI_cmd_OTG_ON;
+			GUI_cmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
 		case 2:
-			Gui_cmd.did = did_BMS;
-			Gui_cmd.cmd = GUI_cmd_OTG_OFF;
-			Gui_cmd.timestamp = TIM5->CNT;
-			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			GUI_cmd.did 		= did_GUI;
+			GUI_cmd.cmd 		= GUI_cmd_OTG_OFF;
+			GUI_cmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
 		case 3:
 			break;
@@ -480,29 +477,29 @@ void fkt_GPS(void)
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);
 
-	testipc = ipc_get_queue_bytes(did_KEYPAD);
 
 	// Keypad
-	while(testipc > 4) 				// look for new command in keypad queue
+	testipc = ipc_get_queue_bytes(did_GUI);
+	while(testipc > 9) 				// look for new command in keypad queue
 	{
-		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
-		testipc = ipc_get_queue_bytes(did_KEYPAD);
-		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
+		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
+		testipc = ipc_get_queue_bytes(did_GUI);
+		switch(GUI_cmd.data)					// switch for pad number
 		{
 		case 0:		// next screen
 			menu = Gui_Vario;
 			break;
 		case 1:
-			Gui_cmd.did = did_BMS;
-			Gui_cmd.cmd = GUI_cmd_OTG_ON;
-			Gui_cmd.timestamp = TIM5->CNT;
-			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			GUI_cmd.did 		= did_GUI;
+			GUI_cmd.cmd 		= GUI_cmd_OTG_ON;
+			GUI_cmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
 		case 2:
-			Gui_cmd.did = did_BMS;
-			Gui_cmd.cmd = GUI_cmd_OTG_OFF;
-			Gui_cmd.timestamp = TIM5->CNT;
-			ipc_queue_push((void*)&Gui_cmd, 6, did_GUI);
+			GUI_cmd.did 		= did_GUI;
+			GUI_cmd.cmd 		= GUI_cmd_OTG_OFF;
+			GUI_cmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
 		case 3:
 			break;

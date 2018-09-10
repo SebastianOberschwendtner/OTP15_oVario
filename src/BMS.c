@@ -7,6 +7,7 @@
 
 #include "BMS.h"
 #include "Variables.h"
+#include "ipc.h"
 
 BMS_T* pBMS;
 
@@ -156,6 +157,8 @@ void init_BMS(void)
 		error_var |= err_bms_fault;
 		i2c_reset_error();
 	}
+
+	ipc_register_queue(200, did_BMS);
 };
 
 /*
@@ -169,15 +172,15 @@ void BMS_task(void)
 	BMS_get_status();
 
 	// Handle Commands
-	uint8_t ipc_no_bytes = ipc_get_queue_bytes(did_GUI);
-	T_GUI_cmd Gui_ipc_cmd;
+	uint8_t ipc_no_bytes = ipc_get_queue_bytes(did_BMS);
+	T_command IPC_cmd;
 
-	while(ipc_no_bytes > 5)
+	while(ipc_no_bytes > 9)
 	{
-		ipc_queue_get(did_GUI,6,&Gui_ipc_cmd); 	// get new command
-		ipc_no_bytes = ipc_get_queue_bytes(did_GUI);
+		ipc_queue_get(did_BMS,10,&IPC_cmd); 	// get new command
+		ipc_no_bytes = ipc_get_queue_bytes(did_BMS);
 
-		switch(Gui_ipc_cmd.cmd)					// switch for pad number
+		switch(IPC_cmd.cmd)					// switch for pad number
 		{
 		case GUI_cmd_OTG_ON:
 			BMS_set_otg(ON);

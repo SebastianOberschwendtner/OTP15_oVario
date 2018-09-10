@@ -15,7 +15,7 @@
 
 //*********** Defines **************
 #define memory_data_size 10000
-#define memory_queue_size 1000
+#define memory_queue_size 5000
 #define did_size 	20
 
 // ***** Prototypes *****

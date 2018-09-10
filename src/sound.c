@@ -13,7 +13,7 @@
 
 T_sound_state sound_state;
 uint32_t timet = 0;
-T_sound_command sound_command;
+T_command sound_command;
 volatile uint32_t temp = 0;
 
 // ***** Functions *****
@@ -131,11 +131,11 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 
 void sound_task(void)
 {
-	while(ipc_get_queue_bytes(did_SOUND) > 4)
+	while(ipc_get_queue_bytes(did_SOUND) > 9)
 	{
-		if(ipc_queue_get(did_SOUND, 5, &sound_command))
+		if(ipc_queue_get(did_SOUND, 10, &sound_command))
 		{
-			switch(sound_command.command)
+			switch(sound_command.cmd)
 			{
 			case sound_cmd_set_frequ:
 				sound_state.frequency = (uint16_t)sound_command.data;

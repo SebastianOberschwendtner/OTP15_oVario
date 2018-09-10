@@ -21,9 +21,11 @@
 #pragma pack(push, 1)
 typedef struct
 {
-	uint8_t command;
+	uint8_t did;
+	uint8_t cmd;
 	uint32_t data;
-}T_sound_command;
+	uint32_t timestamp;
+}T_command;
 #pragma pack(pop)
 
 #pragma pack(push, 1)
