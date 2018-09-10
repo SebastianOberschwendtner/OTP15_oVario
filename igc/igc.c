@@ -49,8 +49,8 @@ void igc_task(void)
 	switch(IgcInfo.open)
 	{
 	case IGC_CLOSED:
-		//If gps has a fix start logging
-		if(GpsData->fix)
+		//If gps has a fix start logging -> this is detected if the time is not 0
+		if(get_seconds())
 		{
 			//Create log
 			igc_create();
@@ -67,9 +67,10 @@ void igc_task(void)
 		break;
 	case IGC_LANDING:
 		igc_close();
-		IgcInfo.open = IGC_FINISHED;
 		sdio_set_inactive();
 		set_led_green(OFF);
+
+		IgcInfo.open = IGC_FINISHED;
 		break;
 	case IGC_FINISHED:
 		break;
@@ -78,28 +79,8 @@ void igc_task(void)
 	default:
 		break;
 	}
+};
 
-	// Keypad
-	while(ipc_get_queue_bytes(did_KEYPAD) > 4) 				// look for new command in keypad queue
-	{
-		ipc_queue_get(did_KEYPAD,5,&p_ipc_gui_keypad_data); 	// get new command
-		switch(p_ipc_gui_keypad_data.pad)					// switch for pad number
-		{
-		case 0:
-			break;
-		case 1:
-			break;
-		case 2:
-			break;
-		case 3:
-			if(IgcInfo.open == IGC_RECORDING)
-				IgcInfo.open = IGC_LANDING;
-			break;
-		default:
-			break;
-		}
-	}
-}
 /*
  * Check if current character is a valid igc character and therefore included in the grecord
  */
@@ -192,7 +173,7 @@ void igc_create(void)
 
 		//initialize hashes with custom key
 		for(unsigned char count = 0; count < 4; count++)
-			md5_initialize(&IgcInfo.md5[count], (unsigned long*)(&(g_key[4*count]))); //TODO Is the construct with the const_cast desirable?
+			md5_initialize(&IgcInfo.md5[count], (unsigned long*)(&(g_key[4*count]))); //DONE Is the construct with the const_cast desirable? -> works good
 		//Write header as required in FAI Chapter A3.2.4
 		//Manufacturer ID
 		igc_NewRecord('A');
@@ -418,14 +399,32 @@ void igc_BRecord(void)
 	igc_AppendNumber(get_seconds(), 2);
 
 	//Write latitude
-	temp = (unsigned long)(GpsData->lat*100000);
-	igc_AppendNumber(temp, 7);
-	igc_AppendString("N"); //TODO How do i know whether S or N?
+	if(GpsData->lat >= 0)
+	{
+		temp = (unsigned long)(GpsData->lat*100000);
+		igc_AppendNumber(temp, 7);
+		igc_AppendString("N"); //DONE How do i know whether S or N? -> through the sign of the float
+	}
+	else
+	{
+		temp = (unsigned long)(GpsData->lat*-100000);
+		igc_AppendNumber(temp, 7);
+		igc_AppendString("S");
+	}
 
 	//Write longitude
-	temp = (unsigned long)(GpsData->lon*100000);
-	igc_AppendNumber(temp, 8);
-	igc_AppendString("E"); //TODO How do i know whether W or E?
+	if(GpsData->lon >= 0)
+	{
+		temp = (unsigned long)(GpsData->lon*100000);
+		igc_AppendNumber(temp, 8);
+		igc_AppendString("E"); //DONE How do i know whether W or E? -> through the sign of the float
+	}
+	else
+	{
+		temp = (unsigned long)(GpsData->lon*-100000);
+		igc_AppendNumber(temp, 8);
+		igc_AppendString("W");
+	}
 
 	//Write fix validity
 	if(GpsData->fix == 3)
@@ -437,10 +436,10 @@ void igc_BRecord(void)
 	igc_AppendNumber((unsigned long)BaroData->height, 5);
 
 	//Write GNSS altitude
-	igc_AppendNumber((unsigned long)GpsData->msl, 5);
+	igc_AppendNumber((unsigned long)GpsData->height, 5);	//DONE Get height above ellipsoid
 
 	//Write fix accuracy
-	igc_AppendNumber((unsigned long)GpsData->HDOP, 3); //TODO Get real accuracy
+	igc_AppendNumber((unsigned long)GpsData->hAcc, 3); //DONE Get real accuracy
 
 	//Write line
 	igc_WriteLine();
