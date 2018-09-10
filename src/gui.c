@@ -338,13 +338,13 @@ void fkt_BMS(void)
 			break;
 		case 1:
 			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= GUI_cmd_OTG_ON;
+			GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
 		case 2:
 			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= GUI_cmd_OTG_OFF;
+			GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
@@ -491,13 +491,13 @@ void fkt_GPS(void)
 			break;
 		case 1:
 			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= GUI_cmd_OTG_ON;
+			GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;
 		case 2:
 			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= GUI_cmd_OTG_OFF;
+			GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
 			GUI_cmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 			break;

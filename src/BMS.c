@@ -182,10 +182,10 @@ void BMS_task(void)
 
 		switch(IPC_cmd.cmd)					// switch for pad number
 		{
-		case GUI_cmd_OTG_ON:
+		case cmd_BMS_OTG_ON:
 			BMS_set_otg(ON);
 			break;
-		case GUI_cmd_OTG_OFF:
+		case cmd_BMS_OTG_OFF:
 			BMS_set_otg(OFF);
 			break;
 		default:

@@ -11,9 +11,24 @@
 #define true 1
 #define false 0
 
-// GUI CMDs
-#define GUI_cmd_OTG_OFF		0
-#define GUI_cmd_OTG_ON		1
+
+// ******* QUEUE MESSAGES *******
+
+// BMS
+#define cmd_BMS_OTG_OFF		0
+#define cmd_BMS_OTG_ON		1
+
+
+// Sound cmd
+#define cmd_sound_set_frequ 	1
+#define cmd_sound_set_vol		2
+#define cmd_sound_set_louder 	3
+#define cmd_sound_set_quieter 	4
+#define cmd_sound_set_mute		5
+#define cmd_sound_set_unmute	6
+#define cmd_sound_set_beep 		7
+#define cmd_sound_set_cont		8
+#define cmd_sound_set_period	9
 
 
 

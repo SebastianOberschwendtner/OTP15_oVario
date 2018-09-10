@@ -137,45 +137,45 @@ void sound_task(void)
 		{
 			switch(sound_command.cmd)
 			{
-			case sound_cmd_set_frequ:
+			case cmd_sound_set_frequ:
 				sound_state.frequency = (uint16_t)sound_command.data;
 				break;
 
-			case sound_cmd_set_vol:
+			case cmd_sound_set_vol:
 				sound_state.volume = (uint16_t)sound_command.data;
 				break;
 
-			case sound_cmd_set_louder:
+			case cmd_sound_set_louder:
 				if(sound_state.volume >= 100-(uint8_t)sound_command.data)
 					sound_state.volume += (uint8_t)sound_command.data;
 				else
 					sound_state.volume = 100;
 				break;
 
-			case sound_cmd_set_quieter:
+			case cmd_sound_set_quieter:
 				if(sound_state.volume >= (uint8_t)sound_command.data)
 					sound_state.volume -= (uint8_t)sound_command.data;
 				else
 					sound_state.volume = 0;
 				break;
 
-			case sound_cmd_set_mute:
+			case cmd_sound_set_mute:
 				sound_state.mute = 1;
 				break;
 
-			case sound_cmd_set_unmute:
+			case cmd_sound_set_unmute:
 				sound_state.mute = 0;
 				break;
 
-			case sound_cmd_set_beep:
+			case cmd_sound_set_beep:
 				sound_state.mode = sound_mode_beep;
 				break;
 
-			case sound_cmd_set_cont:
+			case cmd_sound_set_cont:
 				sound_state.mode = sound_mode_cont;
 				break;
 
-			case sound_cmd_set_period:
+			case cmd_sound_set_period:
 				sound_state.period = (uint8_t)sound_command.data;
 				break;
 
