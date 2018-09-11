@@ -12,9 +12,17 @@
 #include "ipc.h"
 #include "Variables.h"
 
+//*********** struct typedefs ********
+typedef struct
+{
+	uint8_t 	message;
+	uint16_t	lifetime;
+}InfoBox_T;
+
 //*********** Variables **************
-uint8_t menu = Gui_Vario;
-uint8_t submenu = 0;
+uint8_t 		menu = Gui_Vario;
+uint8_t 		submenu = 0;
+InfoBox_T		InfoBox;
 datafusion_T* 	p_ipc_gui_df_data;
 GPS_T* 			p_ipc_gui_gps_data;
 BMS_T* 			p_ipc_gui_bms_data;
@@ -58,10 +66,12 @@ void gui_task (void)
 	default:
 		break;
 	}
+	//Draw infobox
+	fkt_infobox();
 
 	// draw screen
-	lcd_send_buffer();
-	//lcd_dma_enable();
+	//lcd_send_buffer();
+	lcd_dma_enable();
 }
 
 void fkt_Initscreen (void)
@@ -203,38 +213,52 @@ void fkt_Vario (void)
 	draw_graph(138, 57);
 
 
-	// Keypad
+	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
 	{
 		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-		switch(GUI_cmd.data)					// switch for pad number
+
+		//Switch for commad
+		switch(GUI_cmd.cmd)
 		{
-		case data_KEYPAD_pad_LEFT:		// next screen
-			menu = Gui_BMS;
+		//Keypad
+		case cmd_gui_eval_keypad:
+			switch(GUI_cmd.data)					// switch for pad number
+			{
+			case data_KEYPAD_pad_LEFT:		// next screen
+				menu = Gui_BMS;
+				break;
+
+			case data_KEYPAD_pad_DOWN:
+				break;
+
+			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+				break;
+
+			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+				break;
+
+			default:
+				break;
+			}
 			break;
 
-		case data_KEYPAD_pad_DOWN:
-			break;
-
-		case data_KEYPAD_pad_UP:
-			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= cmd_igc_stop_logging;
-			GUI_cmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
-			break;
-
-		case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-			GUI_cmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
-			break;
-
-		default:
-			break;
+			//Infobox
+			case cmd_gui_set_std_message:
+				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+				break;
+			default:
+				break;
 		}
-
-
 	}
 }
 
@@ -369,7 +393,6 @@ void fkt_BMS(void)
 
 	}
 }
-
 
 void fkt_GPS(void)
 {
@@ -523,9 +546,6 @@ void fkt_GPS(void)
 	}
 }
 
-
-
-
 void fkt_Menu (void)
 {
 	;
@@ -535,6 +555,43 @@ void fkt_Settings(void)
 {
 	;
 }
+
+/*
+ * This function displays an infobox on the screen with an expiration time.
+ * The expiration time is fixed to 5 seconds for now.
+ */
+//TODO Add adjustable lifetime.
+void fkt_infobox(void)
+{
+	//Check if infobox is expired
+	if(InfoBox.lifetime)
+	{
+		lcd_box2buffer(170, 40, 2);
+		switch(InfoBox.message)
+		{
+		case data_info_logging_started:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("IGC Started!");
+			break;
+		case data_info_logging_stopped:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("IGC Finished!");
+			break;
+		case data_info_error:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Error!");
+			break;
+		default:
+			break;
+		}
+
+		//After displaying decrease lifetime of box
+		InfoBox.lifetime--;
+	}
+};
 
 void gui_gauge(float value, float min, float max)
 {
@@ -581,7 +638,6 @@ void gui_gauge(float value, float min, float max)
 	else if(value < 0)
 		lcd_block2buffer(229,zeroline + value_min,value_min,10);
 }
-
 
 void draw_graph(uint8_t x, uint8_t y)
 {
@@ -635,6 +691,5 @@ void draw_graph(uint8_t x, uint8_t y)
 	lcd_float2buffer((float)min,1,0);
 	lcd_string2buffer("ms");
 }
-
 
 

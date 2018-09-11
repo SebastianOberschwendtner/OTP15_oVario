@@ -42,6 +42,15 @@
 //IGC Logging
 #define cmd_igc_stop_logging		1
 
+//GUI
+#define cmd_gui_eval_keypad			1
+#define cmd_gui_set_std_message		2
+
+//Standard messages for infobox
+#define data_info_logging_started	1
+#define data_info_logging_stopped	2
+#define data_info_error				3
+
 
 // ******* TYPEDEF *******
 // Generic command for queue

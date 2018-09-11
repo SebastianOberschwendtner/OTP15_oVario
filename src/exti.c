@@ -72,6 +72,7 @@ void EXTI0_IRQHandler (void)
 {
 	T_command temp;
 	temp.did  		= did_KEYPAD;
+	temp.cmd		= cmd_gui_eval_keypad;
 	temp.data 		= data_KEYPAD_pad_LEFT;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
@@ -82,6 +83,7 @@ void EXTI1_IRQHandler (void)
 {
 	T_command temp;
 	temp.did  		= did_KEYPAD;
+	temp.cmd		= cmd_gui_eval_keypad;
 	temp.data 		= data_KEYPAD_pad_DOWN;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
@@ -92,6 +94,7 @@ void EXTI2_IRQHandler (void)
 {
 	T_command temp;
 	temp.did  		= did_KEYPAD;
+	temp.cmd		= cmd_gui_eval_keypad;
 	temp.data 		= data_KEYPAD_pad_UP;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
@@ -102,6 +105,7 @@ void EXTI3_IRQHandler (void)
 {
 	T_command temp;
 	temp.did  		= did_KEYPAD;
+	temp.cmd		= cmd_gui_eval_keypad;
 	temp.data 		= data_KEYPAD_pad_RIGHT;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);

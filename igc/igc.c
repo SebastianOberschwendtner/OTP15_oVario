@@ -77,7 +77,25 @@ void igc_task(void)
 			set_led_green(ON);
 			//If start of logging was succesful
 			if(IgcInfo.open != IGC_ERROR)
+			{
 				IgcInfo.open = IGC_RECORDING;
+
+				//Send infobox
+				IgcCmd.did 			= did_IGC;
+				IgcCmd.cmd			= cmd_gui_set_std_message;
+				IgcCmd.data 		= data_info_logging_started;
+				IgcCmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push(&IgcCmd, 10, did_GUI);
+			}
+			else
+			{
+				//Send infobox
+				IgcCmd.did 			= did_IGC;
+				IgcCmd.cmd			= cmd_gui_set_std_message;
+				IgcCmd.data 		= data_info_error;
+				IgcCmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push(&IgcCmd, 10, did_GUI);
+			}
 		}
 		break;
 	case IGC_RECORDING:
@@ -90,6 +108,12 @@ void igc_task(void)
 		set_led_green(OFF);
 
 		IgcInfo.open = IGC_FINISHED;
+		//Send infobox
+		IgcCmd.did 			= did_IGC;
+		IgcCmd.cmd			= cmd_gui_set_std_message;
+		IgcCmd.data 		= data_info_logging_stopped;
+		IgcCmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push(&IgcCmd, 10, did_GUI);
 		break;
 	case IGC_FINISHED:
 		break;

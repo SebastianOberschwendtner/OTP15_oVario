@@ -571,5 +571,41 @@ void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
 		plcd_DOGXL->cursor_x += (ch_predecimal+1)*FONT_X*plcd_DOGXL->ch_fontsize;
 	else
 		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
-}
+};
+
+/*
+ * Write an empty box with a border in the buffer.
+ * The box is centered in the middle of the screen.
+ */
+void lcd_box2buffer(unsigned char width, unsigned char height, unsigned char thickness)
+{
+	//get coordinates of box
+	unsigned char x_start 	= (LCD_PIXEL_X/2) - (width/2);
+	unsigned char x_end 	= (LCD_PIXEL_X/2) + (width/2);
+	unsigned char y_start  	= (LCD_PIXEL_Y/2) - (height/2);
+	unsigned char y_end		= (LCD_PIXEL_Y/2) + (height/2);
+
+	//Draw border
+	for(unsigned char border = 0; border < thickness; border++)
+	{
+		//horizontal lines
+		lcd_line2buffer(x_start, y_start + border, x_end, y_start + border);
+		lcd_line2buffer(x_start, y_end - border, x_end, y_end - border);
+
+		//vertical lines
+		lcd_line2buffer(x_start + border, y_start, x_start + border, y_end);
+		lcd_line2buffer(x_end - border, y_start, x_end - border, y_end);
+	}
+
+	//Fill with empty space
+	//X-direction
+	for(unsigned char x_count = x_start+thickness; x_count <= x_end-thickness; x_count++)
+	{
+		//Y-direction
+		for(unsigned char y_count = y_start+thickness; y_count <= y_end-thickness; y_count++)
+		{
+			lcd_pixel2buffer(x_count, y_count, 0);
+		}
+	}
+};
 

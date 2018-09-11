@@ -158,6 +158,7 @@ void lcd_bat2buffer(unsigned char ch_stat);
 void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned char ch_x_end,unsigned char ch_y_end);
 void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius);
 void lcd_block2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_height, unsigned char ch_width);
+void lcd_box2buffer(unsigned char width, unsigned char height, unsigned char thickness);
 
 
 #endif /* DOGXL240_H_ */

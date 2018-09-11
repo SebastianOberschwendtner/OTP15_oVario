@@ -31,6 +31,7 @@ void fkt_BMS		(void);
 void fkt_GPS		(void);
 void fkt_Menu 		(void);
 void fkt_Settings	(void);
+void fkt_infobox(void);
 
 void gui_gauge      (float value, float min, float max);
 void draw_graph		(uint8_t x, uint8_t y);
