@@ -23,13 +23,11 @@
 #include "gps.h"
 #include "BMS.h"
 #include "sdio.h"
+#include "logging.h"
+#include "igc.h"
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
-
-int32_t testmain = 0;
-
-
 
 int main(void)
 {
@@ -45,20 +43,17 @@ int main(void)
 	timer_init();
 	init_i2c();
 
-
 	MS5611_init();
-
-	//init_sdio();
+	init_sdio();
 
 	wait_systick(10);
 	init_BMS();
 
 	gps_init();
-
 	datafusion_init();
 	vario_init();
 	gui_init();
-
+	init_igc();
 
 	while(1)
 	{
@@ -72,10 +67,7 @@ int main(void)
 			gui_task();
 			gps_task();
 			BMS_task();
-			//sdio_task();
 
-			// Geblinke
-			set_led_green(TOGGLE);
 			l_count_tick++;
 			if(l_count_tick == 5)
 			{
@@ -84,6 +76,7 @@ int main(void)
 			else if (l_count_tick == 10)
 			{
 				set_led_red(ON);
+				igc_task();
 				l_count_tick = 0;
 			}
 		}
