@@ -217,6 +217,10 @@ void fkt_Vario (void)
 			break;
 
 		case data_KEYPAD_pad_UP:
+			GUI_cmd.did 		= did_GUI;
+			GUI_cmd.cmd 		= cmd_igc_stop_logging;
+			GUI_cmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 			break;
 
 		case data_KEYPAD_pad_RIGHT:		// toggle sinktone

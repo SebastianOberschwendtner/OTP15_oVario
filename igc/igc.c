@@ -30,6 +30,7 @@ T_keypad p_ipc_gui_keypad_data;
 //private structs
 FILE_T IGC;
 IGCINFO_T IgcInfo;
+T_command IgcCmd;
 
 //Hash start keys
 unsigned long const g_key[16] = {
@@ -45,10 +46,28 @@ unsigned long const g_key[16] = {
 
 void igc_task(void)
 {
+	//Check commands
+	while(ipc_get_queue_bytes(did_IGC) > 9) // look for new command in keypad queue
+	{
+		ipc_queue_get(did_IGC,10,&IgcCmd); 	// get new command
+		switch(IgcCmd.cmd)					// switch for command
+		{
+		case cmd_igc_stop_logging:			// stop logging
+
+			//Check if logging is ongoing
+			if(IgcInfo.open == IGC_RECORDING)
+				IgcInfo.open = IGC_LANDING;
+			break;
+		default:
+			break;
+		}
+	}
+
 	//Perform igc task
 	switch(IgcInfo.open)
 	{
 	case IGC_CLOSED:
+
 		//If gps has a fix start logging -> this is detected if the time is not 0
 		if(get_seconds())
 		{
@@ -139,6 +158,9 @@ void init_igc(void)
 	GpsData = ipc_memory_get(did_GPS);
 	//get the datafusion handler
 	BaroData = ipc_memory_get(did_DATAFUSION);
+
+	//Register the command queue
+	ipc_register_queue(20, did_IGC);
 }
 
 /*

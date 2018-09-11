@@ -39,9 +39,12 @@
 #define cmd_vario_clear_sinktone	1
 #define cmd_vario_toggle_sinktone	2
 
+//IGC Logging
+#define cmd_igc_stop_logging		1
+
 
 // ******* TYPEDEF *******
-// Sound
+// Generic command for queue
 #pragma pack(push, 1)
 typedef struct
 {
@@ -52,6 +55,7 @@ typedef struct
 }T_command;
 #pragma pack(pop)
 
+//Sound
 #pragma pack(push, 1)
 typedef struct
 {
