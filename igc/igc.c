@@ -436,7 +436,8 @@ void igc_FRecord(void)
  */
 void igc_BRecord(void)
 {
-	unsigned long temp = 0;
+	unsigned long TempInt = 0;
+	float temp = 0;
 
 	igc_NewRecord('B');
 	//Write UTC time
@@ -445,30 +446,81 @@ void igc_BRecord(void)
 	igc_AppendNumber(get_seconds(), 2);
 
 	//Write latitude
+	//DONE Compute coordinates in minutes and seconds
 	if(GpsData->lat >= 0)
 	{
-		temp = (unsigned long)(GpsData->lat*100000);
-		igc_AppendNumber(temp, 7);
+		//degrees
+		temp = GpsData->lat;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 2);
+
+		//minutes
+		temp = (temp-TempInt)*60;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 2);
+
+		//seconds
+		temp = (temp-TempInt)*600;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 3);
+
 		igc_AppendString("N"); //DONE How do i know whether S or N? -> through the sign of the float
 	}
 	else
 	{
-		temp = (unsigned long)(GpsData->lat*-100000);
-		igc_AppendNumber(temp, 7);
+		//degrees
+		temp = GpsData->lat;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 2);
+
+		//minutes
+		temp = (temp-TempInt)*60;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 2);
+
+		//seconds
+		temp = (temp-TempInt)*600;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 3);
 		igc_AppendString("S");
 	}
 
 	//Write longitude
 	if(GpsData->lon >= 0)
 	{
-		temp = (unsigned long)(GpsData->lon*100000);
-		igc_AppendNumber(temp, 8);
+		//degrees
+		temp = GpsData->lon;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 3);
+
+		//minutes
+		temp = (temp-TempInt)*60;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 2);
+
+		//seconds
+		temp = (temp-TempInt)*600;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 3);
 		igc_AppendString("E"); //DONE How do i know whether W or E? -> through the sign of the float
 	}
 	else
 	{
-		temp = (unsigned long)(GpsData->lon*-100000);
-		igc_AppendNumber(temp, 8);
+
+		//degrees
+		temp = GpsData->lon;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 3);
+
+		//minutes
+		temp = (temp-TempInt)*60;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 2);
+
+		//seconds
+		temp = (temp-TempInt)*600;
+		TempInt = (unsigned long)temp;
+		igc_AppendNumber(TempInt, 3);
 		igc_AppendString("W");
 	}
 
