@@ -455,14 +455,9 @@ void igc_BRecord(void)
 		igc_AppendNumber(TempInt, 2);
 
 		//minutes
-		temp = (temp-TempInt)*60;
+		temp = (temp-TempInt)*60000;
 		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 2);
-
-		//seconds
-		temp = (temp-TempInt)*600;
-		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 3);
+		igc_AppendNumber(TempInt, 5);
 
 		igc_AppendString("N"); //DONE How do i know whether S or N? -> through the sign of the float
 	}
@@ -474,14 +469,10 @@ void igc_BRecord(void)
 		igc_AppendNumber(TempInt, 2);
 
 		//minutes
-		temp = (temp-TempInt)*60;
+		temp = (temp-TempInt)*60000;
 		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 2);
+		igc_AppendNumber(TempInt, 5);
 
-		//seconds
-		temp = (temp-TempInt)*600;
-		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 3);
 		igc_AppendString("S");
 	}
 
@@ -494,14 +485,10 @@ void igc_BRecord(void)
 		igc_AppendNumber(TempInt, 3);
 
 		//minutes
-		temp = (temp-TempInt)*60;
+		temp = (temp-TempInt)*60000;
 		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 2);
+		igc_AppendNumber(TempInt, 5);
 
-		//seconds
-		temp = (temp-TempInt)*600;
-		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 3);
 		igc_AppendString("E"); //DONE How do i know whether W or E? -> through the sign of the float
 	}
 	else
@@ -513,14 +500,10 @@ void igc_BRecord(void)
 		igc_AppendNumber(TempInt, 3);
 
 		//minutes
-		temp = (temp-TempInt)*60;
+		temp = (temp-TempInt)*60000;
 		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 2);
+		igc_AppendNumber(TempInt, 5);
 
-		//seconds
-		temp = (temp-TempInt)*600;
-		TempInt = (unsigned long)temp;
-		igc_AppendNumber(TempInt, 3);
 		igc_AppendString("W");
 	}
 
