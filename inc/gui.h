@@ -13,13 +13,16 @@
 //***** Defines*****
 enum states
 {
-	Gui_Initscreen,
-	Gui_Vario,
-	Gui_Menu,
-	Gui_Settings,
-	Gui_BMS,
-	Gui_GPS
+	Gui_Initscreen 	= 0,
+	Gui_Vario 		= 1,
+	Gui_Menu 		= 2,
+	Gui_Settings 	= 3,
+	Gui_BMS 		= 4,
+	Gui_GPS 		= 5,
+	GUI_MS5611 		= 6
 };
+#define num_states 7
+
 
 // Functions
 void gui_init		(void);
@@ -31,7 +34,9 @@ void fkt_BMS		(void);
 void fkt_GPS		(void);
 void fkt_Menu 		(void);
 void fkt_Settings	(void);
-void fkt_infobox(void);
+void fkt_MS5611 	(void);
+void fkt_infobox	(void);
+
 
 void gui_gauge      (float value, float min, float max);
 void draw_graph		(uint8_t x, uint8_t y);
