@@ -68,8 +68,11 @@ void igc_task(void)
 	{
 	case IGC_CLOSED:
 
-		//If gps has a fix start logging -> this is detected if the time is not 0
-		if(get_seconds())
+		/*
+		 * If gps has a fix start logging -> this is detected if the time is not 0
+		 * Do not start logging if no sd-card is inserted
+		 */
+		if(get_seconds() && (sd->state & SD_CARD_DETECTED))
 		{
 			//Create log
 			igc_create();
