@@ -148,9 +148,14 @@ void fkt_Initscreen (void)
 	}
 }
 
+uint16_t tempo = 0;
 void fkt_Vario (void)
 {
 
+	uint8_t y = 20;
+
+
+	// Clock
 	lcd_set_cursor(190, 8);
 	lcd_set_fontsize(1);
 	lcd_num2buffer(p_ipc_gui_gps_data->hours,2);
@@ -159,51 +164,78 @@ void fkt_Vario (void)
 	lcd_string2buffer(":");
 	lcd_num2buffer(p_ipc_gui_gps_data->sec,2);
 
+	lcd_set_cursor(100, 8);
+	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
+	lcd_string2buffer(" m MSL");
 
+	lcd_set_fontsize(1);
+	lcd_set_cursor(0, 8);
+	lcd_string2buffer("UBat:");
+	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
+	lcd_string2buffer(" mV");
 
-	lcd_set_cursor(0, 16);
+	y = y + 8;
+	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_df_data->glide,2,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" gz");
 
-	lcd_set_cursor(100, 12);
-	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
-	lcd_string2buffer(" m MSL");
 
-
-	lcd_set_cursor(0, 36);
+	y = y + 20;
+	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_gps_data->speed_kmh,2,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" kmh");
 
-	lcd_set_cursor(0, 56);
+	y = y + 20;
+	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" m");
 
-	lcd_set_cursor(0, 76);
-	lcd_set_fontsize(2);
-	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg,3,0);
-	lcd_set_fontsize(1);
-	lcd_string2buffer(" hdg");
 
-	lcd_set_cursor(0, 96);
+	//	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg,3,0);
+
+
+	y = y + 20;
+	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_av,1,2);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" ms av");
 
+	// Draw Heading Arrow
 
+#define x_hdg 50
+#define y_hdg 105
+#define r_hdg 10
+
+	lcd_circle2buffer(x_hdg, y_hdg, r_hdg);
+
+	tempo = (uint16_t)p_ipc_gui_gps_data->heading_deg;//tempo + 3;
+//	if(tempo >359) tempo = 0;
+
+	lcd_arrow2buffer(x_hdg, y_hdg, r_hdg, tempo);
 
 	lcd_set_fontsize(1);
-	lcd_set_cursor(0, 116);
-	lcd_string2buffer("UBat:");
-	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
-	lcd_string2buffer(" mV");
+	lcd_set_cursor(x_hdg - 3, y_hdg - 10);
+	lcd_string2buffer("N");
+	lcd_set_cursor(x_hdg + 12, y_hdg + 5);
+	lcd_string2buffer("O");
+	lcd_set_cursor(x_hdg - 3, y_hdg + 20);
+	lcd_string2buffer("S");
+	lcd_set_cursor(x_hdg - 18 , y_hdg + 5);
+	lcd_string2buffer("W");
 
+
+
+
+
+
+	// Climbrate
 	lcd_set_cursor(110, 40);
 	lcd_set_fontsize(3);
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);

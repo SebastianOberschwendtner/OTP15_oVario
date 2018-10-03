@@ -7,6 +7,10 @@
 
 #include "DOGXL240.h"
 #include "font.h"
+#include "sign.h"
+#include "arm_math.h"
+#include "math.h"
+
 
 unsigned char temp[4];
 
@@ -504,10 +508,10 @@ void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned 
 	}
 	else
 	{
-		unsigned long l_gradient = (ch_y_end-ch_y_start)*1000/(ch_x_end-ch_x_start);
+		signed long l_gradient = (ch_y_end-ch_y_start)*1000/(ch_x_end-ch_x_start);
 		for(unsigned char ch_count=0;ch_count<(ch_x_end-ch_x_start);ch_count++)
 		{
-			lcd_pixel2buffer(ch_x_start+ch_count,l_gradient*ch_count/1000+ch_y_start,1);
+			lcd_pixel2buffer(ch_x_start+ch_count,(unsigned char)(l_gradient*ch_count/1000+ch_y_start),1);
 		}
 		lcd_pixel2buffer(ch_x_end,ch_y_end,1);
 	}
@@ -518,8 +522,63 @@ void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned 
  */
 void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius)
 {
+	uint8_t x = ch_x_center;
+	uint8_t y = ch_y_center;
+	uint8_t r = ch_radius;
+	float pTemp;
+
+	for(uint8_t i = 0; i <= r; i++)
+	{
+		arm_sqrt_f32((float)(r * r - i * i), &pTemp);
+		lcd_pixel2buffer(x + i, y + (uint8_t)pTemp,1);
+		lcd_pixel2buffer(x - i, y + (uint8_t)pTemp, 1);
+		lcd_pixel2buffer(x + i, y - (uint8_t)pTemp,1);
+		lcd_pixel2buffer(x - i, y - (uint8_t)pTemp, 1);
+	}
+}
+
+
+/*
+ * Write Arrow to buffer
+ */
+void lcd_arrow2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius, uint16_t heading)
+{
+	uint8_t r = ch_radius;
+	uint8_t xt = 0;
+	uint8_t yt = 0;
+	float ctemp = 0;
+	float stemp = 0;
+	float temp = (float)heading / 180 * 3.1415926f;
+
+	ctemp = cos(temp);
+	stemp = sin(temp);
+
+	yt = (int8_t)((float)r * ctemp);
+	xt = (int8_t)((float)r * stemp);
+
+	uint8_t x1, x2, y1, y2;
+	x1 = (uint8_t)(ch_x_center + xt);
+	x2 = (uint8_t)(ch_x_center - xt);
+	y1 = (uint8_t)(ch_y_center - yt);
+	y2 = (uint8_t)(ch_y_center + yt);
+
+	if(x2 > x1)
+	{
+		lcd_line2buffer(x1, y1, x2, y2);
+	}
+	else
+	{
+		lcd_line2buffer(x2, y2, x1, y1);
+	}
+	yt = (int8_t)((float)(r-3) * ctemp);
+	xt = (int8_t)((float)(r-3) * stemp);
+
+	lcd_circle2buffer((uint8_t)(ch_x_center + xt), (uint8_t)(ch_y_center - yt),1);
+	lcd_circle2buffer((uint8_t)(ch_x_center + xt), (uint8_t)(ch_y_center - yt),2);
 
 }
+
+
 
 /*
  * Draw Block; Coordinates are bottom left corner
@@ -608,4 +667,5 @@ void lcd_box2buffer(unsigned char width, unsigned char height, unsigned char thi
 		}
 	}
 };
+
 
