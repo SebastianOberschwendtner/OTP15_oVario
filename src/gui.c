@@ -8,6 +8,7 @@
 
 //*********** Includes **************
 #include "gui.h"
+#include "oVario_Framework.h"
 #include "DOGXL240.h"
 #include "ipc.h"
 #include "Variables.h"
@@ -158,11 +159,11 @@ void fkt_Vario (void)
 	// Clock
 	lcd_set_cursor(190, 8);
 	lcd_set_fontsize(1);
-	lcd_num2buffer(p_ipc_gui_gps_data->hours,2);
+	lcd_num2buffer(get_hours_lct(),2);
 	lcd_string2buffer(":");
-	lcd_num2buffer(p_ipc_gui_gps_data->min,2);
+	lcd_num2buffer(get_minutes_lct(),2);
 	lcd_string2buffer(":");
-	lcd_num2buffer(p_ipc_gui_gps_data->sec,2);
+	lcd_num2buffer(get_seconds_lct(),2);
 
 	lcd_set_cursor(100, 8);
 	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);

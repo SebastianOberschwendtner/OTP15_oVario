@@ -212,6 +212,7 @@ typedef struct
 {
 	unsigned int date;
 	unsigned long time;
+	signed char TimeOffset;
 }SYS_T;
 #pragma pack(pop)
 

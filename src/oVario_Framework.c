@@ -52,7 +52,7 @@ void init_clock(void)
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
 
 	//register system struct
-	sys = ipc_memory_register(8,did_SYS);
+	sys = ipc_memory_register(9,did_SYS);
 	set_time(20,15,0);
 	set_date(23,2,2018);
 
@@ -154,7 +154,22 @@ void wait_systick(unsigned long l_ticks)
 }
 
 /*
- * Set the time
+ * Set the timezone using dates, i.e. sommer and winter time
+ * Problem: the change is always on the last sunday of October/March, we do not track the weekday yet.
+ * So the switchof the timezones only takes the month into account.
+ */
+void set_timezone(void)
+{
+	unsigned char month = get_month_utc();
+
+	if( (month > 3) && (month <= 10) )
+		sys->TimeOffset = 2;
+	else
+		sys->TimeOffset = 1;
+};
+
+/*
+ * Set the time in UTC!
  */
 void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second)
 {
@@ -164,7 +179,11 @@ void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_s
 /*
  * Get seconds of time
  */
-unsigned char get_seconds(void)
+unsigned char get_seconds_utc(void)
+{
+	return (unsigned char)((sys->time>>SYS_TIME_SECONDS_pos) & 0x3F);
+};
+unsigned char get_seconds_lct(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_SECONDS_pos) & 0x3F);
 };
@@ -172,7 +191,11 @@ unsigned char get_seconds(void)
 /*
  * Get minutes of time
  */
-unsigned char get_minutes(void)
+unsigned char get_minutes_utc(void)
+{
+	return (unsigned char)((sys->time>>SYS_TIME_MINUTE_pos) & 0x3F);
+};
+unsigned char get_minutes_lct(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_MINUTE_pos) & 0x3F);
 };
@@ -180,13 +203,19 @@ unsigned char get_minutes(void)
 /*
  * Get hours of time
  */
-unsigned char get_hours(void)
+unsigned char get_hours_utc(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_HOUR_pos) & 0x1F);
 };
+unsigned char get_hours_lct(void)
+{
+	return (unsigned char)(((sys->time>>SYS_TIME_HOUR_pos) & 0x1F) + sys->TimeOffset);
+};
+
+
 
 /*
- * Set the date
+ * Set the date in UTC!
  */
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
 {
@@ -196,7 +225,11 @@ void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
 /*
  * Get Day of date
  */
-unsigned char get_day(void)
+unsigned char get_day_utc(void)
+{
+	return (unsigned char)((sys->date>>SYS_DATE_DAY_pos) & 0x1F);
+};
+unsigned char get_day_lct(void)
 {
 	return (unsigned char)((sys->date>>SYS_DATE_DAY_pos) & 0x1F);
 };
@@ -204,7 +237,11 @@ unsigned char get_day(void)
 /*
  * Get Month of date
  */
-unsigned char get_month(void)
+unsigned char get_month_utc(void)
+{
+	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0x1F);
+};
+unsigned char get_month_lct(void)
 {
 	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0x1F);
 };
@@ -212,7 +249,11 @@ unsigned char get_month(void)
 /*
  * Get Day of date
  */
-unsigned int get_year(void)
+unsigned int get_year_utc(void)
+{
+	return (unsigned int)(((sys->date>>SYS_DATE_YEAR_pos) & 0x3F) + 1980);
+};
+unsigned int get_year_lct(void)
 {
 	return (unsigned int)(((sys->date>>SYS_DATE_YEAR_pos) & 0x3F) + 1980);
 };

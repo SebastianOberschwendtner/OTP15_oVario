@@ -54,6 +54,6 @@ void igc_FRecord(void);
 void igc_BRecord(void);
 void igc_sign(void);
 void igc_close(void);
-void igc_PlotLine(void);
+//void igc_PlotLine(void);
 
 #endif /* IGC_H_ */

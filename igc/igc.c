@@ -72,7 +72,7 @@ void igc_task(void)
 		 * If gps has a fix start logging -> this is detected if the time is not 0
 		 * Do not start logging if no sd-card is inserted
 		 */
-		if(get_seconds() && (sd->state & SD_CARD_DETECTED))
+		if(get_seconds_utc() && (sd->state & SD_CARD_DETECTED))
 		{
 			//Create log
 			igc_create();
@@ -202,9 +202,9 @@ void igc_create(void)
 
 		//calculate name
 		char igc_name[9] = {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00};
-		sys_num2str(igc_name, get_day(), 2);
-		sys_num2str(igc_name+2, get_month(),2);
-		sys_num2str(igc_name+4, get_year(),2);
+		sys_num2str(igc_name, get_day_utc(), 2);
+		sys_num2str(igc_name+2, get_month_utc(),2);
+		sys_num2str(igc_name+4, get_year_utc(),2);
 
 		//create file
 		unsigned long l_count = 0;
@@ -243,9 +243,9 @@ void igc_create(void)
 		//Log date and flight number
 		igc_NewRecord('H');
 		igc_AppendString("FDTE");
-		igc_AppendNumber(get_day(), 2);
-		igc_AppendNumber(get_month(), 2);
-		igc_AppendNumber(get_year(), 2);
+		igc_AppendNumber(get_day_utc(), 2);
+		igc_AppendNumber(get_month_utc(), 2);
+		igc_AppendNumber(get_year_utc(), 2);
 		igc_AppendString(",");
 		igc_AppendNumber(l_count, 2);
 		igc_WriteLine();
@@ -426,9 +426,9 @@ void igc_FRecord(void)
 {
 	igc_NewRecord('F');
 	//Write UTC time
-	igc_AppendNumber(get_hours(), 2);
-	igc_AppendNumber(get_minutes(), 2);
-	igc_AppendNumber(get_seconds(), 2);
+	igc_AppendNumber(get_hours_utc(), 2);
+	igc_AppendNumber(get_minutes_utc(), 2);
+	igc_AppendNumber(get_seconds_utc(), 2);
 	for(unsigned char count = 0; count < GpsData->n_sat; count++)
 		igc_AppendNumber(count, 2);
 	igc_WriteLine();
@@ -444,9 +444,9 @@ void igc_BRecord(void)
 
 	igc_NewRecord('B');
 	//Write UTC time
-	igc_AppendNumber(get_hours(), 2);
-	igc_AppendNumber(get_minutes(), 2);
-	igc_AppendNumber(get_seconds(), 2);
+	igc_AppendNumber(get_hours_utc(), 2);
+	igc_AppendNumber(get_minutes_utc(), 2);
+	igc_AppendNumber(get_seconds_utc(), 2);
 
 	//Write latitude
 	//DONE Compute coordinates in minutes and seconds
@@ -576,23 +576,23 @@ void igc_close(void)
 /*
  * Plot current line in display for debugging
  */
-#include "DOGXL240.h"
-unsigned char linecount = 1;
-void igc_PlotLine(void)
-{
-	if(linecount == 17)
-	{
-		lcd_clear_buffer();
-		linecount = 1;
-	}
-	lcd_set_cursor(0, linecount*8);
-	for(unsigned char count= 0; count < IgcInfo.linepointer; count++)
-	{
-		if(count>39)
-			break;
-		lcd_char2buffer(IgcInfo.linebuffer[count]);
-	}
-	linecount++;
-	lcd_send_buffer();
-	wait_systick(5);
-};
+//#include "DOGXL240.h"
+//unsigned char linecount = 1;
+//void igc_PlotLine(void)
+//{
+//	if(linecount == 17)
+//	{
+//		lcd_clear_buffer();
+//		linecount = 1;
+//	}
+//	lcd_set_cursor(0, linecount*8);
+//	for(unsigned char count= 0; count < IgcInfo.linepointer; count++)
+//	{
+//		if(count>39)
+//			break;
+//		lcd_char2buffer(IgcInfo.linebuffer[count]);
+//	}
+//	linecount++;
+//	lcd_send_buffer();
+//	wait_systick(5);
+//};

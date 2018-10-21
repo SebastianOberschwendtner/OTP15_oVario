@@ -83,11 +83,11 @@ void log_create(void)
 		sdio_string2file(&Log, pch_name);
 		sdio_string2file(&Log, " by JoVario - AR\n");
 		sdio_string2file(&Log, "Date: ");
-		sdio_num2file(&Log, (unsigned long)get_day(), 2);
+		sdio_num2file(&Log, (unsigned long)get_day_utc(), 2);
 		sdio_byte2file(&Log, '.');
-		sdio_num2file(&Log, (unsigned long)get_month(), 2);
+		sdio_num2file(&Log, (unsigned long)get_month_utc(), 2);
 		sdio_byte2file(&Log, '.');
-		sdio_num2file(&Log, (unsigned long)get_year(), 4);
+		sdio_num2file(&Log, (unsigned long)get_year_utc(), 4);
 		sdio_byte2file(&Log, '\n');
 		sdio_string2file(&Log, "Sens: ");
 		sdio_string2file(&Log, LogInfo.header);

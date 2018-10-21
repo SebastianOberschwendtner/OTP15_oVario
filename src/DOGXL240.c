@@ -7,9 +7,10 @@
 
 #include "DOGXL240.h"
 #include "font.h"
-#include "sign.h"
+
 #include "arm_math.h"
 #include "math.h"
+//#include "sign.h"
 
 
 unsigned char temp[4];
