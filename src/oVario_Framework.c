@@ -53,7 +53,8 @@ void init_clock(void)
 
 	//register system struct
 	sys = ipc_memory_register(9,did_SYS);
-	set_time(20,15,0);
+	sys->TimeOffset = 0;
+	set_time(20,15,00);
 	set_date(23,2,2018);
 
 };
