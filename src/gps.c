@@ -302,8 +302,11 @@ void gps_task ()
 	}
 
 	gps_SetSysDate();
-	if(p_GPS_data->fix) // if fix -> set Sys Date
+	if(p_GPS_data->fix) // if fix -> set Sys Date and timezone
+	{
+		set_timezone();
 		gps_SetSysTime();
+	}
 
 	p_GPS_data->Rd_Idx 		= (float)Rd_Idx;
 	p_GPS_data->Rd_cnt 		= (float)Rd_Cnt;
@@ -335,7 +338,7 @@ void gps_handle_nav()
 		uint32_t temp = pVN->iTow/1000;
 		p_GPS_data->sec 	= (float)(temp % 60);
 		p_GPS_data->min 	= (float)((temp - (uint32_t)p_GPS_data->sec) / 60 % 60);
-		p_GPS_data->hours   = (float)(((temp - (uint32_t)p_GPS_data->sec - (uint32_t)p_GPS_data->min * 60) / 3600 + 2) % 24);
+		p_GPS_data->hours   = (float)(((temp - (uint32_t)p_GPS_data->sec - (uint32_t)p_GPS_data->min * 60) / 3600 ) % 24);
 		break;
 	case sol:
 		pSOL = (void*)&msg_buff[0];
