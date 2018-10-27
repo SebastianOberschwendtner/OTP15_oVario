@@ -92,7 +92,6 @@ void fkt_Initscreen (void)
 	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
 	lcd_char2buffer('m');
 
-
 	lcd_set_cursor(0, 25);
 	lcd_num2buffer(p_ipc_gui_df_data->pressure,6);
 	lcd_string2buffer("hPa");
@@ -115,16 +114,13 @@ void fkt_Initscreen (void)
 	lcd_signed_num2buffer(p_ipc_gui_bms_data->current,3);
 	lcd_string2buffer("mA");
 
-
 	lcd_set_cursor(0, 90);
 	lcd_string2buffer("Glide:");
 	lcd_float2buffer(p_ipc_gui_df_data->glide,2,1);
 
-
 	lcd_set_cursor(80, 50);
 	lcd_set_fontsize(3);
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);
-
 
 	gui_gauge(p_ipc_gui_df_data->climbrate_filt, -2, 5);
 
@@ -155,7 +151,6 @@ void fkt_Vario (void)
 
 	uint8_t y = 20;
 
-
 	// Clock
 	lcd_set_cursor(190, 8);
 	lcd_set_fontsize(1);
@@ -182,7 +177,6 @@ void fkt_Vario (void)
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" gz");
 
-
 	y = y + 20;
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
@@ -197,9 +191,7 @@ void fkt_Vario (void)
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" m");
 
-
 	//	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg,3,0);
-
 
 	y = y + 20;
 	lcd_set_cursor(0, y);
@@ -231,11 +223,6 @@ void fkt_Vario (void)
 	lcd_set_cursor(x_hdg - 18 , y_hdg + 5);
 	lcd_string2buffer("W");
 
-
-
-
-
-
 	// Climbrate
 	lcd_set_cursor(110, 40);
 	lcd_set_fontsize(3);
@@ -244,7 +231,6 @@ void fkt_Vario (void)
 	lcd_string2buffer(" ms");
 
 	draw_graph(138, 57);
-
 
 	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
@@ -295,7 +281,6 @@ void fkt_Vario (void)
 	}
 }
 
-uint8_t testipc = 0;
 
 void fkt_BMS(void)
 {
@@ -394,40 +379,50 @@ void fkt_BMS(void)
 	lcd_num2buffer(p_ipc_gui_bms_data->temperature,4);
 	lcd_string2buffer(" C");
 
-
-	// Keypad
-	testipc = ipc_get_queue_bytes(did_GUI);
-	while(testipc > 9) 							// look for new command in keypad queue
+	// check comamnds
+	while(ipc_get_queue_bytes(did_GUI) > 9) 							// look for new command in keypad queue
 	{
 		ipc_queue_get(did_GUI, 10, &GUI_cmd); 	// get new command
-		testipc = ipc_get_queue_bytes(did_GUI);
-		switch(GUI_cmd.data)					// switch for pad number
+
+		//Switch for commad
+		switch(GUI_cmd.cmd)
 		{
-		case data_KEYPAD_pad_LEFT:		// next screen
-			menu++;
+		//Keypad
+		case cmd_gui_eval_keypad:
+			switch(GUI_cmd.data)					// switch for pad number
+			{
+			case data_KEYPAD_pad_LEFT:		// next screen
+				menu++;
+				break;
+
+			case data_KEYPAD_pad_DOWN:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+				break;
+
+			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+				break;
+
+			case data_KEYPAD_pad_RIGHT:
+				break;
+
+			default:
+				break;
+			}
 			break;
 
-		case data_KEYPAD_pad_DOWN:
-			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
-			GUI_cmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-			break;
-
-		case data_KEYPAD_pad_UP:
-			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
-			GUI_cmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-			break;
-
-		case data_KEYPAD_pad_RIGHT:
-			break;
-
-		default:
+		//Infobox
+		case cmd_gui_set_std_message:
+			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
 			break;
 		}
-
 	}
 }
 
@@ -458,7 +453,6 @@ void fkt_GPS(void)
 	else
 		lcd_string2buffer(" South");
 
-
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Longitude: ");
@@ -488,14 +482,11 @@ void fkt_GPS(void)
 	lcd_string2buffer("Time:");
 	lcd_set_cursor(c1, y);
 
-
 	lcd_num2buffer(p_ipc_gui_gps_data->hours,2);
 	lcd_string2buffer(":");
 	lcd_num2buffer(p_ipc_gui_gps_data->min,2);
 	lcd_string2buffer(":");
 	lcd_num2buffer(p_ipc_gui_gps_data->sec,2);
-
-
 
 	y +=ls;
 	lcd_set_cursor(0, y);
@@ -541,36 +532,46 @@ void fkt_GPS(void)
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);
 
-
-	// Keypad
-	testipc = ipc_get_queue_bytes(did_GUI);
-	while(testipc > 9) 				// look for new command in keypad queue
+	// Check comamnds
+	while(ipc_get_queue_bytes(did_GUI) > 9) 	// look for new command in keypad queue
 	{
 		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-		testipc = ipc_get_queue_bytes(did_GUI);
-		switch(GUI_cmd.data)					// switch for pad number
+
+		//Switch for commad
+		switch(GUI_cmd.cmd)
 		{
-		case data_KEYPAD_pad_LEFT:		// next screen
-			menu++;
+		//Keypad
+		case cmd_gui_eval_keypad:
+			switch(GUI_cmd.data)					// switch for pad number
+			{
+			case data_KEYPAD_pad_LEFT:		// next screen
+				menu++;
+				break;
+			case data_KEYPAD_pad_DOWN:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+				break;
+			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+				break;
+			case data_KEYPAD_pad_RIGHT:
+				break;
+			default:
+				break;
+			}
 			break;
-		case data_KEYPAD_pad_DOWN:
-			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
-			GUI_cmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-			break;
-		case data_KEYPAD_pad_UP:
-			GUI_cmd.did 		= did_GUI;
-			GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
-			GUI_cmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-			break;
-		case data_KEYPAD_pad_RIGHT:
-			break;
-		default:
+
+		//Infobox
+		case cmd_gui_set_std_message:
+			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
 			break;
 		}
-
 	}
 }
 
@@ -597,7 +598,6 @@ void fkt_MS5611 (void)
 	lcd_string2buffer("Temperature: ");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->temperature)/100,2,1);
-
 
 	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
@@ -637,13 +637,13 @@ void fkt_MS5611 (void)
 			}
 			break;
 
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-			default:
-				break;
+		//Infobox
+		case cmd_gui_set_std_message:
+			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -655,7 +655,6 @@ void fkt_Menu (void)
 	lcd_set_cursor(0, 12);
 	lcd_set_fontsize(1);
 	lcd_float2buffer(2.0f,4,1);
-
 
 	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
@@ -711,7 +710,6 @@ void fkt_Settings(void)
 	lcd_set_cursor(0, 12);
 	lcd_set_fontsize(1);
 	lcd_float2buffer(3.0f,4,1);
-
 
 	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
@@ -812,7 +810,6 @@ void gui_gauge(float value, float min, float max)
 		value = min;
 
 	float total = max - min;
-
 
 	// draw scale
 
