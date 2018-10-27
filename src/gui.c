@@ -297,7 +297,7 @@ void fkt_BMS(void)
 	lcd_string2buffer("OTG Status: ");
 	lcd_set_cursor(c1, y);
 
-	if (p_ipc_gui_bms_data->charging_state == ON)
+	if (p_ipc_gui_bms_data->charging_state & (1<<12))
 		lcd_string2buffer("ON");
 	else
 		lcd_string2buffer("OFF");
