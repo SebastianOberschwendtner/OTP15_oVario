@@ -25,17 +25,18 @@ enum states
 
 
 // Functions
-void gui_init		(void);
-void gui_task 		(void);
+void gui_init			(void);
+void gui_task 			(void);
 
-void fkt_Initscreen (void);
-void fkt_Vario 		(void);
-void fkt_BMS		(void);
-void fkt_GPS		(void);
-void fkt_Menu 		(void);
-void fkt_Settings	(void);
-void fkt_MS5611 	(void);
-void fkt_infobox	(void);
+void fkt_Initscreen 	(void);
+void fkt_Vario 			(void);
+void fkt_BMS			(void);
+void fkt_GPS			(void);
+void fkt_Menu 			(void);
+void fkt_Settings		(void);
+void fkt_MS5611 		(void);
+void fkt_runtime_errors	(void);
+void fkt_infobox		(void);
 
 
 void gui_gauge      (float value, float min, float max);

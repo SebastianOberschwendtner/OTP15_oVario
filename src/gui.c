@@ -11,6 +11,7 @@
 #include "oVario_Framework.h"
 #include "DOGXL240.h"
 #include "ipc.h"
+#include "error.h"
 #include "Variables.h"
 
 //*********** struct typedefs ********
@@ -29,6 +30,8 @@ GPS_T* 			p_ipc_gui_gps_data;
 BMS_T* 			p_ipc_gui_bms_data;
 ms5611_T* 		p_ipc_gui_ms5611_data;
 T_command 		GUI_cmd;
+
+extern unsigned long error_var;
 
 //*********** Functions **************
 void gui_init (void)
@@ -77,6 +80,9 @@ void gui_task (void)
 	default:
 		break;
 	}
+	// Check for runtime errors
+	fkt_runtime_errors();
+
 	//Draw infobox
 	fkt_infobox();
 
@@ -761,6 +767,49 @@ void fkt_Settings(void)
 }
 
 /*
+ * Check for runtime errors and displayes the error as infobox
+ */
+void fkt_runtime_errors(void)
+{
+	//if error occured
+	if(error_var)
+	{
+		switch(error_var)
+		{
+		case err_no_memory_left:
+			InfoBox.message = data_info_error;			//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		case err_queue_overrun:
+			InfoBox.message = data_info_error;			//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		case err_bms_fault:
+			InfoBox.message = data_info_bms_fault;		//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		case err_coloumb_fault:
+			InfoBox.message = data_info_coloumb_fault;	//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		case err_baro_fault:
+			InfoBox.message = data_info_baro_fault;		//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		case err_sd_fault:
+			InfoBox.message = data_info_sd_fault;		//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		default:
+			InfoBox.message = data_info_error;			//Standard message
+			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			break;
+		}
+		error_var = 0;
+	}
+};
+
+/*
  * This function displays an infobox on the screen with an expiration time.
  * The expiration time is fixed to 5 seconds for now.
  */
@@ -787,6 +836,26 @@ void fkt_infobox(void)
 			lcd_set_cursor(40, 73);
 			lcd_set_fontsize(2);
 			lcd_string2buffer("Error!");
+			break;
+		case data_info_bms_fault:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("BMS Fault!");
+			break;
+		case data_info_coloumb_fault:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("BatGauge Fault!");
+			break;
+		case data_info_baro_fault:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Barometer Fault!");
+			break;
+		case data_info_sd_fault:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("SD Card Fault!");
 			break;
 		default:
 			break;

@@ -50,6 +50,10 @@
 #define data_info_logging_started	1
 #define data_info_logging_stopped	2
 #define data_info_error				3
+#define data_info_bms_fault			4
+#define data_info_coloumb_fault		5
+#define data_info_baro_fault		6
+#define data_info_sd_fault			7
 
 
 // ******* TYPEDEF *******
