@@ -53,7 +53,7 @@ void init_sdio(void)
 
 
 	//Register Memory
-	SD = ipc_memory_register(30,did_SDIO);
+	SD = ipc_memory_register(38,did_SDIO);
 	dir = ipc_memory_register(556, did_DIRFILE);
 	dir->name[11] = 0;	//End of string
 	sys = ipc_memory_get(did_SYS);
@@ -141,6 +141,12 @@ void init_sdio(void)
 
 		//initialize the filesystem
 		sdio_init_filesystem();
+
+		//Get card name
+		sdio_read_root();
+		sdio_get_file(dir, 0);
+		for(unsigned char count = 0; count<8; count++)
+			SD->CardName[count] = dir->name[count];
 	}
 };
 
