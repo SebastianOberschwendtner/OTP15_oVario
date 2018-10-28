@@ -184,6 +184,17 @@ void BMS_task(void)
 		{
 		case cmd_BMS_OTG_ON:
 			BMS_set_otg(ON);
+			BMS_get_status();
+			//Check whether otg was really enabled
+			if(!(pBMS->charging_state & STATUS_OTG_EN))
+			{
+				//Send infobox
+				IPC_cmd.did 		= did_BMS;
+				IPC_cmd.cmd			= cmd_gui_set_std_message;
+				IPC_cmd.data 		= data_info_otg_on_failure;
+				IPC_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push(&IPC_cmd, 10, did_GUI);
+			}
 			break;
 		case cmd_BMS_OTG_OFF:
 			BMS_set_otg(OFF);
@@ -192,10 +203,6 @@ void BMS_task(void)
 			break;
 		}
 	}
-
-
-
-
 }
 
 /*

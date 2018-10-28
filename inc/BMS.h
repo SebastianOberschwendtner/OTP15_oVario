@@ -193,16 +193,16 @@
 #define ACDSG_EN					(1<<0)	// Accumulated charge enable for discharging current integration
 
 // ***** Functions *****
-void init_BMS(void);
-void BMS_task(void);
-void BMS_SolarPanelController(void);
-void BMS_adc_start(void);
-void BMS_get_adc(void);
-void BMS_get_status(void);
-void BMS_charge_start(void);
-void BMS_set_charge_current(unsigned  int i_current);
-void BMS_set_otg(unsigned char ch_state);
-void BMS_gauge_get_adc(void);
+void 			init_BMS				(void);
+void 			BMS_task				(void);
+void 			BMS_SolarPanelController(void);
+void 			BMS_adc_start			(void);
+void 			BMS_get_adc				(void);
+void 			BMS_get_status			(void);
+void 			BMS_charge_start		(void);
+void 			BMS_set_charge_current	(unsigned  int i_current);
+void		 	BMS_set_otg				(unsigned char ch_state);
+void 			BMS_gauge_get_adc		(void);
 
 
 #endif /* BMS_H_ */
