@@ -33,7 +33,7 @@ lcd* plcd_DOGXL = 0;
 
 extern const unsigned char font12x16[256][32];
 extern const unsigned char font6x8[256][8];
-extern const unsigned char battery16x12[6][24];
+extern const unsigned char battery12x8[4][16];
 extern const unsigned char number16x20[11][40];
 
 /*
@@ -466,20 +466,20 @@ void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char
  */
 void lcd_bat2buffer(unsigned char ch_stat)
 {
-	plcd_DOGXL->cursor_y -= 12;
-	for (unsigned char ch_fonty = 0; ch_fonty<12;ch_fonty++)
+	plcd_DOGXL->cursor_y -= 8;
+	for (unsigned char ch_fonty = 0; ch_fonty<8;ch_fonty++)
 	{
-		for (unsigned char ch_fontx = 0; ch_fontx<16;ch_fontx++)
+		for (unsigned char ch_fontx = 0; ch_fontx<12;ch_fontx++)
 		{
-			lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx,plcd_DOGXL->cursor_y+ch_fonty,(battery16x12[ch_stat][(2*ch_fonty)+(ch_fontx/8)] & (1<<(ch_fontx%8))));
+			lcd_pixel2buffer(plcd_DOGXL->cursor_x+ch_fontx,plcd_DOGXL->cursor_y+ch_fonty,(battery12x8[ch_stat][(2*ch_fonty)+(ch_fontx/8)] & (1<<(7 - (ch_fontx%8)))));
 		}
 	}
-	plcd_DOGXL->cursor_x += 16;
-	plcd_DOGXL->cursor_y += 12;
+	plcd_DOGXL->cursor_x += 12;
+	plcd_DOGXL->cursor_y += 8;
 	if(plcd_DOGXL->cursor_x > LCD_PIXEL_X)
 	{
 		plcd_DOGXL->cursor_x = 0;
-		plcd_DOGXL->cursor_y += 12;
+		plcd_DOGXL->cursor_y += 8;
 		if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
 		{
 			plcd_DOGXL->cursor_y = 0;
