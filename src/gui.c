@@ -29,6 +29,7 @@ datafusion_T* 	p_ipc_gui_df_data;
 GPS_T* 			p_ipc_gui_gps_data;
 BMS_T* 			p_ipc_gui_bms_data;
 ms5611_T* 		p_ipc_gui_ms5611_data;
+SDIO_T*			p_ipc_gui_sd_data;
 T_command 		GUI_cmd;
 
 extern unsigned long error_var;
@@ -40,6 +41,7 @@ void gui_init (void)
 	p_ipc_gui_gps_data 		= ipc_memory_get(did_GPS);
 	p_ipc_gui_bms_data 		= ipc_memory_get(did_BMS);
 	p_ipc_gui_ms5611_data 	= ipc_memory_get(did_MS5611);
+	p_ipc_gui_sd_data		= ipc_memory_get(did_SDIO);
 
 	ipc_register_queue(200, did_GUI);
 }
@@ -50,6 +52,8 @@ void gui_task (void)
 {
 	lcd_clear_buffer();
 	if (menu >= num_states)	menu = 0;
+
+	gui_status_bar();
 
 	switch(menu)
 	{
@@ -156,25 +160,6 @@ void fkt_Vario (void)
 {
 
 	uint8_t y = 20;
-
-	// Clock
-	lcd_set_cursor(190, 8);
-	lcd_set_fontsize(1);
-	lcd_num2buffer(get_hours_lct(),2);
-	lcd_string2buffer(":");
-	lcd_num2buffer(get_minutes_lct(),2);
-	lcd_string2buffer(":");
-	lcd_num2buffer(get_seconds_lct(),2);
-
-	lcd_set_cursor(100, 8);
-	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
-	lcd_string2buffer(" m MSL");
-
-	lcd_set_fontsize(1);
-	lcd_set_cursor(0, 8);
-	lcd_string2buffer("UBat:");
-	lcd_num2buffer(p_ipc_gui_bms_data->battery_voltage,4);
-	lcd_string2buffer(" mV");
 
 	y = y + 8;
 	lcd_set_cursor(0, y);
@@ -290,7 +275,7 @@ void fkt_Vario (void)
 
 void fkt_BMS(void)
 {
-	uint8_t y 	= 0;
+	uint8_t y 	= 9;
 #define	ls	10		// Line step width
 #define	c1	100		// y Value of Value Column
 
@@ -298,7 +283,7 @@ void fkt_BMS(void)
 	lcd_set_fontsize(1);
 
 	// Write Data to Screen
-	y +=ls;
+	y +=ls - 1;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("OTG Status: ");
 	lcd_set_cursor(c1, y);
@@ -434,7 +419,7 @@ void fkt_BMS(void)
 
 void fkt_GPS(void)
 {
-	uint8_t y 	= 0;
+	uint8_t y 	= 9;
 #define	ls	10		// Line step width
 #define	c1	100		// y Value of Value Column
 
@@ -532,11 +517,11 @@ void fkt_GPS(void)
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->Rd_cnt,6,0);
 
-	y +=ls;
+	/*y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("MSG current DMA:");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);
+	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);*/
 
 	// Check comamnds
 	while(ipc_get_queue_bytes(did_GUI) > 9) 	// look for new command in keypad queue
@@ -585,7 +570,7 @@ void fkt_GPS(void)
 void fkt_MS5611 (void)
 {
 
-	uint8_t y 	= 0;
+	uint8_t y 	= 9;
 #define	ls	10		// Line step width
 #define	c1	100		// y Value of Value Column
 
@@ -857,6 +842,11 @@ void fkt_infobox(void)
 			lcd_set_fontsize(2);
 			lcd_string2buffer("SD Card Fault!");
 			break;
+		case data_info_otg_on_failure:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("OTG On Fault!");
+			break;
 		default:
 			break;
 		}
@@ -965,7 +955,7 @@ void draw_graph(uint8_t x, uint8_t y)
 };
 
 /*
- * Draws the bootlogo of the vario:
+ * Draws the bootlogo of the vario.
  */
 void gui_bootlogo(void)
 {
@@ -990,6 +980,99 @@ void gui_bootlogo(void)
 	lcd_set_inverted(0);
 	lcd_string2buffer("V 1.00");
 	lcd_send_buffer();
-}
+};
+
+/*
+ * Draws the status bar of the vario
+ */
+unsigned char ch_status_counter = 0;
+
+void gui_status_bar(void)
+{
+	/*
+	 * Display current menu name
+	 */
+	lcd_set_cursor(0, 8);
+	lcd_set_fontsize(1);
+	lcd_set_inverted(0);
+	switch(menu)
+	{
+	case Gui_Vario:
+		lcd_string2buffer("Vario");
+		break;
+	case Gui_GPS:
+		lcd_string2buffer("GPS");
+		break;
+	case Gui_BMS:
+		lcd_string2buffer("Battery");
+		break;
+	case GUI_MS5611:
+		lcd_string2buffer("Baro");
+		break;
+	default:
+		lcd_string2buffer("home");
+		break;
+	}
+
+	/*
+	 * display current gight MSL
+	 */
+	lcd_set_cursor(42, 8);
+	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
+	lcd_string2buffer(" m MSL");
+
+	/*
+	 * SD-Card information
+	 */
+	lcd_set_cursor(142, 8);
+	lcd_char2buffer(0xFA); //SD-Card symbol
+	// If card is detected
+	if(p_ipc_gui_sd_data->state & 1)
+	{
+		for(unsigned char count = 0; count < 8; count++)
+			lcd_char2buffer(p_ipc_gui_sd_data->CardName[count]);
+	}
+	else
+		lcd_string2buffer("No Card");
+
+	/*
+	 * Display Battery voltage
+	 */
+	lcd_set_cursor(196, 8);
+	//if not charging
+	if(p_ipc_gui_bms_data->charging_state & (1<<14))
+	{
+		lcd_bat2buffer(ch_status_counter/10);
+		ch_status_counter++;
+		if(ch_status_counter >= 50)
+			ch_status_counter = 0;
+	}
+	else
+	{
+		if(p_ipc_gui_bms_data->battery_voltage >= 4000)
+			lcd_bat2buffer(3);
+		else if(p_ipc_gui_bms_data->battery_voltage >= 3500)
+			lcd_bat2buffer(2);
+		else if(p_ipc_gui_bms_data->battery_voltage >= 3200)
+			lcd_bat2buffer(1);
+		else
+			lcd_bat2buffer(0);
+	}
+
+	/*
+	 * Display Clock
+	 */
+	lcd_set_cursor(209, 8);
+	lcd_set_fontsize(1);
+	lcd_num2buffer(get_hours_lct(),2);
+	lcd_string2buffer(":");
+	lcd_num2buffer(get_minutes_lct(),2);
+
+	/*
+	 * Display seperation line
+	 */
+	lcd_line2buffer(0, 8, 239, 8);
+
+};
 
 

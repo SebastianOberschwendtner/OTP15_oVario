@@ -54,6 +54,7 @@
 #define data_info_coloumb_fault		5
 #define data_info_baro_fault		6
 #define data_info_sd_fault			7
+#define data_info_otg_on_failure	8
 
 
 // ******* TYPEDEF *******
@@ -189,6 +190,7 @@ typedef struct
 	unsigned long FirstDataSecNum;
 	unsigned long RootDirClus;
 	unsigned char SecPerClus;
+	unsigned char CardName[8];
 	unsigned char err;
 }SDIO_T;
 #pragma pack(pop)

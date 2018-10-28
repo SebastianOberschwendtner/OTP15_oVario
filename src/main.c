@@ -38,8 +38,9 @@ int main(void)
 
 	set_led_red(ON);
 	init_lcd();
+	gui_bootlogo();
 	exti_init();
-	//sound_init();
+	sound_init();
 	timer_init();
 	init_i2c();
 
@@ -53,7 +54,9 @@ int main(void)
 	datafusion_init();
 	vario_init();
 	gui_init();
+
 	init_igc();
+
 
 	while(1)
 	{
