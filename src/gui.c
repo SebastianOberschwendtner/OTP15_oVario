@@ -962,6 +962,34 @@ void draw_graph(uint8_t x, uint8_t y)
 	lcd_set_cursor(x-25, y + height+3);
 	lcd_float2buffer((float)min,1,0);
 	lcd_string2buffer("ms");
+};
+
+/*
+ * Draws the bootlogo of the vario:
+ */
+void gui_bootlogo(void)
+{
+	lcd_clear_buffer();
+	lcd_box2buffer(220, 120, 3);
+	lcd_set_cursor(15, 30);
+	lcd_set_fontsize(0);
+	lcd_string2buffer("OBITec");
+	lcd_set_fontsize(1);
+	lcd_string2buffer(" and ");
+	lcd_set_fontsize(0);
+	lcd_string2buffer("JK Design");
+	lcd_set_cursor(99, 45);
+	lcd_set_fontsize(1);
+	lcd_string2buffer("present");
+	lcd_set_cursor(39, 85);
+	lcd_set_fontsize(3);
+	lcd_set_inverted(1);
+	lcd_string2buffer(" joVario ");
+	lcd_set_cursor(84, 105);
+	lcd_set_fontsize(0);
+	lcd_set_inverted(0);
+	lcd_string2buffer("V 1.00");
+	lcd_send_buffer();
 }
 
 

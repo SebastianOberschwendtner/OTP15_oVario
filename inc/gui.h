@@ -37,6 +37,7 @@ void fkt_Settings		(void);
 void fkt_MS5611 		(void);
 void fkt_runtime_errors	(void);
 void fkt_infobox		(void);
+void gui_bootlogo		(void);
 
 
 void gui_gauge      (float value, float min, float max);
