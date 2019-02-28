@@ -48,6 +48,7 @@ void gui_init (void)
 
 
 //*********** Task **************
+//TODO Implement the command evaluation within a seperate function. THis means one additional switch-case for the menu page, but every key assignment is in one function.
 void gui_task (void)
 {
 	lcd_clear_buffer();
