@@ -243,10 +243,10 @@ void fkt_Vario (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+//				GUI_cmd.did 		= did_GUI;
+//				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+//				GUI_cmd.timestamp 	= TIM5->CNT;
+//				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
@@ -539,19 +539,18 @@ void fkt_GPS(void)
 				menu++;
 				break;
 			case data_KEYPAD_pad_DOWN:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 				break;
+
 			case data_KEYPAD_pad_UP:
 				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
 				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
+
 			case data_KEYPAD_pad_RIGHT:
 				break;
+
 			default:
 				break;
 			}
@@ -610,17 +609,10 @@ void fkt_MS5611 (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+
 				break;
 
 			default:
@@ -667,17 +659,9 @@ void fkt_Menu (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
@@ -722,17 +706,9 @@ void fkt_Settings(void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
