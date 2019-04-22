@@ -202,9 +202,9 @@ void igc_create(void)
 
 		//calculate name
 		char igc_name[9] = {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00};
-		sys_num2str(igc_name, get_day_utc(), 2);
+		sys_num2str(igc_name, get_year_utc(), 2);
 		sys_num2str(igc_name+2, get_month_utc(),2);
-		sys_num2str(igc_name+4, get_year_utc(),2);
+		sys_num2str(igc_name+4, get_day_utc(),2);
 
 		//create file
 		unsigned long l_count = 0;
