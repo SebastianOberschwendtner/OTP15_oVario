@@ -524,12 +524,6 @@ void fkt_GPS(void)
 	lcd_num2buffer(p_ipc_gui_gps_data->min,2);
 	lcd_string2buffer(":");
 	lcd_num2buffer(p_ipc_gui_gps_data->sec,2);
-	lcd_string2buffer("  ");
-	lcd_num2buffer(p_ipc_gui_gps_data->day,2);
-	lcd_string2buffer(".");
-	lcd_num2buffer(p_ipc_gui_gps_data->month,2);
-	lcd_string2buffer(".");
-	lcd_num2buffer(p_ipc_gui_gps_data->year,4);
 
 	y +=ls;
 	lcd_set_cursor(0, y);

@@ -55,7 +55,7 @@ int main(void)
 	vario_init();
 	gui_init();
 
-	init_igc();
+	//init_igc();
 
 //	log_create();
 
@@ -85,7 +85,7 @@ int main(void)
 			else if (l_count_tick == 10)
 			{
 				set_led_red(ON);
-				igc_task();
+				//igc_task();
 				l_count_tick = 0;
 			}
 		}
