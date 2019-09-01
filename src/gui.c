@@ -82,6 +82,9 @@ void gui_task (void)
 	case GUI_MS5611:
 		fkt_MS5611();
 		break;
+	case GUI_DF:
+		fkt_DF();
+		break;
 	default:
 		break;
 	}
@@ -201,7 +204,7 @@ void fkt_Vario (void)
 	lcd_circle2buffer(x_hdg, y_hdg, r_hdg);
 
 	tempo = (uint16_t)p_ipc_gui_gps_data->heading_deg;//tempo + 3;
-//	if(tempo >359) tempo = 0;
+	//	if(tempo >359) tempo = 0;
 
 	lcd_arrow2buffer(x_hdg, y_hdg, r_hdg, tempo);
 
@@ -244,10 +247,10 @@ void fkt_Vario (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-//				GUI_cmd.did 		= did_GUI;
-//				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-//				GUI_cmd.timestamp 	= TIM5->CNT;
-//				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+				//				GUI_cmd.did 		= did_GUI;
+				//				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				//				GUI_cmd.timestamp 	= TIM5->CNT;
+				//				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
@@ -409,11 +412,11 @@ void fkt_BMS(void)
 			}
 			break;
 
-		//Infobox
-		case cmd_gui_set_std_message:
-			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-			break;
+			//Infobox
+			case cmd_gui_set_std_message:
+				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+				break;
 		}
 	}
 }
@@ -557,11 +560,11 @@ void fkt_GPS(void)
 			}
 			break;
 
-		//Infobox
-		case cmd_gui_set_std_message:
-			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-			break;
+			//Infobox
+			case cmd_gui_set_std_message:
+				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+				break;
 		}
 	}
 }
@@ -621,18 +624,112 @@ void fkt_MS5611 (void)
 			}
 			break;
 
-		//Infobox
-		case cmd_gui_set_std_message:
-			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-			break;
-		default:
-			break;
+			//Infobox
+			case cmd_gui_set_std_message:
+				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+				break;
+			default:
+				break;
 		}
 	}
 }
 
+void fkt_DF (void)
+{
 
+
+	uint8_t y 	= 9;
+#define	ls	10		// Line step width
+#define	c1	100		// y Value of Value Column
+
+	// Set Fontsize
+	lcd_set_fontsize(1);
+
+	// Write Data to Screen
+	y +=ls - 1;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ui1: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_df_data->ui1,6,2);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("yi1: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_df_data->yi1,6,2);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("yi2: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_df_data->yi2,6,2);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("sub: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_df_data->sub,6,2);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("height: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_df_data->height,6,2);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("y: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_df_data->climbrate_filt,6,2);
+
+
+
+
+
+
+
+	//Get commands
+	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
+	{
+		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
+
+		//Switch for commad
+		switch(GUI_cmd.cmd)
+		{
+		//Keypad
+		case cmd_gui_eval_keypad:
+			switch(GUI_cmd.data)					// switch for pad number
+			{
+			case data_KEYPAD_pad_LEFT:		// next screen
+				menu++;
+				break;
+
+			case data_KEYPAD_pad_DOWN:
+				break;
+
+			case data_KEYPAD_pad_UP:
+				break;
+
+			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
+
+				break;
+
+			default:
+				break;
+			}
+			break;
+
+			//Infobox
+			case cmd_gui_set_std_message:
+				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+				break;
+			default:
+				break;
+		}
+	}
+}
 
 void fkt_Menu (void)
 {

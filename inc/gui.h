@@ -19,9 +19,10 @@ enum states
 	Gui_Settings 	= 3,
 	Gui_BMS 		= 4,
 	Gui_GPS 		= 5,
-	GUI_MS5611 		= 6
+	GUI_MS5611 		= 6,
+	GUI_DF 			= 7
 };
-#define num_states 7
+#define num_states 8
 
 
 // Functions
@@ -35,6 +36,7 @@ void fkt_GPS			(void);
 void fkt_Menu 			(void);
 void fkt_Settings		(void);
 void fkt_MS5611 		(void);
+void fkt_DF 			(void);
 void fkt_runtime_errors	(void);
 void fkt_infobox		(void);
 void gui_bootlogo		(void);
