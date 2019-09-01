@@ -17,7 +17,8 @@
  * Defines for system
  */
 //CPU Speed
-#define	F_CPU			168021840UL //Measured with osci
+//#define	F_CPU			168021840UL //Measured with osci
+#define	F_CPU			161300966UL //Measured with osci
 //Define SysTick time in ms
 #define SYSTICK			100
 //I2C clock speed

@@ -25,6 +25,8 @@
 #include "sdio.h"
 #include "logging.h"
 #include "igc.h"
+#include "stm32f4xx.h"
+#include "adc.h"
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
@@ -37,27 +39,34 @@ int main(void)
 	init_led();
 
 	set_led_red(ON);
-	init_lcd();
-	gui_bootlogo();
-	exti_init();
+	//init_lcd();
+	//gui_bootlogo();
+	//exti_init();
 	sound_init();
 	timer_init();
 	init_i2c();
+	UB_ADC1_SINGLE_Init();
 
 	MS5611_init();
-	init_sdio();
+	//init_sdio();
 
 	wait_systick(10);
-	init_BMS();
+	//init_BMS();
 
-	gps_init();
+	//gps_init();
 	datafusion_init();
 	vario_init();
-	gui_init();
+	//	gui_init();
 
 	//init_igc();
 
-//	log_create();
+	//	log_create();
+
+	if(error_var == 0)
+		set_led_red(OFF);
+	else
+		set_led_red(ON);
+
 
 	while(1)
 	{
@@ -68,11 +77,12 @@ int main(void)
 			ms5611_task();
 			datafusion_task();
 			vario_task();
-			gui_task();
-			gps_task();
+			adc_task();
+			//gui_task();
+			//gps_task();
 
-			BMS_set_charge_current(800);
-			BMS_task();
+			//BMS_set_charge_current(800);
+			//BMS_task();
 			//log_exe_txt();
 
 
@@ -80,11 +90,11 @@ int main(void)
 			l_count_tick++;
 			if(l_count_tick == 5)
 			{
-				set_led_red(OFF);
+				set_led_green(ON);
 			}
 			else if (l_count_tick == 10)
 			{
-				set_led_red(ON);
+				set_led_green(OFF);
 				//igc_task();
 				l_count_tick = 0;
 			}

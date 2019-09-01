@@ -79,9 +79,9 @@ void datafusion_task(void)
 	if (flagfirst)
 	{
 		// Init Filter
-		yi1 = u;
-		ui1 = u * ts;
-		yi2 = -2 * d * T * u;
+		yi1 = 0;
+		ui1 = 0;//u * ts;
+		yi2 = u * ts;
 
 		flagfirst = 0;
 	}

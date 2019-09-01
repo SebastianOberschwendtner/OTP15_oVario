@@ -21,7 +21,7 @@ T_command vario_command;
 uint8_t  volu 	= 0;
 uint16_t freque = 0;
 uint8_t  peri 	= 0;
-uint8_t state_sinktone = 1;
+uint8_t state_sinktone = 0;
 
 
 

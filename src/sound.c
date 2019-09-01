@@ -11,10 +11,10 @@
 
 // ***** Variables *****
 
-T_sound_state sound_state;
-uint32_t timet = 0;
-T_command sound_command;
-volatile uint32_t temp = 0;
+T_sound_state 		sound_state;
+uint32_t 			timet = 0;
+T_command 			sound_command;
+volatile uint32_t 	temp = 0;
 
 // ***** Functions *****
 
@@ -47,9 +47,6 @@ void sound_init()
 	// Clock enable
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-	//RCC_ClocksTypeDef RCC_Clocks;
-
-	//RCC_GetClocksFreq(&RCC_Clocks);
 
 	// Timer for Buzzer Output PWM
 	TIM_TimeBaseStructure.TIM_Period 			= 10500;//20995;
