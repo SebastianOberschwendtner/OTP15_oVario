@@ -68,18 +68,11 @@ void exti_init(void)
 
 }
 
-void EXTI0_IRQHandler (void)
-{
-	T_command temp;
-	temp.did  		= did_KEYPAD;
-	temp.cmd		= cmd_gui_eval_keypad;
-	temp.data 		= data_KEYPAD_pad_LEFT;
-	temp.timestamp 	= TIM5->CNT;
-	ipc_queue_push(&temp, 10, did_GUI);
-	EXTI_ClearITPendingBit(EXTI_Line0);
-}
 
-void EXTI1_IRQHandler (void)
+T_command ExtiCmd;
+
+
+void EXTI0_IRQHandler (void)
 {
 	T_command temp;
 	temp.did  		= did_KEYPAD;
@@ -87,21 +80,18 @@ void EXTI1_IRQHandler (void)
 	temp.data 		= data_KEYPAD_pad_DOWN;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
-	EXTI_ClearITPendingBit(EXTI_Line1);
+	EXTI_ClearITPendingBit(EXTI_Line0);
+
+
+//	//Send infobox
+//	ExtiCmd.did 		= did_KEYPAD;
+//	ExtiCmd.cmd			= cmd_gui_set_std_message;
+//	ExtiCmd.data 		= data_info_keypad_0;
+//	ExtiCmd.timestamp 	= TIM5->CNT;
+//	ipc_queue_push(&ExtiCmd, 10, did_GUI);
 }
 
-void EXTI2_IRQHandler (void)
-{
-	T_command temp;
-	temp.did  		= did_KEYPAD;
-	temp.cmd		= cmd_gui_eval_keypad;
-	temp.data 		= data_KEYPAD_pad_UP;
-	temp.timestamp 	= TIM5->CNT;
-	ipc_queue_push(&temp, 10, did_GUI);
-	EXTI_ClearITPendingBit(EXTI_Line2);
-}
-
-void EXTI3_IRQHandler (void)
+void EXTI1_IRQHandler (void)
 {
 	T_command temp;
 	temp.did  		= did_KEYPAD;
@@ -109,5 +99,48 @@ void EXTI3_IRQHandler (void)
 	temp.data 		= data_KEYPAD_pad_RIGHT;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
+	EXTI_ClearITPendingBit(EXTI_Line1);
+
+//	//Send infobox
+//	ExtiCmd.did 		= did_KEYPAD;
+//	ExtiCmd.cmd			= cmd_gui_set_std_message;
+//	ExtiCmd.data 		= data_info_keypad_1;
+//	ExtiCmd.timestamp 	= TIM5->CNT;
+//	ipc_queue_push(&ExtiCmd, 10, did_GUI);
+}
+
+void EXTI2_IRQHandler (void)
+{
+	T_command temp;
+	temp.did  		= did_KEYPAD;
+	temp.cmd		= cmd_gui_eval_keypad;
+	temp.data 		= data_KEYPAD_pad_LEFT;
+	temp.timestamp 	= TIM5->CNT;
+	ipc_queue_push(&temp, 10, did_GUI);
+	EXTI_ClearITPendingBit(EXTI_Line2);
+
+//	//Send infobox
+//	ExtiCmd.did 		= did_KEYPAD;
+//	ExtiCmd.cmd			= cmd_gui_set_std_message;
+//	ExtiCmd.data 		= data_info_keypad_2;
+//	ExtiCmd.timestamp 	= TIM5->CNT;
+//	ipc_queue_push(&ExtiCmd, 10, did_GUI);
+}
+
+void EXTI3_IRQHandler (void)
+{
+	T_command temp;
+	temp.did  		= did_KEYPAD;
+	temp.cmd		= cmd_gui_eval_keypad;
+	temp.data 		= data_KEYPAD_pad_UP;
+	temp.timestamp 	= TIM5->CNT;
+	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line3);
+
+//	//Send infobox
+//	ExtiCmd.did 		= did_KEYPAD;
+//	ExtiCmd.cmd			= cmd_gui_set_std_message;
+//	ExtiCmd.data 		= data_info_keypad_3;
+//	ExtiCmd.timestamp 	= TIM5->CNT;
+//	ipc_queue_push(&ExtiCmd, 10, did_GUI);
 }

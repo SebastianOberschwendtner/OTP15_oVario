@@ -48,7 +48,6 @@ void gui_init (void)
 
 
 //*********** Task **************
-//TODO Implement the command evaluation within a seperate function. THis means one additional switch-case for the menu page, but every key assignment is in one function.
 void gui_task (void)
 {
 	lcd_clear_buffer();
@@ -79,11 +78,11 @@ void gui_task (void)
 	case Gui_GPS:
 		fkt_GPS();
 		break;
-	case GUI_MS5611:
+	case Gui_MS5611:
 		fkt_MS5611();
 		break;
-	case GUI_DF:
-		fkt_DF();
+	case Gui_Datafusion:
+		fkt_Datafusion();
 		break;
 	default:
 		break;
@@ -176,13 +175,15 @@ void fkt_Vario (void)
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_gps_data->speed_kmh,2,1);
+	//lcd_float2buffer(p_ipc_gui_df_data->Wind.W_mag,2,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" kmh");
 
 	y = y + 20;
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
-	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
+	//	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
+	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" m");
 
@@ -197,10 +198,12 @@ void fkt_Vario (void)
 
 	// Draw Heading Arrow
 
-#define x_hdg 50
-#define y_hdg 105
+#define x_hdg 30
+#define y_hdg 108
 #define r_hdg 10
 
+	lcd_set_cursor(0, y_hdg -10);
+	lcd_string2buffer("HDG");
 	lcd_circle2buffer(x_hdg, y_hdg, r_hdg);
 
 	tempo = (uint16_t)p_ipc_gui_gps_data->heading_deg;//tempo + 3;
@@ -217,6 +220,45 @@ void fkt_Vario (void)
 	lcd_string2buffer("S");
 	lcd_set_cursor(x_hdg - 18 , y_hdg + 5);
 	lcd_string2buffer("W");
+	lcd_set_cursor(0, y_hdg + 20);
+	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg,3,0);
+
+	// Draw wind speed
+
+
+#define x_we 80
+#define y_we 108
+#define r_we 10
+
+	lcd_set_cursor(88, y_hdg - 10);
+	lcd_string2buffer("Wind");
+	lcd_circle2buffer(x_we, y_we, r_we);
+
+	tempo = (uint16_t)p_ipc_gui_df_data->Wind.W_dir;
+
+	lcd_arrow2buffer(x_we, y_we, r_we, tempo);
+
+	lcd_set_fontsize(1);
+	lcd_set_cursor(x_we - 3, y_we - 10);
+	lcd_string2buffer("N");
+	lcd_set_cursor(x_we + 12, y_we + 5);
+	lcd_string2buffer("O");
+	lcd_set_cursor(x_we - 3, y_we + 20);
+	lcd_string2buffer("S");
+	lcd_set_cursor(x_we - 18 , y_we + 5);
+	lcd_string2buffer("W");
+
+	lcd_set_cursor(45, y_we + 20);
+	lcd_float2buffer(p_ipc_gui_df_data->Wind.W_dir,3,0);
+
+	lcd_set_cursor(85, y_we + 20);
+	lcd_float2buffer(p_ipc_gui_df_data->Wind.W_mag,2,1);
+
+	lcd_set_cursor(45, y_we - 10);
+	lcd_float2buffer(p_ipc_gui_df_data->Wind.cnt,2,0);
+
+
+
 
 	// Climbrate
 	lcd_set_cursor(110, 40);
@@ -247,10 +289,10 @@ void fkt_Vario (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-				//				GUI_cmd.did 		= did_GUI;
-				//				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				//				GUI_cmd.timestamp 	= TIM5->CNT;
-				//				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
@@ -543,18 +585,19 @@ void fkt_GPS(void)
 				menu++;
 				break;
 			case data_KEYPAD_pad_DOWN:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 				break;
-
 			case data_KEYPAD_pad_UP:
 				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
 				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 				break;
-
 			case data_KEYPAD_pad_RIGHT:
 				break;
-
 			default:
 				break;
 			}
@@ -593,6 +636,30 @@ void fkt_MS5611 (void)
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->temperature)/100,2,1);
 
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Sens: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Sens),11,0);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Sens2: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Sens2),11,0);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Off: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Off),11,0);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Off2: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Off2),11,0);
+
 	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
 	{
@@ -613,10 +680,17 @@ void fkt_MS5611 (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
@@ -635,9 +709,8 @@ void fkt_MS5611 (void)
 	}
 }
 
-void fkt_DF (void)
+void fkt_Datafusion	(void)
 {
-
 
 	uint8_t y 	= 9;
 #define	ls	10		// Line step width
@@ -649,42 +722,53 @@ void fkt_DF (void)
 	// Write Data to Screen
 	y +=ls - 1;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("ui1: ");
+	lcd_string2buffer("Wind speed: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer((float)p_ipc_gui_df_data->ui1,6,2);
+	lcd_float2buffer((float)p_ipc_gui_df_data->Wind.W_mag,2,1);
+	lcd_string2buffer(" m/s");
 
-	y +=ls;
+	y +=ls - 1;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("yi1: ");
+	lcd_string2buffer("Wind direction: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer((float)p_ipc_gui_df_data->yi1,6,2);
+	lcd_float2buffer((float)p_ipc_gui_df_data->Wind.W_dir,3,0);
+	lcd_string2buffer(" grad");
 
-	y +=ls;
+	y +=ls - 1;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("yi2: ");
+	lcd_string2buffer("Aero speed: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer((float)p_ipc_gui_df_data->yi2,6,2);
+	lcd_float2buffer((float)p_ipc_gui_df_data->Wind.W_Va,2,1);
+	lcd_string2buffer(" m/s");
 
-	y +=ls;
+	y +=ls - 1;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("sub: ");
+	lcd_string2buffer("Iterations: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer((float)p_ipc_gui_df_data->sub,6,2);
+	lcd_float2buffer((float)p_ipc_gui_df_data->Wind.iterations,3,0);
 
-	y +=ls;
+	y +=ls - 1;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("height: ");
+	lcd_string2buffer("Data cnt: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer((float)p_ipc_gui_df_data->height,6,2);
-
-	y +=ls;
-	lcd_set_cursor(0, y);
-	lcd_string2buffer("y: ");
-	lcd_set_cursor(c1, y);
-	lcd_float2buffer((float)p_ipc_gui_df_data->climbrate_filt,6,2);
+	lcd_float2buffer((float)p_ipc_gui_df_data->Wind.cnt,3,0);
 
 
+#define rwe 35
+	lcd_circle2buffer(rwe + 2, y + rwe + 2, rwe);
+	lcd_line2buffer(2,y + rwe + 2, rwe * 2 + 2, y + rwe + 2);
+	lcd_line2buffer(rwe + 2,y + 2, rwe + 2, y + rwe * 2 + 2);
 
+	for(uint8_t cntwe = 0; cntwe <60; cntwe++)
+	{
+		char tempx = rwe + 2;
+		char tempy = rwe + y + 2;
+
+		char tempxx = (char)((((float)(p_ipc_gui_df_data->Wind.WE_x[cntwe])) * rwe / 5 / 20) + (float)tempx);
+		char tempyy = (char)((((float)(-p_ipc_gui_df_data->Wind.WE_y[cntwe])) * rwe / 5 / 20) + (float)tempy);
+
+		lcd_pixel2buffer(tempxx, tempyy, 1);
+	}
 
 
 
@@ -709,10 +793,17 @@ void fkt_DF (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
@@ -730,6 +821,9 @@ void fkt_DF (void)
 		}
 	}
 }
+
+
+
 
 void fkt_Menu (void)
 {
@@ -757,9 +851,17 @@ void fkt_Menu (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
@@ -804,9 +906,17 @@ void fkt_Settings(void)
 				break;
 
 			case data_KEYPAD_pad_UP:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
@@ -921,6 +1031,29 @@ void fkt_infobox(void)
 			lcd_set_fontsize(2);
 			lcd_string2buffer("OTG On Fault!");
 			break;
+		case data_info_keypad_0:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Keypad 0");
+			break;
+		case data_info_keypad_1:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Keypad 1");
+			break;
+		case data_info_keypad_2:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Keypad 2");
+			break;
+		case data_info_keypad_3:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Keypad 3");
+			break;
+
+
+
 		default:
 			break;
 		}
@@ -1080,8 +1213,11 @@ void gui_status_bar(void)
 	case Gui_BMS:
 		lcd_string2buffer("Battery");
 		break;
-	case GUI_MS5611:
+	case Gui_MS5611:
 		lcd_string2buffer("Baro");
+		break;
+	case Gui_Datafusion:
+		lcd_string2buffer("Datafusion");
 		break;
 	default:
 		lcd_string2buffer("home");
@@ -1089,11 +1225,25 @@ void gui_status_bar(void)
 	}
 
 	/*
-	 * display current gight MSL
+	 * display current height Baro
 	 */
-	lcd_set_cursor(42, 8);
-	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
-	lcd_string2buffer(" m MSL");
+	lcd_set_cursor(35, 8);
+	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
+	lcd_string2buffer(" m Baro");
+
+
+	/*
+	 * Sat Symbol
+	 */
+	lcd_set_cursor(135, 8);
+	if(p_ipc_gui_gps_data->fix == 3)
+		lcd_set_inverted(0);
+	else
+		lcd_set_inverted(1);
+
+	lcd_char2buffer(0xFB); //Sat symbol
+	lcd_set_inverted(0);
+
 
 	/*
 	 * SD-Card information

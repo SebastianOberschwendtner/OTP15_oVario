@@ -122,18 +122,18 @@ void init_sdio(void)
 		//SD->response = sdio_send_cmd_short(CMD16,SDIO_BLOCKLEN);
 
 		//Set bus mode to 4 bit
-//
+
 		sdio_select_card();
-//		if(SD->state & SD_CARD_SELECTED)
-//		{
-//			//send command for bus mode
-//			SD->response = sdio_send_cmd_short(CMD55,(SD->RCA<<16));
-//			if(SD->response & R1_APP_CMD)
-//				SD->response = sdio_send_cmd_short(ACMD6,0b10);
-//			//If bus mode is available, switch to this mode
-//			if(!(SD->response & R1_ERROR))
-//				SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
-//		}
+		if(SD->state & SD_CARD_SELECTED)
+		{
+			//send command for bus mode
+			SD->response = sdio_send_cmd_short(CMD55,(SD->RCA<<16));
+			if(SD->response & R1_APP_CMD)
+				SD->response = sdio_send_cmd_short(ACMD6,0b10);
+			//If bus mode is available, switch to this mode
+			if(!(SD->response & R1_ERROR))
+				SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
+		}
 
 		wait_ms(1);
 		//Increase clock speed to 4 MHz

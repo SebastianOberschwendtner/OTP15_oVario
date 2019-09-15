@@ -55,6 +55,10 @@
 #define data_info_baro_fault		6
 #define data_info_sd_fault			7
 #define data_info_otg_on_failure	8
+#define data_info_keypad_0			9
+#define data_info_keypad_1			10
+#define data_info_keypad_2			11
+#define data_info_keypad_3			12
 
 
 // ******* TYPEDEF *******
@@ -94,6 +98,20 @@ typedef struct
 
 
 // Datafusion
+
+#pragma pack(push, 1)
+typedef struct{
+	float W_mag;
+	float W_dir;
+	float W_Va;
+	uint32_t iterations;
+	uint8_t cnt;
+	int8_t WE_x[61];
+	int8_t WE_y[61];
+}datafusion_T_Wind;
+#pragma pack(pop)
+
+
 #pragma pack(push, 1)
 typedef struct{
 	float 		hoehe;
@@ -112,8 +130,10 @@ typedef struct{
 	uint8_t 	hist_ptr;
 	float 		hist_h[30];
 	uint8_t 	histh_ptr;
+	datafusion_T_Wind Wind;
 }datafusion_T;
 #pragma pack(pop)
+
 
 
 // MS5611
@@ -123,6 +143,10 @@ typedef struct{
 	int32_t temperature;
 	uint32_t timestamp;
 	uint8_t com_err;
+	int64_t Off;
+	int64_t Off2;
+	int64_t Sens;
+	uint64_t Sens2;
 }ms5611_T;
 #pragma pack(pop)
 

@@ -28,9 +28,9 @@ void log_include(void* pointer, unsigned char length, unsigned char intervall, c
 	//Check for available sensors
 	if(LogInfo.ch_sensor_count < LOG_MAX_SENSORS)
 	{
-		sensor[LogInfo.ch_sensor_count].address = (char*)pointer;
-		sensor[LogInfo.ch_sensor_count].size = length;
-		sensor[LogInfo.ch_sensor_count].intervall = intervall;
+		sensor[LogInfo.ch_sensor_count].address 	= (char*)pointer;
+		sensor[LogInfo.ch_sensor_count].size 		= length;
+		sensor[LogInfo.ch_sensor_count].intervall 	= intervall;
 
 		//Add the sensor name to header --> max. LOG_SENS_NAME_LENGTH character!
 		for(unsigned char character = 0; character < LOG_SENS_NAME_LENGTH; character++)
@@ -46,11 +46,11 @@ void log_include(void* pointer, unsigned char length, unsigned char intervall, c
  */
 void log_create(void)
 {
-	unsigned long l_count = 0;
-	char pch_name[9] = {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00};
+	unsigned long l_count 	= 0;
+	char pch_name[9] 		= {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00};
 
 	//get sd state
-	sd = ipc_memory_get(did_SDIO);
+	sd 	= ipc_memory_get(did_SDIO);
 	sys = ipc_memory_get(did_SYS);
 
 	//Only log if sd-card is detected
@@ -80,6 +80,7 @@ void log_create(void)
 		 * Sens: SxxSxxSxx
 		 * Byte: 08 08 08
 		 */
+		/*
 		sdio_string2file(&Log, pch_name);
 		sdio_string2file(&Log, " by JoVario - AR\n");
 		sdio_string2file(&Log, "Date: ");
@@ -98,6 +99,14 @@ void log_create(void)
 			sdio_num2file(&Log, sensor[count].size, 2);
 			sdio_byte2file(&Log, ' ');
 		}
+		sdio_byte2file(&Log, '\n');*/
+
+
+		for(unsigned char count = 0; count < LogInfo.ch_sensor_count; count++)
+		{
+			sdio_string2file(&Log, LogInfo.header);
+			sdio_byte2file(&Log, ';');
+		}
 		sdio_byte2file(&Log, '\n');
 	}
 };
@@ -111,7 +120,7 @@ void log_exe(void)
 	//Check if sd-card is inserted and log is not finished
 	if((sd->state & SD_CARD_DETECTED) && LogInfo.ch_log_open)
 	{
-		//Log every sensore
+		//Log every sensor
 		for(unsigned char count = 0; count<LogInfo.ch_sensor_count; count++)
 		{
 			//Log every byte in the sensor
@@ -120,6 +129,27 @@ void log_exe(void)
 				sdio_byte2file(&Log, *(sensor[count].address + byte));
 			}
 		}
+	}
+};
+
+
+
+/*
+ * Log data in plain text; just floats 5.5 digits
+ */
+//TODO Add support for error variable.
+void log_exe_txt(void)
+{
+	//Check if sd-card is inserted and log is not finished
+	if((sd->state & SD_CARD_DETECTED) && LogInfo.ch_log_open)
+	{
+		//Log every sensor
+		for(unsigned char count = 0; count < LogInfo.ch_sensor_count; count++)
+		{
+			log_float(sensor[count].address, 5, 5);
+			sdio_byte2file(&Log, ';');
+		}
+		sdio_byte2file(&Log, '\n');
 	}
 };
 
@@ -149,4 +179,38 @@ void log_finish(void)
 		sdio_set_inactive();
 	}
 };
+
+void log_float(char* add, unsigned char ch_predecimal, unsigned char ch_dedecimal)
+{
+	float *pfnum = (float*)add;
+	float fnum = *pfnum;
+	if(fnum >= 0);
+	//sdio_byte2file(&Log, '+');
+	else
+	{
+		sdio_byte2file(&Log, '-');
+		fnum = -fnum;
+	}
+
+
+	unsigned long E = 1;
+	for(unsigned char cnt = 0; cnt < ch_dedecimal; cnt++)
+	{
+		E *= 10;
+	}
+
+
+	unsigned long predec = (unsigned long)fnum;
+	unsigned long dedec  =  (unsigned long)((fnum - predec) * E);
+
+	sdio_num2file(&Log, (unsigned long)predec, ch_predecimal);
+
+	if(ch_dedecimal > 0)
+	{
+		sdio_byte2file(&Log, ',');
+		sdio_num2file(&Log, (unsigned long)dedec, ch_predecimal);
+	}
+
+}
+
 

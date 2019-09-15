@@ -14,11 +14,13 @@
 // ***** Variables *****
 uint32_t C0,C1,C2,C3,C4,C5,C6,CRC_MS,D1,D2;
 int32_t dT, Temp;
+int32_t pressure = 0;
 uint64_t T2;
 uint64_t Off2;
 uint64_t Sens2;
 int32_t calib_pressure = 0;
 int32_t ipc_pressure = 1;
+int64_t Off, Sens;
 
 ms5611_T* msdata;
 
@@ -51,7 +53,7 @@ void MS5611_init()
 	wait_systick(1);
 	wait_ms(100ul);
 
-	msdata = ipc_memory_register(13, did_MS5611);
+	msdata = ipc_memory_register(45, did_MS5611);
 	//Check communication status
 	if(i2c_get_error())
 	{
@@ -67,6 +69,11 @@ void ms5611_task()
 	msdata->pressure 	= get_pressure_MS();
 	msdata->temperature	= Temp;
 	msdata->timestamp 	= TIM5->CNT;
+
+	msdata->Off 	= Off;
+	msdata->Off2 	= Off2;
+	msdata->Sens	= Sens;
+	msdata->Sens2 	= Sens2;
 }
 
 
@@ -85,36 +92,37 @@ int32_t get_pressure_MS()
 		wait_ms(10ul);
 
 		// ADC Read
-		uint32_t D1 = (int32_t)i2c_read_24bit(i2c_addr_MS5611,0x00);
+		D1 = (int32_t)i2c_read_24bit(i2c_addr_MS5611,0x00);
 
 		// ADC Read
 
-		int64_t Off = (long long)C2 * 65536 + ((long long)C4 * dT ) / 128;
-		int64_t Sens = (long long)C1 * 32768 + ((long long)C3 * dT) / 256;
+		Off 	= (long long)C2 * 65536 + ((long long)C4 * dT ) / 128;
+		Sens 	= (long long)C1 * 32768 + ((long long)C3 * dT) / 256;
 
 		if (Temp < 2000)
 		{
-			uint64_t T2 = ((uint64_t) dT )>> 31;
-			uint64_t Off2 = (5 * (Temp - 2000)^2) >> 1;
-			uint64_t Sens2 = (5 * (Temp - 2000)) >> 2;
+			T2 		= ((uint64_t) dT )>> 31;
+			Off2 	= (5 * (Temp - 2000) * (Temp - 2000)) >> 1;
+			Sens2 	= (5 * (Temp - 2000) * (Temp - 2000)) >> 2;
 
-			if (Temp < -15)
+			if (Temp < -1500)
 			{
-				Off2 = Off2 + (7 * (Temp + 1500)^2);
-				Sens2 = Sens2 + ((11 * (Temp + 1500)^2) >> 1);
+				Off2 	= Off2 + (7 * (Temp + 1500) * (Temp + 1500));
+				Sens2 	= Sens2 + ((11 * (Temp + 1500) * (Temp + 1500)) >> 1);
 			}
 		}
 		else
 		{
-			uint64_t T2 = 0;
-			uint64_t Off2 = 0;
-			uint64_t Sens2 = 0;
+			T2 		= 0;
+			Off2 	= 0;
+			Sens2 	= 0;
 		}
+
 		Temp 	= Temp - T2;
 		Off 	= Off - Off2;
 		Sens 	= Sens - Sens2;
 
-		int32_t pressure 	= (D1*Sens/2097152 - Off)/32768;
+		pressure 	= (D1 * Sens / 2097152 - Off)/32768;
 		return pressure;
 
 		//check communication error
