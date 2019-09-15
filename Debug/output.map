@@ -8139,12 +8139,11 @@ LOAD /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64
                 0x00000000080053e4       0x3c src/exti.o
                 0x00000000080053e4                EXTI1_IRQHandler
  .text.EXTI2_IRQHandler
-                0x0000000008005420       0x3c src/exti.o
+                0x0000000008005420       0x40 src/exti.o
                 0x0000000008005420                EXTI2_IRQHandler
  .text.EXTI3_IRQHandler
-                0x000000000800545c       0x40 src/exti.o
-                0x000000000800545c                EXTI3_IRQHandler
- *fill*         0x000000000800549c        0x4 
+                0x0000000008005460       0x40 src/exti.o
+                0x0000000008005460                EXTI3_IRQHandler
  .text.gps_handle_nav
                 0x00000000080054a0      0x1ec src/gps.o
                 0x00000000080054a0                gps_handle_nav
