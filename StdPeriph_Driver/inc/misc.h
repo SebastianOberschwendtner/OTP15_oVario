@@ -71,7 +71,7 @@ typedef struct
   FunctionalState NVIC_IRQChannelCmd;         /*!< Specifies whether the IRQ channel defined in NVIC_IRQChannel
                                                    will be enabled or disabled. 
                                                    This parameter can be set either to ENABLE or DISABLE */   
-} NVIC_InitTypeDef;
+}NVIC_InitTypeDef;
  
 /* Exported constants --------------------------------------------------------*/
 

@@ -52,10 +52,6 @@ sound = 500;
 		T_command IPC_cmd;
 		while(ipc_get_queue_bytes(did_VARIO))
 		{
-<<<<<<< HEAD
-=======
-
->>>>>>> master
 			ipc_queue_get(did_VARIO, 10, &IPC_cmd); 	// get new command
 			switch(IPC_cmd.cmd)					// switch for pad number
 			{

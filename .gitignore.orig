@@ -1,0 +1,10 @@
+Debug/
+.DS_Store
+<<<<<<< HEAD
+.settings
+.cproject
+=======
+.settings/
+.cproject
+
+>>>>>>> master
