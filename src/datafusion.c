@@ -43,6 +43,8 @@ float yi2 = 0;
 float sub = 0;
 
 float timeclimbarray[climbavtime * 2] = {0};
+float timeclimbh[2];
+float timeclimbav = 0;
 
 uint8_t flagfirst = 1;
 uint8_t timecnt = 0;
@@ -81,7 +83,8 @@ void datafusion_task(void)
 		// Init Filter
 		yi1 = u;
 		ui1 = u * ts;
-		yi2 = -2 * d * T * u;
+		yi2 = 2 * ui1 - 2 * d * T * yi1;
+		timeclimbh[0] = df_data->height;
 
 		flagfirst = 0;
 	}
