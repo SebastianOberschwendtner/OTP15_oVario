@@ -60,7 +60,7 @@ void datafusion_init(void)
 
 
 	char log_baro[] = {"bar"};
-	log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
+	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
 }
 
 

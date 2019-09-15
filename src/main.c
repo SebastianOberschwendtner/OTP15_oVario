@@ -55,9 +55,8 @@ int main(void)
 	vario_init();
 	gui_init();
 
-	//init_igc();
+	init_igc();
 
-//	log_create();
 
 	while(1)
 	{
@@ -73,9 +72,6 @@ int main(void)
 
 			BMS_set_charge_current(800);
 			BMS_task();
-			//log_exe_txt();
-
-
 
 			l_count_tick++;
 			if(l_count_tick == 5)
@@ -85,7 +81,7 @@ int main(void)
 			else if (l_count_tick == 10)
 			{
 				set_led_red(ON);
-				//igc_task();
+				igc_task();
 				l_count_tick = 0;
 			}
 		}
