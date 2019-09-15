@@ -5413,66 +5413,26 @@ Discarded input sections
  .text          0x0000000000000000        0x0 driver/sdio.o
  .data          0x0000000000000000        0x0 driver/sdio.o
  .bss           0x0000000000000000        0x0 driver/sdio.o
- .text.sdio_set_inactive
-                0x0000000000000000       0x20 driver/sdio.o
- .text.sdio_dma_transmit
-                0x0000000000000000       0x28 driver/sdio.o
- .text.sdio_write_block
-                0x0000000000000000       0x90 driver/sdio.o
- .text.sdio_write_byte
-                0x0000000000000000       0x28 driver/sdio.o
- .text.sdio_write_int
-                0x0000000000000000       0x1c driver/sdio.o
- .text.sdio_write_long
-                0x0000000000000000       0x34 driver/sdio.o
  .text.sdio_register_handler
                 0x0000000000000000       0x30 driver/sdio.o
- .text.sdio_write_fat_pos
-                0x0000000000000000       0x20 driver/sdio.o
- .text.sdio_set_cluster
-                0x0000000000000000       0x60 driver/sdio.o
  .text.sdio_clear_cluster
                 0x0000000000000000       0x40 driver/sdio.o
- .text.sdio_write_current_sector
-                0x0000000000000000       0x20 driver/sdio.o
- .text.sdio_strcmp
-                0x0000000000000000       0x1c driver/sdio.o
  .text.sdio_check_filetype
                 0x0000000000000000       0x28 driver/sdio.o
- .text.sdio_get_empty_id
-                0x0000000000000000       0x78 driver/sdio.o
  .text.sdio_set_empty_id
                 0x0000000000000000       0x5c driver/sdio.o
- .text.sdio_get_empty_cluster
-                0x0000000000000000       0x64 driver/sdio.o
- .text.sdio_get_fileid
-                0x0000000000000000       0xec driver/sdio.o
  .text.sdio_get_date
                 0x0000000000000000        0xc driver/sdio.o
- .text.sdio_get_time
-                0x0000000000000000       0x10 driver/sdio.o
  .text.sdio_cd  0x0000000000000000       0x64 driver/sdio.o
- .text.sdio_make_entry
-                0x0000000000000000      0x130 driver/sdio.o
- .text.sdio_mkfile
-                0x0000000000000000       0x98 driver/sdio.o
  .text.sdio_mkdir
                 0x0000000000000000       0xf8 driver/sdio.o
  .text.sdio_rm  0x0000000000000000       0xa4 driver/sdio.o
- .text.sdio_set_filesize
-                0x0000000000000000       0x6c driver/sdio.o
  .text.sdio_fclear
                 0x0000000000000000       0xb4 driver/sdio.o
  .text.sdio_read_end_sector_of_file
                 0x0000000000000000       0x88 driver/sdio.o
  .text.sdio_fopen
                 0x0000000000000000       0x54 driver/sdio.o
- .text.sdio_write_file
-                0x0000000000000000       0xa4 driver/sdio.o
- .text.sdio_fclose
-                0x0000000000000000       0x38 driver/sdio.o
- .text.sdio_byte2file
-                0x0000000000000000       0x34 driver/sdio.o
  .text.sdio_int2file
                 0x0000000000000000       0x20 driver/sdio.o
  .text.sdio_long2file
@@ -5481,7 +5441,6 @@ Discarded input sections
                 0x0000000000000000       0x1c driver/sdio.o
  .text.sdio_num2file
                 0x0000000000000000       0x64 driver/sdio.o
- .rodata        0x0000000000000000        0xc driver/sdio.o
  .rodata.str1.4
                 0x0000000000000000        0xb driver/sdio.o
  .debug_macro   0x0000000000000000      0x8aa driver/sdio.o
@@ -5661,46 +5620,10 @@ Discarded input sections
  .text          0x0000000000000000        0x0 igc/igc.o
  .data          0x0000000000000000        0x0 igc/igc.o
  .bss           0x0000000000000000        0x0 igc/igc.o
- .text.igc_IsValidCharacter
-                0x0000000000000000       0x38 igc/igc.o
- .text.igc_IncludeInGrecord
-                0x0000000000000000       0x3c igc/igc.o
- .text.init_igc
-                0x0000000000000000       0x38 igc/igc.o
- .text.igc_CommitCharacter
-                0x0000000000000000       0x24 igc/igc.o
- .text.igc_CommitLine
-                0x0000000000000000       0x24 igc/igc.o
- .text.igc_WriteLine
-                0x0000000000000000       0x40 igc/igc.o
  .text.igc_NewRecord
                 0x0000000000000000       0x10 igc/igc.o
- .text.igc_AppendString
-                0x0000000000000000       0x34 igc/igc.o
- .text.igc_AppendNumber
-                0x0000000000000000       0x30 igc/igc.o
- .text.igc_create
-                0x0000000000000000      0x278 igc/igc.o
  .text.igc_FRecord
                 0x0000000000000000       0x5c igc/igc.o
- .text.igc_BRecord
-                0x0000000000000000      0x1b4 igc/igc.o
- .text.igc_sign
-                0x0000000000000000       0x84 igc/igc.o
- .text.igc_close
-                0x0000000000000000       0x28 igc/igc.o
- .text.igc_task
-                0x0000000000000000      0x11c igc/igc.o
- .rodata        0x0000000000000000       0x4c igc/igc.o
- .rodata.str1.4
-                0x0000000000000000      0x17e igc/igc.o
- .debug_info    0x0000000000000000     0x17d3 igc/igc.o
- .debug_abbrev  0x0000000000000000      0x28f igc/igc.o
- .debug_loc     0x0000000000000000      0x5de igc/igc.o
- .debug_aranges
-                0x0000000000000000       0x90 igc/igc.o
- .debug_ranges  0x0000000000000000       0x98 igc/igc.o
- .debug_macro   0x0000000000000000      0x30d igc/igc.o
  .debug_macro   0x0000000000000000      0x8aa igc/igc.o
  .debug_macro   0x0000000000000000       0x65 igc/igc.o
  .debug_macro   0x0000000000000000       0x3b igc/igc.o
@@ -5745,14 +5668,6 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0xdc igc/igc.o
  .debug_macro   0x0000000000000000       0xdc igc/igc.o
  .debug_macro   0x0000000000000000      0x1fb igc/igc.o
- .debug_macro   0x0000000000000000       0x6a igc/igc.o
- .debug_line    0x0000000000000000      0x957 igc/igc.o
- .debug_str     0x0000000000000000    0x5f6cc igc/igc.o
- .comment       0x0000000000000000       0x6f igc/igc.o
- .debug_frame   0x0000000000000000      0x1b8 igc/igc.o
- .ARM.attributes
-                0x0000000000000000       0x39 igc/igc.o
- COMMON         0x0000000000000000      0x3f7 igc/igc.o
  .group         0x0000000000000000        0x8 igc/md5.o
  .group         0x0000000000000000        0x8 igc/md5.o
  .group         0x0000000000000000        0x8 igc/md5.o
@@ -5799,28 +5714,8 @@ Discarded input sections
  .text          0x0000000000000000        0x0 igc/md5.o
  .data          0x0000000000000000        0x0 igc/md5.o
  .bss           0x0000000000000000        0x0 igc/md5.o
- .text.md5_initialize
-                0x0000000000000000       0x40 igc/md5.o
  .text.md5_leftrotate
                 0x0000000000000000        0x8 igc/md5.o
- .text.md5_process512
-                0x0000000000000000      0x104 igc/md5.o
- .text.md5_append_char
-                0x0000000000000000       0x20 igc/md5.o
- .text.md5_WriteLength
-                0x0000000000000000       0x14 igc/md5.o
- .text.md5_finalize
-                0x0000000000000000       0x54 igc/md5.o
- .text.md5_GetDigest
-                0x0000000000000000       0x38 igc/md5.o
- .rodata        0x0000000000000000      0x200 igc/md5.o
- .debug_info    0x0000000000000000      0x4f5 igc/md5.o
- .debug_abbrev  0x0000000000000000      0x1dc igc/md5.o
- .debug_loc     0x0000000000000000      0x40b igc/md5.o
- .debug_aranges
-                0x0000000000000000       0x50 igc/md5.o
- .debug_ranges  0x0000000000000000       0x88 igc/md5.o
- .debug_macro   0x0000000000000000      0x2df igc/md5.o
  .debug_macro   0x0000000000000000      0x8aa igc/md5.o
  .debug_macro   0x0000000000000000       0x65 igc/md5.o
  .debug_macro   0x0000000000000000       0x3b igc/md5.o
@@ -5864,12 +5759,6 @@ Discarded input sections
  .debug_macro   0x0000000000000000       0x16 igc/md5.o
  .debug_macro   0x0000000000000000       0xdc igc/md5.o
  .debug_macro   0x0000000000000000       0xdc igc/md5.o
- .debug_line    0x0000000000000000      0x77f igc/md5.o
- .debug_str     0x0000000000000000    0x5e968 igc/md5.o
- .comment       0x0000000000000000       0x6f igc/md5.o
- .debug_frame   0x0000000000000000       0xc8 igc/md5.o
- .ARM.attributes
-                0x0000000000000000       0x39 igc/md5.o
  .group         0x0000000000000000        0x8 src/BMS.o
  .group         0x0000000000000000        0x8 src/BMS.o
  .group         0x0000000000000000        0x8 src/BMS.o
@@ -6918,36 +6807,16 @@ Discarded input sections
  .text          0x0000000000000000        0x0 src/oVario_Framework.o
  .data          0x0000000000000000        0x0 src/oVario_Framework.o
  .bss           0x0000000000000000        0x0 src/oVario_Framework.o
- .text.set_led_green
-                0x0000000000000000       0x28 src/oVario_Framework.o
- .text.get_seconds_utc
-                0x0000000000000000       0x10 src/oVario_Framework.o
  .text.get_seconds_lct
-                0x0000000000000000       0x10 src/oVario_Framework.o
- .text.get_minutes_utc
-                0x0000000000000000       0x10 src/oVario_Framework.o
- .text.get_hours_utc
-                0x0000000000000000       0x10 src/oVario_Framework.o
- .text.get_day_utc
                 0x0000000000000000       0x10 src/oVario_Framework.o
  .text.get_day_lct
                 0x0000000000000000       0x10 src/oVario_Framework.o
  .text.get_month_lct
                 0x0000000000000000       0x10 src/oVario_Framework.o
- .text.get_year_utc
-                0x0000000000000000       0x14 src/oVario_Framework.o
  .text.get_year_lct
                 0x0000000000000000       0x14 src/oVario_Framework.o
- .text.sys_strcmp
-                0x0000000000000000       0x1c src/oVario_Framework.o
  .text.sys_strcpy
                 0x0000000000000000       0x2c src/oVario_Framework.o
- .text.sys_num2str
-                0x0000000000000000       0x38 src/oVario_Framework.o
- .text.sys_memcpy
-                0x0000000000000000       0x20 src/oVario_Framework.o
- .text.sys_hex2str
-                0x0000000000000000       0x30 src/oVario_Framework.o
  .debug_macro   0x0000000000000000      0x8aa src/oVario_Framework.o
  .debug_macro   0x0000000000000000       0x65 src/oVario_Framework.o
  .debug_macro   0x0000000000000000       0x3b src/oVario_Framework.o
@@ -7769,7 +7638,7 @@ LOAD /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64
                 0x0000000008000000                g_pfnVectors
                 0x00000000080001a8                . = ALIGN (0x4)
 
-.text           0x00000000080001a8     0x8aa8
+.text           0x00000000080001a8     0x9c70
                 0x00000000080001a8                . = ALIGN (0x4)
  *(.text)
  .text          0x00000000080001a8       0x5c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
@@ -7976,598 +7845,756 @@ LOAD /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64
  .text.sdio_select_card
                 0x00000000080020a4       0x34 driver/sdio.o
                 0x00000000080020a4                sdio_select_card
+ .text.sdio_set_inactive
+                0x00000000080020d8       0x20 driver/sdio.o
+                0x00000000080020d8                sdio_set_inactive
  .text.sdio_set_wait
-                0x00000000080020d8       0x1c driver/sdio.o
-                0x00000000080020d8                sdio_set_wait
+                0x00000000080020f8       0x1c driver/sdio.o
+                0x00000000080020f8                sdio_set_wait
  .text.sdio_dma_receive
-                0x00000000080020f4       0x28 driver/sdio.o
-                0x00000000080020f4                sdio_dma_receive
+                0x0000000008002114       0x28 driver/sdio.o
+                0x0000000008002114                sdio_dma_receive
  .text.sdio_read_block
-                0x000000000800211c       0x60 driver/sdio.o
-                0x000000000800211c                sdio_read_block
+                0x000000000800213c       0x60 driver/sdio.o
+                0x000000000800213c                sdio_read_block
+ .text.sdio_dma_transmit
+                0x000000000800219c       0x28 driver/sdio.o
+                0x000000000800219c                sdio_dma_transmit
+ .text.sdio_write_block
+                0x00000000080021c4       0x90 driver/sdio.o
+                0x00000000080021c4                sdio_write_block
  .text.sdio_read_byte
-                0x000000000800217c       0x14 driver/sdio.o
-                0x000000000800217c                sdio_read_byte
+                0x0000000008002254       0x14 driver/sdio.o
+                0x0000000008002254                sdio_read_byte
+ .text.sdio_write_byte
+                0x0000000008002268       0x28 driver/sdio.o
+                0x0000000008002268                sdio_write_byte
  .text.sdio_read_int
-                0x0000000008002190       0x1c driver/sdio.o
-                0x0000000008002190                sdio_read_int
+                0x0000000008002290       0x1c driver/sdio.o
+                0x0000000008002290                sdio_read_int
+ .text.sdio_write_int
+                0x00000000080022ac       0x1c driver/sdio.o
+                0x00000000080022ac                sdio_write_int
  .text.sdio_read_long
-                0x00000000080021ac       0x34 driver/sdio.o
-                0x00000000080021ac                sdio_read_long
+                0x00000000080022c8       0x34 driver/sdio.o
+                0x00000000080022c8                sdio_read_long
+ .text.sdio_write_long
+                0x00000000080022fc       0x34 driver/sdio.o
+                0x00000000080022fc                sdio_write_long
  .text.sdio_init_filesystem
-                0x00000000080021e0      0x188 driver/sdio.o
-                0x00000000080021e0                sdio_init_filesystem
+                0x0000000008002330      0x188 driver/sdio.o
+                0x0000000008002330                sdio_init_filesystem
  .text.sdio_get_lba
-                0x0000000008002368       0x28 driver/sdio.o
-                0x0000000008002368                sdio_get_lba
+                0x00000000080024b8       0x28 driver/sdio.o
+                0x00000000080024b8                sdio_get_lba
  .text.sdio_get_fat_sec
-                0x0000000008002390       0x24 driver/sdio.o
-                0x0000000008002390                sdio_get_fat_sec
+                0x00000000080024e0       0x24 driver/sdio.o
+                0x00000000080024e0                sdio_get_fat_sec
  .text.sdio_get_fat_pos
-                0x00000000080023b4       0x1c driver/sdio.o
-                0x00000000080023b4                sdio_get_fat_pos
+                0x0000000008002504       0x1c driver/sdio.o
+                0x0000000008002504                sdio_get_fat_pos
  .text.sdio_read_fat_pos
-                0x00000000080023d0       0x20 driver/sdio.o
-                0x00000000080023d0                sdio_read_fat_pos
+                0x0000000008002520       0x20 driver/sdio.o
+                0x0000000008002520                sdio_read_fat_pos
+ .text.sdio_write_fat_pos
+                0x0000000008002540       0x20 driver/sdio.o
+                0x0000000008002540                sdio_write_fat_pos
  .text.sdio_get_next_cluster
-                0x00000000080023f0       0x28 driver/sdio.o
-                0x00000000080023f0                sdio_get_next_cluster
+                0x0000000008002560       0x28 driver/sdio.o
+                0x0000000008002560                sdio_get_next_cluster
+ .text.sdio_set_cluster
+                0x0000000008002588       0x60 driver/sdio.o
+                0x0000000008002588                sdio_set_cluster
  .text.sdio_read_cluster
-                0x0000000008002418       0x24 driver/sdio.o
-                0x0000000008002418                sdio_read_cluster
+                0x00000000080025e8       0x24 driver/sdio.o
+                0x00000000080025e8                sdio_read_cluster
  .text.sdio_read_root
-                0x000000000800243c       0x80 driver/sdio.o
-                0x000000000800243c                sdio_read_root
+                0x000000000800260c       0x80 driver/sdio.o
+                0x000000000800260c                sdio_read_root
+ .text.sdio_write_current_sector
+                0x000000000800268c       0x20 driver/sdio.o
+                0x000000000800268c                sdio_write_current_sector
  .text.sdio_read_next_sector_of_cluster
-                0x00000000080024bc       0xac driver/sdio.o
-                0x00000000080024bc                sdio_read_next_sector_of_cluster
+                0x00000000080026ac       0xac driver/sdio.o
+                0x00000000080026ac                sdio_read_next_sector_of_cluster
  .text.sdio_get_name
-                0x0000000008002568       0x34 driver/sdio.o
-                0x0000000008002568                sdio_get_name
+                0x0000000008002758       0x34 driver/sdio.o
+                0x0000000008002758                sdio_get_name
+ .text.sdio_strcmp
+                0x000000000800278c       0x1c driver/sdio.o
+                0x000000000800278c                sdio_strcmp
  .text.sdio_get_file
-                0x000000000800259c       0xbc driver/sdio.o
-                0x000000000800259c                sdio_get_file
+                0x00000000080027a8       0xbc driver/sdio.o
+                0x00000000080027a8                sdio_get_file
  .text.init_sdio
-                0x0000000008002658      0x21c driver/sdio.o
-                0x0000000008002658                init_sdio
+                0x0000000008002864      0x21c driver/sdio.o
+                0x0000000008002864                init_sdio
+ .text.sdio_get_empty_id
+                0x0000000008002a80       0x78 driver/sdio.o
+                0x0000000008002a80                sdio_get_empty_id
+ .text.sdio_get_empty_cluster
+                0x0000000008002af8       0x64 driver/sdio.o
+                0x0000000008002af8                sdio_get_empty_cluster
+ .text.sdio_get_fileid
+                0x0000000008002b5c       0xec driver/sdio.o
+                0x0000000008002b5c                sdio_get_fileid
+ .text.sdio_get_time
+                0x0000000008002c48       0x10 driver/sdio.o
+                0x0000000008002c48                sdio_get_time
+ .text.sdio_make_entry
+                0x0000000008002c58      0x130 driver/sdio.o
+                0x0000000008002c58                sdio_make_entry
+ .text.sdio_mkfile
+                0x0000000008002d88       0x98 driver/sdio.o
+                0x0000000008002d88                sdio_mkfile
+ .text.sdio_set_filesize
+                0x0000000008002e20       0x6c driver/sdio.o
+                0x0000000008002e20                sdio_set_filesize
+ .text.sdio_write_file
+                0x0000000008002e8c       0xa4 driver/sdio.o
+                0x0000000008002e8c                sdio_write_file
+ .text.sdio_fclose
+                0x0000000008002f30       0x38 driver/sdio.o
+                0x0000000008002f30                sdio_fclose
+ .text.sdio_byte2file
+                0x0000000008002f68       0x34 driver/sdio.o
+                0x0000000008002f68                sdio_byte2file
  .text.init_spi
-                0x0000000008002874       0x50 driver/spi.o
-                0x0000000008002874                init_spi
+                0x0000000008002f9c       0x50 driver/spi.o
+                0x0000000008002f9c                init_spi
  .text.spi_send_char
-                0x00000000080028c4       0x18 driver/spi.o
-                0x00000000080028c4                spi_send_char
+                0x0000000008002fec       0x18 driver/spi.o
+                0x0000000008002fec                spi_send_char
+ .text.igc_IsValidCharacter
+                0x0000000008003004       0x38 igc/igc.o
+                0x0000000008003004                igc_IsValidCharacter
+ .text.igc_IncludeInGrecord
+                0x000000000800303c       0x3c igc/igc.o
+                0x000000000800303c                igc_IncludeInGrecord
+ .text.init_igc
+                0x0000000008003078       0x38 igc/igc.o
+                0x0000000008003078                init_igc
+ .text.igc_CommitCharacter
+                0x00000000080030b0       0x24 igc/igc.o
+                0x00000000080030b0                igc_CommitCharacter
+ .text.igc_CommitLine
+                0x00000000080030d4       0x24 igc/igc.o
+                0x00000000080030d4                igc_CommitLine
+ .text.igc_WriteLine
+                0x00000000080030f8       0x40 igc/igc.o
+                0x00000000080030f8                igc_WriteLine
+ .text.igc_AppendString
+                0x0000000008003138       0x34 igc/igc.o
+                0x0000000008003138                igc_AppendString
+ .text.igc_AppendNumber
+                0x000000000800316c       0x30 igc/igc.o
+                0x000000000800316c                igc_AppendNumber
+ .text.igc_create
+                0x000000000800319c      0x278 igc/igc.o
+                0x000000000800319c                igc_create
+ .text.igc_BRecord
+                0x0000000008003414      0x1b4 igc/igc.o
+                0x0000000008003414                igc_BRecord
+ .text.igc_sign
+                0x00000000080035c8       0x84 igc/igc.o
+                0x00000000080035c8                igc_sign
+ .text.igc_close
+                0x000000000800364c       0x28 igc/igc.o
+                0x000000000800364c                igc_close
+ .text.igc_task
+                0x0000000008003674      0x11c igc/igc.o
+                0x0000000008003674                igc_task
+ .text.md5_initialize
+                0x0000000008003790       0x40 igc/md5.o
+                0x0000000008003790                md5_initialize
+ .text.md5_process512
+                0x00000000080037d0      0x104 igc/md5.o
+                0x00000000080037d0                md5_process512
+ .text.md5_append_char
+                0x00000000080038d4       0x20 igc/md5.o
+                0x00000000080038d4                md5_append_char
+ .text.md5_WriteLength
+                0x00000000080038f4       0x14 igc/md5.o
+                0x00000000080038f4                md5_WriteLength
+ .text.md5_finalize
+                0x0000000008003908       0x54 igc/md5.o
+                0x0000000008003908                md5_finalize
+ .text.md5_GetDigest
+                0x000000000800395c       0x38 igc/md5.o
+                0x000000000800395c                md5_GetDigest
  .text.init_BMS
-                0x00000000080028dc      0x164 src/BMS.o
-                0x00000000080028dc                init_BMS
+                0x0000000008003994      0x164 src/BMS.o
+                0x0000000008003994                init_BMS
  .text.BMS_adc_start
-                0x0000000008002a40       0x54 src/BMS.o
-                0x0000000008002a40                BMS_adc_start
+                0x0000000008003af8       0x54 src/BMS.o
+                0x0000000008003af8                BMS_adc_start
  .text.BMS_get_status
-                0x0000000008002a94       0xd8 src/BMS.o
-                0x0000000008002a94                BMS_get_status
+                0x0000000008003b4c       0xd8 src/BMS.o
+                0x0000000008003b4c                BMS_get_status
  .text.BMS_get_adc
-                0x0000000008002b6c       0xd4 src/BMS.o
-                0x0000000008002b6c                BMS_get_adc
+                0x0000000008003c24       0xd4 src/BMS.o
+                0x0000000008003c24                BMS_get_adc
  .text.BMS_set_charge_current
-                0x0000000008002c40       0x6c src/BMS.o
-                0x0000000008002c40                BMS_set_charge_current
+                0x0000000008003cf8       0x6c src/BMS.o
+                0x0000000008003cf8                BMS_set_charge_current
  .text.BMS_set_otg
-                0x0000000008002cac       0xec src/BMS.o
-                0x0000000008002cac                BMS_set_otg
+                0x0000000008003d64       0xec src/BMS.o
+                0x0000000008003d64                BMS_set_otg
  .text.BMS_gauge_get_adc
-                0x0000000008002d98       0x7c src/BMS.o
-                0x0000000008002d98                BMS_gauge_get_adc
+                0x0000000008003e50       0x7c src/BMS.o
+                0x0000000008003e50                BMS_gauge_get_adc
  .text.BMS_task
-                0x0000000008002e14       0x90 src/BMS.o
-                0x0000000008002e14                BMS_task
+                0x0000000008003ecc       0x90 src/BMS.o
+                0x0000000008003ecc                BMS_task
  .text.lcd_dma_enable
-                0x0000000008002ea4       0x38 src/DOGXL240.o
-                0x0000000008002ea4                lcd_dma_enable
+                0x0000000008003f5c       0x38 src/DOGXL240.o
+                0x0000000008003f5c                lcd_dma_enable
  .text.lcd_set_col_addr
-                0x0000000008002edc       0x34 src/DOGXL240.o
-                0x0000000008002edc                lcd_set_col_addr
+                0x0000000008003f94       0x34 src/DOGXL240.o
+                0x0000000008003f94                lcd_set_col_addr
  .text.lcd_set_page_addr
-                0x0000000008002f10       0x38 src/DOGXL240.o
-                0x0000000008002f10                lcd_set_page_addr
+                0x0000000008003fc8       0x38 src/DOGXL240.o
+                0x0000000008003fc8                lcd_set_page_addr
  .text.lcd_set_write_pattern
-                0x0000000008002f48       0x28 src/DOGXL240.o
-                0x0000000008002f48                lcd_set_write_pattern
+                0x0000000008004000       0x28 src/DOGXL240.o
+                0x0000000008004000                lcd_set_write_pattern
  .text.lcd_set_cursor
-                0x0000000008002f70       0x10 src/DOGXL240.o
-                0x0000000008002f70                lcd_set_cursor
+                0x0000000008004028       0x10 src/DOGXL240.o
+                0x0000000008004028                lcd_set_cursor
  .text.init_lcd
-                0x0000000008002f80      0x14c src/DOGXL240.o
-                0x0000000008002f80                init_lcd
+                0x0000000008004038      0x14c src/DOGXL240.o
+                0x0000000008004038                init_lcd
  .text.lcd_set_fontsize
-                0x00000000080030cc        0xc src/DOGXL240.o
-                0x00000000080030cc                lcd_set_fontsize
+                0x0000000008004184        0xc src/DOGXL240.o
+                0x0000000008004184                lcd_set_fontsize
  .text.lcd_set_inverted
-                0x00000000080030d8        0xc src/DOGXL240.o
-                0x00000000080030d8                lcd_set_inverted
+                0x0000000008004190        0xc src/DOGXL240.o
+                0x0000000008004190                lcd_set_inverted
  .text.lcd_send_buffer
-                0x00000000080030e4       0x2c src/DOGXL240.o
-                0x00000000080030e4                lcd_send_buffer
+                0x000000000800419c       0x2c src/DOGXL240.o
+                0x000000000800419c                lcd_send_buffer
  .text.lcd_pixel2buffer
-                0x0000000008003110       0x48 src/DOGXL240.o
-                0x0000000008003110                lcd_pixel2buffer
+                0x00000000080041c8       0x48 src/DOGXL240.o
+                0x00000000080041c8                lcd_pixel2buffer
  .text.lcd_char2buffer
-                0x0000000008003158      0x1a4 src/DOGXL240.o
-                0x0000000008003158                lcd_char2buffer
+                0x0000000008004210      0x1a4 src/DOGXL240.o
+                0x0000000008004210                lcd_char2buffer
  .text.lcd_clear_buffer
-                0x00000000080032fc       0x1c src/DOGXL240.o
-                0x00000000080032fc                lcd_clear_buffer
+                0x00000000080043b4       0x1c src/DOGXL240.o
+                0x00000000080043b4                lcd_clear_buffer
  .text.lcd_string2buffer
-                0x0000000008003318       0x18 src/DOGXL240.o
-                0x0000000008003318                lcd_string2buffer
+                0x00000000080043d0       0x18 src/DOGXL240.o
+                0x00000000080043d0                lcd_string2buffer
  .text.lcd_num2buffer
-                0x0000000008003330       0xa8 src/DOGXL240.o
-                0x0000000008003330                lcd_num2buffer
+                0x00000000080043e8       0xa8 src/DOGXL240.o
+                0x00000000080043e8                lcd_num2buffer
  .text.lcd_float2buffer
-                0x00000000080033d8       0x8c src/DOGXL240.o
-                0x00000000080033d8                lcd_float2buffer
+                0x0000000008004490       0x8c src/DOGXL240.o
+                0x0000000008004490                lcd_float2buffer
  .text.lcd_bat2buffer
-                0x0000000008003464       0xac src/DOGXL240.o
-                0x0000000008003464                lcd_bat2buffer
+                0x000000000800451c       0xac src/DOGXL240.o
+                0x000000000800451c                lcd_bat2buffer
  .text.lcd_line2buffer
-                0x0000000008003510       0xc0 src/DOGXL240.o
-                0x0000000008003510                lcd_line2buffer
+                0x00000000080045c8       0xc0 src/DOGXL240.o
+                0x00000000080045c8                lcd_line2buffer
  .text.lcd_circle2buffer
-                0x00000000080035d0       0xbc src/DOGXL240.o
-                0x00000000080035d0                lcd_circle2buffer
+                0x0000000008004688       0xbc src/DOGXL240.o
+                0x0000000008004688                lcd_circle2buffer
  .text.lcd_arrow2buffer
-                0x000000000800368c      0x108 src/DOGXL240.o
-                0x000000000800368c                lcd_arrow2buffer
+                0x0000000008004744      0x108 src/DOGXL240.o
+                0x0000000008004744                lcd_arrow2buffer
  .text.lcd_signed_num2buffer
-                0x0000000008003794       0xc8 src/DOGXL240.o
-                0x0000000008003794                lcd_signed_num2buffer
+                0x000000000800484c       0xc8 src/DOGXL240.o
+                0x000000000800484c                lcd_signed_num2buffer
  .text.lcd_box2buffer
-                0x000000000800385c       0xb4 src/DOGXL240.o
-                0x000000000800385c                lcd_box2buffer
+                0x0000000008004914       0xb4 src/DOGXL240.o
+                0x0000000008004914                lcd_box2buffer
  .text.datafusion_init
-                0x0000000008003910       0x50 src/datafusion.o
-                0x0000000008003910                datafusion_init
+                0x00000000080049c8       0x34 src/datafusion.o
+                0x00000000080049c8                datafusion_init
  .text.wind_turn_dir
-                0x0000000008003960       0x48 src/datafusion.o
-                0x0000000008003960                wind_turn_dir
+                0x00000000080049fc       0x48 src/datafusion.o
+                0x00000000080049fc                wind_turn_dir
+ *fill*         0x0000000008004a44        0x4 
  .text.wind_collect_samples
-                0x00000000080039a8       0xf0 src/datafusion.o
-                0x00000000080039a8                wind_collect_samples
+                0x0000000008004a48       0xf0 src/datafusion.o
+                0x0000000008004a48                wind_collect_samples
  .text.wind_grad
-                0x0000000008003a98      0x520 src/datafusion.o
-                0x0000000008003a98                wind_grad
+                0x0000000008004b38      0x520 src/datafusion.o
+                0x0000000008004b38                wind_grad
  .text.wind_estimator
-                0x0000000008003fb8        0xc src/datafusion.o
-                0x0000000008003fb8                wind_estimator
- *fill*         0x0000000008003fc4        0x4 
+                0x0000000008005058        0xc src/datafusion.o
+                0x0000000008005058                wind_estimator
+ *fill*         0x0000000008005064        0x4 
  .text.datafusion_task
-                0x0000000008003fc8      0x298 src/datafusion.o
-                0x0000000008003fc8                datafusion_task
+                0x0000000008005068      0x298 src/datafusion.o
+                0x0000000008005068                datafusion_task
  .text.exti_init
-                0x0000000008004260       0xa8 src/exti.o
-                0x0000000008004260                exti_init
+                0x0000000008005300       0xa8 src/exti.o
+                0x0000000008005300                exti_init
  .text.EXTI0_IRQHandler
-                0x0000000008004308       0x3c src/exti.o
-                0x0000000008004308                EXTI0_IRQHandler
+                0x00000000080053a8       0x3c src/exti.o
+                0x00000000080053a8                EXTI0_IRQHandler
  .text.EXTI1_IRQHandler
-                0x0000000008004344       0x3c src/exti.o
-                0x0000000008004344                EXTI1_IRQHandler
+                0x00000000080053e4       0x3c src/exti.o
+                0x00000000080053e4                EXTI1_IRQHandler
  .text.EXTI2_IRQHandler
-                0x0000000008004380       0x3c src/exti.o
-                0x0000000008004380                EXTI2_IRQHandler
+                0x0000000008005420       0x3c src/exti.o
+                0x0000000008005420                EXTI2_IRQHandler
  .text.EXTI3_IRQHandler
-                0x00000000080043bc       0x40 src/exti.o
-                0x00000000080043bc                EXTI3_IRQHandler
- *fill*         0x00000000080043fc        0x4 
+                0x000000000800545c       0x40 src/exti.o
+                0x000000000800545c                EXTI3_IRQHandler
+ *fill*         0x000000000800549c        0x4 
  .text.gps_handle_nav
-                0x0000000008004400      0x1ec src/gps.o
-                0x0000000008004400                gps_handle_nav
+                0x00000000080054a0      0x1ec src/gps.o
+                0x00000000080054a0                gps_handle_nav
  .text.gps_send_bytes
-                0x00000000080045ec       0x34 src/gps.o
-                0x00000000080045ec                gps_send_bytes
+                0x000000000800568c       0x34 src/gps.o
+                0x000000000800568c                gps_send_bytes
  .text.gps_set_msg_rate
-                0x0000000008004620       0x4c src/gps.o
-                0x0000000008004620                gps_set_msg_rate
+                0x00000000080056c0       0x4c src/gps.o
+                0x00000000080056c0                gps_set_msg_rate
  .text.gps_config
-                0x000000000800466c       0xcc src/gps.o
-                0x000000000800466c                gps_config
+                0x000000000800570c       0xcc src/gps.o
+                0x000000000800570c                gps_config
  .text.gps_init
-                0x0000000008004738      0x1b4 src/gps.o
-                0x0000000008004738                gps_init
+                0x00000000080057d8      0x1b4 src/gps.o
+                0x00000000080057d8                gps_init
  .text.DMA1_Stream1_IRQHandler
-                0x00000000080048ec       0x5c src/gps.o
-                0x00000000080048ec                DMA1_Stream1_IRQHandler
+                0x000000000800598c       0x5c src/gps.o
+                0x000000000800598c                DMA1_Stream1_IRQHandler
  .text.gps_SetSysTime
-                0x0000000008004948       0x54 src/gps.o
-                0x0000000008004948                gps_SetSysTime
+                0x00000000080059e8       0x54 src/gps.o
+                0x00000000080059e8                gps_SetSysTime
  .text.gps_SetSysDate
-                0x000000000800499c       0x1c src/gps.o
-                0x000000000800499c                gps_SetSysDate
+                0x0000000008005a3c       0x1c src/gps.o
+                0x0000000008005a3c                gps_SetSysDate
  .text.gps_task
-                0x00000000080049b8      0x1c4 src/gps.o
-                0x00000000080049b8                gps_task
+                0x0000000008005a58      0x1c4 src/gps.o
+                0x0000000008005a58                gps_task
  .text.gui_init
-                0x0000000008004b7c       0x54 src/gui.o
-                0x0000000008004b7c                gui_init
- .text.fkt_BMS  0x0000000008004bd0      0x2b4 src/gui.o
-                0x0000000008004bd0                fkt_BMS
- .text.fkt_GPS  0x0000000008004e84      0x34c src/gui.o
-                0x0000000008004e84                fkt_GPS
+                0x0000000008005c1c       0x54 src/gui.o
+                0x0000000008005c1c                gui_init
+ .text.fkt_BMS  0x0000000008005c70      0x2b4 src/gui.o
+                0x0000000008005c70                fkt_BMS
+ .text.fkt_GPS  0x0000000008005f24      0x34c src/gui.o
+                0x0000000008005f24                fkt_GPS
  .text.fkt_MS5611
-                0x00000000080051d0      0x1d4 src/gui.o
-                0x00000000080051d0                fkt_MS5611
+                0x0000000008006270      0x1d4 src/gui.o
+                0x0000000008006270                fkt_MS5611
  .text.fkt_Datafusion
-                0x00000000080053a4      0x250 src/gui.o
-                0x00000000080053a4                fkt_Datafusion
+                0x0000000008006444      0x250 src/gui.o
+                0x0000000008006444                fkt_Datafusion
  .text.fkt_runtime_errors
-                0x00000000080055f4       0xa4 src/gui.o
-                0x00000000080055f4                fkt_runtime_errors
+                0x0000000008006694       0xa4 src/gui.o
+                0x0000000008006694                fkt_runtime_errors
  .text.fkt_infobox
-                0x0000000008005698      0x178 src/gui.o
-                0x0000000008005698                fkt_infobox
+                0x0000000008006738      0x178 src/gui.o
+                0x0000000008006738                fkt_infobox
  .text.draw_graph
-                0x0000000008005810      0x1b8 src/gui.o
-                0x0000000008005810                draw_graph
+                0x00000000080068b0      0x1b8 src/gui.o
+                0x00000000080068b0                draw_graph
  .text.fkt_Vario
-                0x00000000080059c8      0x31c src/gui.o
-                0x00000000080059c8                fkt_Vario
+                0x0000000008006a68      0x31c src/gui.o
+                0x0000000008006a68                fkt_Vario
  .text.gui_bootlogo
-                0x0000000008005ce4       0xa4 src/gui.o
-                0x0000000008005ce4                gui_bootlogo
+                0x0000000008006d84       0xa4 src/gui.o
+                0x0000000008006d84                gui_bootlogo
  .text.gui_status_bar
-                0x0000000008005d88      0x1b8 src/gui.o
-                0x0000000008005d88                gui_status_bar
+                0x0000000008006e28      0x1b8 src/gui.o
+                0x0000000008006e28                gui_status_bar
  .text.gui_task
-                0x0000000008005f40       0x74 src/gui.o
-                0x0000000008005f40                gui_task
+                0x0000000008006fe0       0x74 src/gui.o
+                0x0000000008006fe0                gui_task
  .text.ipc_memory_register
-                0x0000000008005fb4       0x30 src/ipc.o
-                0x0000000008005fb4                ipc_memory_register
+                0x0000000008007054       0x30 src/ipc.o
+                0x0000000008007054                ipc_memory_register
  .text.ipc_memory_get
-                0x0000000008005fe4        0xc src/ipc.o
-                0x0000000008005fe4                ipc_memory_get
+                0x0000000008007084        0xc src/ipc.o
+                0x0000000008007084                ipc_memory_get
  .text.ipc_register_queue
-                0x0000000008005ff0       0x48 src/ipc.o
-                0x0000000008005ff0                ipc_register_queue
+                0x0000000008007090       0x48 src/ipc.o
+                0x0000000008007090                ipc_register_queue
  .text.ipc_queue_push
-                0x0000000008006038       0x80 src/ipc.o
-                0x0000000008006038                ipc_queue_push
+                0x00000000080070d8       0x80 src/ipc.o
+                0x00000000080070d8                ipc_queue_push
  .text.ipc_queue_get
-                0x00000000080060b8       0x70 src/ipc.o
-                0x00000000080060b8                ipc_queue_get
+                0x0000000008007158       0x70 src/ipc.o
+                0x0000000008007158                ipc_queue_get
  .text.ipc_get_queue_bytes
-                0x0000000008006128       0x14 src/ipc.o
-                0x0000000008006128                ipc_get_queue_bytes
+                0x00000000080071c8       0x14 src/ipc.o
+                0x00000000080071c8                ipc_get_queue_bytes
  .text.log_include
-                0x000000000800613c       0x50 src/logging.o
-                0x000000000800613c                log_include
- .text.main     0x000000000800618c       0xb0 src/main.o
-                0x000000000800618c                main
+                0x00000000080071dc       0x50 src/logging.o
+                0x00000000080071dc                log_include
+ .text.main     0x000000000800722c       0xb8 src/main.o
+                0x000000000800722c                main
  .text.MS5611_init
-                0x000000000800623c       0xd8 src/ms5611.o
-                0x000000000800623c                MS5611_init
+                0x00000000080072e4       0xd8 src/ms5611.o
+                0x00000000080072e4                MS5611_init
  .text.catch_temp_MS
-                0x0000000008006314       0xa4 src/ms5611.o
-                0x0000000008006314                catch_temp_MS
+                0x00000000080073bc       0xa4 src/ms5611.o
+                0x00000000080073bc                catch_temp_MS
  .text.get_pressure_MS
-                0x00000000080063b8      0x210 src/ms5611.o
-                0x00000000080063b8                get_pressure_MS
+                0x0000000008007460      0x210 src/ms5611.o
+                0x0000000008007460                get_pressure_MS
  .text.ms5611_task
-                0x00000000080065c8       0x70 src/ms5611.o
-                0x00000000080065c8                ms5611_task
+                0x0000000008007670       0x70 src/ms5611.o
+                0x0000000008007670                ms5611_task
  .text.init_clock
-                0x0000000008006638       0xbc src/oVario_Framework.o
-                0x0000000008006638                init_clock
- .text.gpio_en  0x00000000080066f4       0x14 src/oVario_Framework.o
-                0x00000000080066f4                gpio_en
+                0x00000000080076e0       0xbc src/oVario_Framework.o
+                0x00000000080076e0                init_clock
+ .text.gpio_en  0x000000000800779c       0x14 src/oVario_Framework.o
+                0x000000000800779c                gpio_en
  .text.init_systick_ms
-                0x0000000008006708       0x2c src/oVario_Framework.o
-                0x0000000008006708                init_systick_ms
+                0x00000000080077b0       0x2c src/oVario_Framework.o
+                0x00000000080077b0                init_systick_ms
  .text.init_led
-                0x0000000008006734       0x18 src/oVario_Framework.o
-                0x0000000008006734                init_led
+                0x00000000080077dc       0x18 src/oVario_Framework.o
+                0x00000000080077dc                init_led
+ .text.set_led_green
+                0x00000000080077f4       0x28 src/oVario_Framework.o
+                0x00000000080077f4                set_led_green
  .text.set_led_red
-                0x000000000800674c       0x28 src/oVario_Framework.o
-                0x000000000800674c                set_led_red
+                0x000000000800781c       0x28 src/oVario_Framework.o
+                0x000000000800781c                set_led_red
  .text.wait_systick
-                0x0000000008006774       0x24 src/oVario_Framework.o
-                0x0000000008006774                wait_systick
- .text.wait_ms  0x0000000008006798       0x38 src/oVario_Framework.o
-                0x0000000008006798                wait_ms
+                0x0000000008007844       0x24 src/oVario_Framework.o
+                0x0000000008007844                wait_systick
+ .text.wait_ms  0x0000000008007868       0x38 src/oVario_Framework.o
+                0x0000000008007868                wait_ms
  .text.set_time
-                0x00000000080067d0       0x14 src/oVario_Framework.o
-                0x00000000080067d0                set_time
+                0x00000000080078a0       0x14 src/oVario_Framework.o
+                0x00000000080078a0                set_time
+ .text.get_seconds_utc
+                0x00000000080078b4       0x10 src/oVario_Framework.o
+                0x00000000080078b4                get_seconds_utc
+ .text.get_minutes_utc
+                0x00000000080078c4       0x10 src/oVario_Framework.o
+                0x00000000080078c4                get_minutes_utc
  .text.get_minutes_lct
-                0x00000000080067e4       0x10 src/oVario_Framework.o
-                0x00000000080067e4                get_minutes_lct
+                0x00000000080078d4       0x10 src/oVario_Framework.o
+                0x00000000080078d4                get_minutes_lct
+ .text.get_hours_utc
+                0x00000000080078e4       0x10 src/oVario_Framework.o
+                0x00000000080078e4                get_hours_utc
  .text.get_hours_lct
-                0x00000000080067f4       0x18 src/oVario_Framework.o
-                0x00000000080067f4                get_hours_lct
+                0x00000000080078f4       0x18 src/oVario_Framework.o
+                0x00000000080078f4                get_hours_lct
  .text.set_date
-                0x000000000800680c       0x18 src/oVario_Framework.o
-                0x000000000800680c                set_date
+                0x000000000800790c       0x18 src/oVario_Framework.o
+                0x000000000800790c                set_date
+ .text.get_day_utc
+                0x0000000008007924       0x10 src/oVario_Framework.o
+                0x0000000008007924                get_day_utc
  .text.get_month_utc
-                0x0000000008006824       0x10 src/oVario_Framework.o
-                0x0000000008006824                get_month_utc
+                0x0000000008007934       0x10 src/oVario_Framework.o
+                0x0000000008007934                get_month_utc
  .text.set_timezone
-                0x0000000008006834       0x20 src/oVario_Framework.o
-                0x0000000008006834                set_timezone
+                0x0000000008007944       0x20 src/oVario_Framework.o
+                0x0000000008007944                set_timezone
+ .text.get_year_utc
+                0x0000000008007964       0x14 src/oVario_Framework.o
+                0x0000000008007964                get_year_utc
+ .text.sys_strcmp
+                0x0000000008007978       0x1c src/oVario_Framework.o
+                0x0000000008007978                sys_strcmp
+ .text.sys_num2str
+                0x0000000008007994       0x38 src/oVario_Framework.o
+                0x0000000008007994                sys_num2str
+ .text.sys_memcpy
+                0x00000000080079cc       0x20 src/oVario_Framework.o
+                0x00000000080079cc                sys_memcpy
+ .text.sys_hex2str
+                0x00000000080079ec       0x30 src/oVario_Framework.o
+                0x00000000080079ec                sys_hex2str
  .text.sound_init
-                0x0000000008006854      0x14c src/sound.o
-                0x0000000008006854                sound_init
+                0x0000000008007a1c      0x14c src/sound.o
+                0x0000000008007a1c                sound_init
  .text.sound_set_frequ_vol
-                0x00000000080069a0       0x5c src/sound.o
-                0x00000000080069a0                sound_set_frequ_vol
+                0x0000000008007b68       0x5c src/sound.o
+                0x0000000008007b68                sound_set_frequ_vol
  .text.sound_task
-                0x00000000080069fc       0xcc src/sound.o
-                0x00000000080069fc                sound_task
+                0x0000000008007bc4       0xcc src/sound.o
+                0x0000000008007bc4                sound_task
  .text.TIM3_IRQHandler
-                0x0000000008006ac8       0x28 src/sound.o
-                0x0000000008006ac8                TIM3_IRQHandler
+                0x0000000008007c90       0x28 src/sound.o
+                0x0000000008007c90                TIM3_IRQHandler
  .text.timer_init
-                0x0000000008006af0       0x74 src/timer.o
-                0x0000000008006af0                timer_init
+                0x0000000008007cb8       0x74 src/timer.o
+                0x0000000008007cb8                timer_init
  .text.vario_init
-                0x0000000008006b64       0x1c src/vario.o
-                0x0000000008006b64                vario_init
+                0x0000000008007d2c       0x1c src/vario.o
+                0x0000000008007d2c                vario_init
  .text.vario_task
-                0x0000000008006b80      0x24c src/vario.o
-                0x0000000008006b80                vario_task
+                0x0000000008007d48      0x24c src/vario.o
+                0x0000000008007d48                vario_task
  .text.Reset_Handler
-                0x0000000008006dcc       0x50 startup/startup_stm32.o
-                0x0000000008006dcc                Reset_Handler
+                0x0000000008007f94       0x50 startup/startup_stm32.o
+                0x0000000008007f94                Reset_Handler
  .text.Default_Handler
-                0x0000000008006e1c        0x2 startup/startup_stm32.o
-                0x0000000008006e1c                DMA1_Stream3_IRQHandler
-                0x0000000008006e1c                HASH_RNG_IRQHandler
-                0x0000000008006e1c                TIM8_CC_IRQHandler
-                0x0000000008006e1c                DebugMon_Handler
-                0x0000000008006e1c                TIM1_CC_IRQHandler
-                0x0000000008006e1c                DMA2_Stream5_IRQHandler
-                0x0000000008006e1c                HardFault_Handler
-                0x0000000008006e1c                DMA1_Stream5_IRQHandler
-                0x0000000008006e1c                SysTick_Handler
-                0x0000000008006e1c                PVD_IRQHandler
-                0x0000000008006e1c                SDIO_IRQHandler
-                0x0000000008006e1c                TAMP_STAMP_IRQHandler
-                0x0000000008006e1c                PendSV_Handler
-                0x0000000008006e1c                NMI_Handler
-                0x0000000008006e1c                CAN2_RX1_IRQHandler
-                0x0000000008006e1c                TIM8_TRG_COM_TIM14_IRQHandler
-                0x0000000008006e1c                TIM1_UP_TIM10_IRQHandler
-                0x0000000008006e1c                TIM8_UP_TIM13_IRQHandler
-                0x0000000008006e1c                I2C3_ER_IRQHandler
-                0x0000000008006e1c                LCD_TFT_IRQHandler
-                0x0000000008006e1c                I2C2_EV_IRQHandler
-                0x0000000008006e1c                DMA1_Stream2_IRQHandler
-                0x0000000008006e1c                CAN1_RX0_IRQHandler
-                0x0000000008006e1c                FPU_IRQHandler
-                0x0000000008006e1c                OTG_HS_WKUP_IRQHandler
-                0x0000000008006e1c                UsageFault_Handler
-                0x0000000008006e1c                CAN2_SCE_IRQHandler
-                0x0000000008006e1c                DMA2_Stream2_IRQHandler
-                0x0000000008006e1c                SPI1_IRQHandler
-                0x0000000008006e1c                TIM6_DAC_IRQHandler
-                0x0000000008006e1c                TIM1_BRK_TIM9_IRQHandler
-                0x0000000008006e1c                DCMI_IRQHandler
-                0x0000000008006e1c                CAN2_RX0_IRQHandler
-                0x0000000008006e1c                DMA2_Stream3_IRQHandler
-                0x0000000008006e1c                USART6_IRQHandler
-                0x0000000008006e1c                USART3_IRQHandler
-                0x0000000008006e1c                CRYP_IRQHandler
-                0x0000000008006e1c                CAN1_RX1_IRQHandler
-                0x0000000008006e1c                UART5_IRQHandler
-                0x0000000008006e1c                DMA2_Stream0_IRQHandler
-                0x0000000008006e1c                TIM4_IRQHandler
-                0x0000000008006e1c                I2C1_EV_IRQHandler
-                0x0000000008006e1c                DMA1_Stream6_IRQHandler
-                0x0000000008006e1c                UART4_IRQHandler
-                0x0000000008006e1c                LCD_TFT_1_IRQHandler
-                0x0000000008006e1c                RCC_IRQHandler
-                0x0000000008006e1c                TIM8_BRK_TIM12_IRQHandler
-                0x0000000008006e1c                Default_Handler
-                0x0000000008006e1c                EXTI15_10_IRQHandler
-                0x0000000008006e1c                ADC_IRQHandler
-                0x0000000008006e1c                DMA1_Stream7_IRQHandler
-                0x0000000008006e1c                TIM7_IRQHandler
-                0x0000000008006e1c                CAN2_TX_IRQHandler
-                0x0000000008006e1c                TIM5_IRQHandler
-                0x0000000008006e1c                DMA2_Stream7_IRQHandler
-                0x0000000008006e1c                I2C3_EV_IRQHandler
-                0x0000000008006e1c                EXTI9_5_IRQHandler
-                0x0000000008006e1c                RTC_WKUP_IRQHandler
-                0x0000000008006e1c                ETH_WKUP_IRQHandler
-                0x0000000008006e1c                SPI2_IRQHandler
-                0x0000000008006e1c                OTG_HS_EP1_IN_IRQHandler
-                0x0000000008006e1c                MemManage_Handler
-                0x0000000008006e1c                DMA1_Stream0_IRQHandler
-                0x0000000008006e1c                CAN1_TX_IRQHandler
-                0x0000000008006e1c                SVC_Handler
-                0x0000000008006e1c                EXTI4_IRQHandler
-                0x0000000008006e1c                FSMC_IRQHandler
-                0x0000000008006e1c                ETH_IRQHandler
-                0x0000000008006e1c                OTG_HS_EP1_OUT_IRQHandler
-                0x0000000008006e1c                WWDG_IRQHandler
-                0x0000000008006e1c                TIM2_IRQHandler
-                0x0000000008006e1c                OTG_FS_WKUP_IRQHandler
-                0x0000000008006e1c                TIM1_TRG_COM_TIM11_IRQHandler
-                0x0000000008006e1c                OTG_HS_IRQHandler
-                0x0000000008006e1c                USART2_IRQHandler
-                0x0000000008006e1c                I2C2_ER_IRQHandler
-                0x0000000008006e1c                DMA2_Stream1_IRQHandler
-                0x0000000008006e1c                CAN1_SCE_IRQHandler
-                0x0000000008006e1c                DMA2_Stream4_IRQHandler
-                0x0000000008006e1c                BusFault_Handler
-                0x0000000008006e1c                USART1_IRQHandler
-                0x0000000008006e1c                OTG_FS_IRQHandler
-                0x0000000008006e1c                SPI3_IRQHandler
-                0x0000000008006e1c                DMA1_Stream4_IRQHandler
-                0x0000000008006e1c                I2C1_ER_IRQHandler
-                0x0000000008006e1c                DMA2_Stream6_IRQHandler
-                0x0000000008006e1c                RTC_Alarm_IRQHandler
- *fill*         0x0000000008006e1e        0x2 
- .text.__errno  0x0000000008006e20        0xc /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-errno.o)
-                0x0000000008006e20                __errno
+                0x0000000008007fe4        0x2 startup/startup_stm32.o
+                0x0000000008007fe4                DMA1_Stream3_IRQHandler
+                0x0000000008007fe4                HASH_RNG_IRQHandler
+                0x0000000008007fe4                TIM8_CC_IRQHandler
+                0x0000000008007fe4                DebugMon_Handler
+                0x0000000008007fe4                TIM1_CC_IRQHandler
+                0x0000000008007fe4                DMA2_Stream5_IRQHandler
+                0x0000000008007fe4                HardFault_Handler
+                0x0000000008007fe4                DMA1_Stream5_IRQHandler
+                0x0000000008007fe4                SysTick_Handler
+                0x0000000008007fe4                PVD_IRQHandler
+                0x0000000008007fe4                SDIO_IRQHandler
+                0x0000000008007fe4                TAMP_STAMP_IRQHandler
+                0x0000000008007fe4                PendSV_Handler
+                0x0000000008007fe4                NMI_Handler
+                0x0000000008007fe4                CAN2_RX1_IRQHandler
+                0x0000000008007fe4                TIM8_TRG_COM_TIM14_IRQHandler
+                0x0000000008007fe4                TIM1_UP_TIM10_IRQHandler
+                0x0000000008007fe4                TIM8_UP_TIM13_IRQHandler
+                0x0000000008007fe4                I2C3_ER_IRQHandler
+                0x0000000008007fe4                LCD_TFT_IRQHandler
+                0x0000000008007fe4                I2C2_EV_IRQHandler
+                0x0000000008007fe4                DMA1_Stream2_IRQHandler
+                0x0000000008007fe4                CAN1_RX0_IRQHandler
+                0x0000000008007fe4                FPU_IRQHandler
+                0x0000000008007fe4                OTG_HS_WKUP_IRQHandler
+                0x0000000008007fe4                UsageFault_Handler
+                0x0000000008007fe4                CAN2_SCE_IRQHandler
+                0x0000000008007fe4                DMA2_Stream2_IRQHandler
+                0x0000000008007fe4                SPI1_IRQHandler
+                0x0000000008007fe4                TIM6_DAC_IRQHandler
+                0x0000000008007fe4                TIM1_BRK_TIM9_IRQHandler
+                0x0000000008007fe4                DCMI_IRQHandler
+                0x0000000008007fe4                CAN2_RX0_IRQHandler
+                0x0000000008007fe4                DMA2_Stream3_IRQHandler
+                0x0000000008007fe4                USART6_IRQHandler
+                0x0000000008007fe4                USART3_IRQHandler
+                0x0000000008007fe4                CRYP_IRQHandler
+                0x0000000008007fe4                CAN1_RX1_IRQHandler
+                0x0000000008007fe4                UART5_IRQHandler
+                0x0000000008007fe4                DMA2_Stream0_IRQHandler
+                0x0000000008007fe4                TIM4_IRQHandler
+                0x0000000008007fe4                I2C1_EV_IRQHandler
+                0x0000000008007fe4                DMA1_Stream6_IRQHandler
+                0x0000000008007fe4                UART4_IRQHandler
+                0x0000000008007fe4                LCD_TFT_1_IRQHandler
+                0x0000000008007fe4                RCC_IRQHandler
+                0x0000000008007fe4                TIM8_BRK_TIM12_IRQHandler
+                0x0000000008007fe4                Default_Handler
+                0x0000000008007fe4                EXTI15_10_IRQHandler
+                0x0000000008007fe4                ADC_IRQHandler
+                0x0000000008007fe4                DMA1_Stream7_IRQHandler
+                0x0000000008007fe4                TIM7_IRQHandler
+                0x0000000008007fe4                CAN2_TX_IRQHandler
+                0x0000000008007fe4                TIM5_IRQHandler
+                0x0000000008007fe4                DMA2_Stream7_IRQHandler
+                0x0000000008007fe4                I2C3_EV_IRQHandler
+                0x0000000008007fe4                EXTI9_5_IRQHandler
+                0x0000000008007fe4                RTC_WKUP_IRQHandler
+                0x0000000008007fe4                ETH_WKUP_IRQHandler
+                0x0000000008007fe4                SPI2_IRQHandler
+                0x0000000008007fe4                OTG_HS_EP1_IN_IRQHandler
+                0x0000000008007fe4                MemManage_Handler
+                0x0000000008007fe4                DMA1_Stream0_IRQHandler
+                0x0000000008007fe4                CAN1_TX_IRQHandler
+                0x0000000008007fe4                SVC_Handler
+                0x0000000008007fe4                EXTI4_IRQHandler
+                0x0000000008007fe4                FSMC_IRQHandler
+                0x0000000008007fe4                ETH_IRQHandler
+                0x0000000008007fe4                OTG_HS_EP1_OUT_IRQHandler
+                0x0000000008007fe4                WWDG_IRQHandler
+                0x0000000008007fe4                TIM2_IRQHandler
+                0x0000000008007fe4                OTG_FS_WKUP_IRQHandler
+                0x0000000008007fe4                TIM1_TRG_COM_TIM11_IRQHandler
+                0x0000000008007fe4                OTG_HS_IRQHandler
+                0x0000000008007fe4                USART2_IRQHandler
+                0x0000000008007fe4                I2C2_ER_IRQHandler
+                0x0000000008007fe4                DMA2_Stream1_IRQHandler
+                0x0000000008007fe4                CAN1_SCE_IRQHandler
+                0x0000000008007fe4                DMA2_Stream4_IRQHandler
+                0x0000000008007fe4                BusFault_Handler
+                0x0000000008007fe4                USART1_IRQHandler
+                0x0000000008007fe4                OTG_FS_IRQHandler
+                0x0000000008007fe4                SPI3_IRQHandler
+                0x0000000008007fe4                DMA1_Stream4_IRQHandler
+                0x0000000008007fe4                I2C1_ER_IRQHandler
+                0x0000000008007fe4                DMA2_Stream6_IRQHandler
+                0x0000000008007fe4                RTC_Alarm_IRQHandler
+ *fill*         0x0000000008007fe6        0x2 
+ .text.__errno  0x0000000008007fe8        0xc /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-errno.o)
+                0x0000000008007fe8                __errno
  .text.__libc_init_array
-                0x0000000008006e2c       0x50 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-init.o)
-                0x0000000008006e2c                __libc_init_array
+                0x0000000008007ff4       0x50 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-init.o)
+                0x0000000008007ff4                __libc_init_array
  .text.startup.register_fini
-                0x0000000008006e7c       0x14 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
- .text.atexit   0x0000000008006e90        0xc /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-atexit.o)
-                0x0000000008006e90                atexit
+                0x0000000008008044       0x14 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
+ .text.atexit   0x0000000008008058        0xc /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-atexit.o)
+                0x0000000008008058                atexit
  .text.__libc_fini_array
-                0x0000000008006e9c       0x28 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-fini.o)
-                0x0000000008006e9c                __libc_fini_array
+                0x0000000008008064       0x28 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-fini.o)
+                0x0000000008008064                __libc_fini_array
  .text.__register_exitproc
-                0x0000000008006ec4       0xa4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__atexit.o)
-                0x0000000008006ec4                __register_exitproc
- .text.cos      0x0000000008006f68       0xc0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_cos.o)
-                0x0000000008006f68                cos
- .text.sin      0x0000000008007028       0xc0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_sin.o)
-                0x0000000008007028                sin
- .text.asin     0x00000000080070e8       0xc4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-w_asin.o)
-                0x00000000080070e8                asin
- .text.sqrtf    0x00000000080071ac       0xac /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-wf_sqrt.o)
-                0x00000000080071ac                sqrtf
+                0x000000000800808c       0xa4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__atexit.o)
+                0x000000000800808c                __register_exitproc
+ .text.cos      0x0000000008008130       0xc0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_cos.o)
+                0x0000000008008130                cos
+ .text.sin      0x00000000080081f0       0xc0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_sin.o)
+                0x00000000080081f0                sin
+ .text.asin     0x00000000080082b0       0xc4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-w_asin.o)
+                0x00000000080082b0                asin
+ .text.sqrtf    0x0000000008008374       0xac /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-wf_sqrt.o)
+                0x0000000008008374                sqrtf
  .text.__ieee754_asin
-                0x0000000008007258      0x49c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_asin.o)
-                0x0000000008007258                __ieee754_asin
- *fill*         0x00000000080076f4        0x4 
+                0x0000000008008420      0x49c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_asin.o)
+                0x0000000008008420                __ieee754_asin
+ *fill*         0x00000000080088bc        0x4 
  .text.__ieee754_rem_pio2
-                0x00000000080076f8      0x44c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_rem_pio2.o)
-                0x00000000080076f8                __ieee754_rem_pio2
+                0x00000000080088c0      0x44c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_rem_pio2.o)
+                0x00000000080088c0                __ieee754_rem_pio2
  .text.__ieee754_sqrt
-                0x0000000008007b44      0x1a0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_sqrt.o)
-                0x0000000008007b44                __ieee754_sqrt
+                0x0000000008008d0c      0x1a0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_sqrt.o)
+                0x0000000008008d0c                __ieee754_sqrt
  .text.__ieee754_sqrtf
-                0x0000000008007ce4       0xa4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-ef_sqrt.o)
-                0x0000000008007ce4                __ieee754_sqrtf
+                0x0000000008008eac       0xa4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-ef_sqrt.o)
+                0x0000000008008eac                __ieee754_sqrtf
  .text.__kernel_cos
-                0x0000000008007d88      0x284 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_cos.o)
-                0x0000000008007d88                __kernel_cos
- *fill*         0x000000000800800c        0x4 
+                0x0000000008008f50      0x284 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_cos.o)
+                0x0000000008008f50                __kernel_cos
+ *fill*         0x00000000080091d4        0x4 
  .text.__kernel_rem_pio2
-                0x0000000008008010      0x820 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_rem_pio2.o)
-                0x0000000008008010                __kernel_rem_pio2
+                0x00000000080091d8      0x820 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_rem_pio2.o)
+                0x00000000080091d8                __kernel_rem_pio2
  .text.__kernel_sin
-                0x0000000008008830      0x194 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_sin.o)
-                0x0000000008008830                __kernel_sin
- .text.fabs     0x00000000080089c4       0x10 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_fabs.o)
-                0x00000000080089c4                fabs
- *fill*         0x00000000080089d4        0x4 
- .text.floor    0x00000000080089d8      0x120 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_floor.o)
-                0x00000000080089d8                floor
- .text.matherr  0x0000000008008af8        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_matherr.o)
-                0x0000000008008af8                matherr
- *fill*         0x0000000008008afc        0x4 
- .text.nan      0x0000000008008b00       0x10 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_nan.o)
-                0x0000000008008b00                nan
- .text.scalbn   0x0000000008008b10      0x10c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_scalbn.o)
-                0x0000000008008b10                scalbn
+                0x00000000080099f8      0x194 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_sin.o)
+                0x00000000080099f8                __kernel_sin
+ .text.fabs     0x0000000008009b8c       0x10 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_fabs.o)
+                0x0000000008009b8c                fabs
+ *fill*         0x0000000008009b9c        0x4 
+ .text.floor    0x0000000008009ba0      0x120 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_floor.o)
+                0x0000000008009ba0                floor
+ .text.matherr  0x0000000008009cc0        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_matherr.o)
+                0x0000000008009cc0                matherr
+ *fill*         0x0000000008009cc4        0x4 
+ .text.nan      0x0000000008009cc8       0x10 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_nan.o)
+                0x0000000008009cc8                nan
+ .text.scalbn   0x0000000008009cd8      0x10c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_scalbn.o)
+                0x0000000008009cd8                scalbn
  .text.copysign
-                0x0000000008008c1c       0x1c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_copysign.o)
-                0x0000000008008c1c                copysign
+                0x0000000008009de4       0x1c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-s_copysign.o)
+                0x0000000008009de4                copysign
  *(.glue_7)
- .glue_7        0x0000000008008c38        0x0 linker stubs
+ .glue_7        0x0000000008009e00        0x0 linker stubs
  *(.glue_7t)
- .glue_7t       0x0000000008008c38        0x0 linker stubs
+ .glue_7t       0x0000000008009e00        0x0 linker stubs
  *(.eh_frame)
- .eh_frame      0x0000000008008c38        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
+ .eh_frame      0x0000000008009e00        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
  *(.init)
- .init          0x0000000008008c38        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crti.o
-                0x0000000008008c38                _init
- .init          0x0000000008008c3c        0x8 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtn.o
+ .init          0x0000000008009e00        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crti.o
+                0x0000000008009e00                _init
+ .init          0x0000000008009e04        0x8 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtn.o
  *(.fini)
- .fini          0x0000000008008c44        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crti.o
-                0x0000000008008c44                _fini
- .fini          0x0000000008008c48        0x8 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtn.o
-                0x0000000008008c50                . = ALIGN (0x4)
-                0x0000000008008c50                _etext = .
+ .fini          0x0000000008009e0c        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crti.o
+                0x0000000008009e0c                _fini
+ .fini          0x0000000008009e10        0x8 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtn.o
+                0x0000000008009e18                . = ALIGN (0x4)
+                0x0000000008009e18                _etext = .
 
-.vfp11_veneer   0x0000000008008c50        0x0
- .vfp11_veneer  0x0000000008008c50        0x0 linker stubs
+.vfp11_veneer   0x0000000008009e18        0x0
+ .vfp11_veneer  0x0000000008009e18        0x0 linker stubs
 
-.v4_bx          0x0000000008008c50        0x0
- .v4_bx         0x0000000008008c50        0x0 linker stubs
+.v4_bx          0x0000000008009e18        0x0
+ .v4_bx         0x0000000008009e18        0x0 linker stubs
 
-.iplt           0x0000000008008c50        0x0
- .iplt          0x0000000008008c50        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
+.iplt           0x0000000008009e18        0x0
+ .iplt          0x0000000008009e18        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
 
-.rodata         0x0000000008008c50     0x2f60
-                0x0000000008008c50                . = ALIGN (0x4)
+.rodata         0x0000000008009e18     0x3328
+                0x0000000008009e18                . = ALIGN (0x4)
  *(.rodata)
- .rodata        0x0000000008008c50     0x29f8 src/DOGXL240.o
-                0x0000000008008c50                font6x8
-                0x0000000008009450                font12x16
-                0x000000000800b450                number16x20
-                0x000000000800b608                battery12x8
+ .rodata        0x0000000008009e18        0xc driver/sdio.o
+ .rodata        0x0000000008009e24       0x4c igc/igc.o
+                0x0000000008009e30                g_key
+ .rodata        0x0000000008009e70      0x200 igc/md5.o
+                0x0000000008009e70                k
+                0x0000000008009f70                r
+ .rodata        0x000000000800a070     0x29f8 src/DOGXL240.o
+                0x000000000800a070                font6x8
+                0x000000000800a870                font12x16
+                0x000000000800c870                number16x20
+                0x000000000800ca28                battery12x8
  *(.rodata*)
  .rodata.str1.4
-                0x000000000800b648      0x378 src/gui.o
+                0x000000000800ca68      0x17a igc/igc.o
+                                        0x17e (size before relaxing)
+ *fill*         0x000000000800cbe2        0x2 
+ .rodata.str1.4
+                0x000000000800cbe4      0x36c src/gui.o
                                         0x37c (size before relaxing)
  .rodata._global_impure_ptr
-                0x000000000800b9c0        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-impure.o)
-                0x000000000800b9c0                _global_impure_ptr
+                0x000000000800cf50        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-impure.o)
+                0x000000000800cf50                _global_impure_ptr
  .rodata.str1.4
-                0x000000000800b9c4        0x5 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-w_asin.o)
+                0x000000000800cf54        0x5 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-w_asin.o)
                                           0x9 (size before relaxing)
- *fill*         0x000000000800b9c9        0x3 
+ *fill*         0x000000000800cf59        0x3 
  .rodata.str1.4
-                0x000000000800b9cc        0x8 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-wf_sqrt.o)
+                0x000000000800cf5c        0x8 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-wf_sqrt.o)
                                           0x6 (size before relaxing)
  .rodata.npio2_hw
-                0x000000000800b9d4       0x80 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_rem_pio2.o)
+                0x000000000800cf64       0x80 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_rem_pio2.o)
  .rodata.two_over_pi
-                0x000000000800ba54      0x108 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_rem_pio2.o)
+                0x000000000800cfe4      0x108 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-e_rem_pio2.o)
  .rodata.init_jk
-                0x000000000800bb5c       0x10 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_rem_pio2.o)
- *fill*         0x000000000800bb6c        0x4 
- .rodata.PIo2   0x000000000800bb70       0x40 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_rem_pio2.o)
-                0x000000000800bbb0                . = ALIGN (0x4)
+                0x000000000800d0ec       0x10 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_rem_pio2.o)
+ *fill*         0x000000000800d0fc        0x4 
+ .rodata.PIo2   0x000000000800d100       0x40 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libm.a(lib_a-k_rem_pio2.o)
+                0x000000000800d140                . = ALIGN (0x4)
 
-.rel.dyn        0x000000000800bbb0        0x0
- .rel.iplt      0x000000000800bbb0        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
+.rel.dyn        0x000000000800d140        0x0
+ .rel.iplt      0x000000000800d140        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
 
-.ARM.extab      0x000000000800bbb0        0x0
-                0x000000000800bbb0                . = ALIGN (0x4)
+.ARM.extab      0x000000000800d140        0x0
+                0x000000000800d140                . = ALIGN (0x4)
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x000000000800bbb0                . = ALIGN (0x4)
+                0x000000000800d140                . = ALIGN (0x4)
 
-.ARM            0x000000000800bbb0        0x0
-                0x000000000800bbb0                . = ALIGN (0x4)
-                0x000000000800bbb0                __exidx_start = .
+.ARM            0x000000000800d140        0x0
+                0x000000000800d140                . = ALIGN (0x4)
+                0x000000000800d140                __exidx_start = .
  *(.ARM.exidx*)
-                0x000000000800bbb0                __exidx_end = .
-                0x000000000800bbb0                . = ALIGN (0x4)
+                0x000000000800d140                __exidx_end = .
+                0x000000000800d140                . = ALIGN (0x4)
 
-.preinit_array  0x000000000800bbb0        0x0
-                0x000000000800bbb0                . = ALIGN (0x4)
-                0x000000000800bbb0                PROVIDE (__preinit_array_start, .)
+.preinit_array  0x000000000800d140        0x0
+                0x000000000800d140                . = ALIGN (0x4)
+                0x000000000800d140                PROVIDE (__preinit_array_start, .)
  *(.preinit_array*)
-                0x000000000800bbb0                PROVIDE (__preinit_array_end, .)
-                0x000000000800bbb0                . = ALIGN (0x4)
+                0x000000000800d140                PROVIDE (__preinit_array_end, .)
+                0x000000000800d140                . = ALIGN (0x4)
 
-.init_array     0x000000000800bbb0        0x8
-                0x000000000800bbb0                . = ALIGN (0x4)
-                0x000000000800bbb0                PROVIDE (__init_array_start, .)
+.init_array     0x000000000800d140        0x8
+                0x000000000800d140                . = ALIGN (0x4)
+                0x000000000800d140                PROVIDE (__init_array_start, .)
  *(SORT(.init_array.*))
  .init_array.00000
-                0x000000000800bbb0        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
+                0x000000000800d140        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
  *(.init_array*)
- .init_array    0x000000000800bbb4        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
-                0x000000000800bbb8                PROVIDE (__init_array_end, .)
-                0x000000000800bbb8                . = ALIGN (0x4)
+ .init_array    0x000000000800d144        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
+                0x000000000800d148                PROVIDE (__init_array_end, .)
+                0x000000000800d148                . = ALIGN (0x4)
 
-.fini_array     0x000000000800bbb8        0x4
-                0x000000000800bbb8                . = ALIGN (0x4)
-                0x000000000800bbb8                PROVIDE (__fini_array_start, .)
+.fini_array     0x000000000800d148        0x4
+                0x000000000800d148                . = ALIGN (0x4)
+                0x000000000800d148                PROVIDE (__fini_array_start, .)
  *(SORT(.fini_array.*))
  *(.fini_array*)
- .fini_array    0x000000000800bbb8        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
-                0x000000000800bbbc                PROVIDE (__fini_array_end, .)
-                0x000000000800bbbc                . = ALIGN (0x4)
-                0x000000000800bbbc                _sidata = LOADADDR (.data)
+ .fini_array    0x000000000800d148        0x4 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
+                0x000000000800d14c                PROVIDE (__fini_array_end, .)
+                0x000000000800d14c                . = ALIGN (0x4)
+                0x000000000800d14c                _sidata = LOADADDR (.data)
 
-.data           0x0000000020000000      0x460 load address 0x000000000800bbbc
+.data           0x0000000020000000      0x460 load address 0x000000000800d14c
                 0x0000000020000000                . = ALIGN (0x4)
                 0x0000000020000000                _sdata = .
  *(.data)
@@ -8597,14 +8624,14 @@ LOAD /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64
  *fill*         0x000000002000045d        0x3 
                 0x0000000020000460                _edata = .
 
-.jcr            0x0000000020000460        0x0 load address 0x000000000800c01c
+.jcr            0x0000000020000460        0x0 load address 0x000000000800d5ac
  .jcr           0x0000000020000460        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
 
-.igot.plt       0x0000000020000460        0x0 load address 0x000000000800c01c
+.igot.plt       0x0000000020000460        0x0 load address 0x000000000800d5ac
  .igot.plt      0x0000000020000460        0x0 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtbegin.o
                 0x0000000020000460                . = ALIGN (0x4)
 
-.bss            0x0000000020000460     0x4808 load address 0x000000000800c01c
+.bss            0x0000000020000460     0x4c00 load address 0x000000000800d5ac
                 0x0000000020000460                _sbss = .
                 0x0000000020000460                __bss_start__ = _sbss
  *(.bss)
@@ -8672,85 +8699,94 @@ LOAD /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64
                 0x000000002000057c                sys
                 0x0000000020000580                dir
                 0x0000000020000584                SD
- COMMON         0x0000000020000588        0x4 src/BMS.o
-                0x0000000020000588                pBMS
- COMMON         0x000000002000058c      0x414 src/datafusion.o
-                0x000000002000058c                vgps
-                0x000000002000078c                psi
-                0x000000002000098c                ipc_df_data
-                0x0000000020000990                ipc_df_gps_data
-                0x0000000020000994                timeclimbh
-                0x000000002000099c                df_data
- COMMON         0x00000000200009a0      0x367 src/gps.o
-                0x00000000200009a0                dedec
-                0x00000000200009ac                DMABuff
-                0x0000000020000bac                buff
-                0x0000000020000be0                predec
-                0x0000000020000bec                p_GPS_data
-                0x0000000020000bf0                msg_buff
-                0x0000000020000cf0                pDMABuff
-                0x0000000020000cf4                UBX_beg
-                0x0000000020000cf8                act_VTG
- *fill*         0x0000000020000d07        0x1 
- COMMON         0x0000000020000d08       0x24 src/gui.o
-                0x0000000020000d08                InfoBox
-                0x0000000020000d0c                p_ipc_gui_gps_data
-                0x0000000020000d10                p_ipc_gui_df_data
-                0x0000000020000d14                GUI_cmd
-                0x0000000020000d20                p_ipc_gui_sd_data
-                0x0000000020000d24                p_ipc_gui_ms5611_data
-                0x0000000020000d28                p_ipc_gui_bms_data
- COMMON         0x0000000020000d2c     0x3c28 src/ipc.o
-                0x0000000020000d2c                ipc_data_memory
-                0x000000002000343c                queues
-                0x000000002000352c                memory_queue_did
-                0x000000002000357c                ipc_queue_memory
-                0x0000000020004904                memory_data_did
- COMMON         0x0000000020004954      0x27e src/logging.o
-                0x0000000020004954                LogInfo
-                0x0000000020004974                sensor
-                0x00000000200049ac                Log
- *fill*         0x0000000020004bd2        0x6 
- COMMON         0x0000000020004bd8       0x68 src/ms5611.o
-                0x0000000020004bd8                T2
-                0x0000000020004be0                C1
-                0x0000000020004be4                C3
-                0x0000000020004be8                dT
-                0x0000000020004bf0                Off2
-                0x0000000020004bf8                Off
-                0x0000000020004c00                Temp
-                0x0000000020004c04                msdata
-                0x0000000020004c08                C2
-                0x0000000020004c0c                C6
-                0x0000000020004c10                C0
-                0x0000000020004c18                Sens
-                0x0000000020004c20                D2
-                0x0000000020004c28                Sens2
-                0x0000000020004c30                C5
-                0x0000000020004c34                C4
-                0x0000000020004c38                D1
-                0x0000000020004c3c                CRC_MS
- COMMON         0x0000000020004c40       0x13 src/sound.o
-                0x0000000020004c40                sound_command
-                0x0000000020004c4c                sound_state
- *fill*         0x0000000020004c53        0x1 
- COMMON         0x0000000020004c54       0x14 src/vario.o
-                0x0000000020004c54                p_ipc_v_df_data
-                0x0000000020004c58                vario_command
-                0x0000000020004c64                temp_climb
-                0x0000000020004c68                . = ALIGN (0x4)
-                0x0000000020004c68                _ebss = .
-                0x0000000020004c68                __bss_end__ = _ebss
+ COMMON         0x0000000020000588      0x3f7 igc/igc.o
+                0x0000000020000588                p_ipc_gui_keypad_data
+                0x0000000020000590                IGC
+                0x00000000200007b8                BaroData
+                0x00000000200007bc                IgcCmd
+                0x00000000200007c8                GpsData
+                0x00000000200007cc                sd
+                0x00000000200007d0                IgcInfo
+ *fill*         0x000000002000097f        0x1 
+ COMMON         0x0000000020000980        0x4 src/BMS.o
+                0x0000000020000980                pBMS
+ COMMON         0x0000000020000984      0x414 src/datafusion.o
+                0x0000000020000984                vgps
+                0x0000000020000b84                psi
+                0x0000000020000d84                ipc_df_data
+                0x0000000020000d88                ipc_df_gps_data
+                0x0000000020000d8c                timeclimbh
+                0x0000000020000d94                df_data
+ COMMON         0x0000000020000d98      0x367 src/gps.o
+                0x0000000020000d98                dedec
+                0x0000000020000da4                DMABuff
+                0x0000000020000fa4                buff
+                0x0000000020000fd8                predec
+                0x0000000020000fe4                p_GPS_data
+                0x0000000020000fe8                msg_buff
+                0x00000000200010e8                pDMABuff
+                0x00000000200010ec                UBX_beg
+                0x00000000200010f0                act_VTG
+ *fill*         0x00000000200010ff        0x1 
+ COMMON         0x0000000020001100       0x24 src/gui.o
+                0x0000000020001100                InfoBox
+                0x0000000020001104                p_ipc_gui_gps_data
+                0x0000000020001108                p_ipc_gui_df_data
+                0x000000002000110c                GUI_cmd
+                0x0000000020001118                p_ipc_gui_sd_data
+                0x000000002000111c                p_ipc_gui_ms5611_data
+                0x0000000020001120                p_ipc_gui_bms_data
+ COMMON         0x0000000020001124     0x3c28 src/ipc.o
+                0x0000000020001124                ipc_data_memory
+                0x0000000020003834                queues
+                0x0000000020003924                memory_queue_did
+                0x0000000020003974                ipc_queue_memory
+                0x0000000020004cfc                memory_data_did
+ COMMON         0x0000000020004d4c      0x27e src/logging.o
+                0x0000000020004d4c                LogInfo
+                0x0000000020004d6c                sensor
+                0x0000000020004da4                Log
+ *fill*         0x0000000020004fca        0x6 
+ COMMON         0x0000000020004fd0       0x68 src/ms5611.o
+                0x0000000020004fd0                T2
+                0x0000000020004fd8                C1
+                0x0000000020004fdc                C3
+                0x0000000020004fe0                dT
+                0x0000000020004fe8                Off2
+                0x0000000020004ff0                Off
+                0x0000000020004ff8                Temp
+                0x0000000020004ffc                msdata
+                0x0000000020005000                C2
+                0x0000000020005004                C6
+                0x0000000020005008                C0
+                0x0000000020005010                Sens
+                0x0000000020005018                D2
+                0x0000000020005020                Sens2
+                0x0000000020005028                C5
+                0x000000002000502c                C4
+                0x0000000020005030                D1
+                0x0000000020005034                CRC_MS
+ COMMON         0x0000000020005038       0x13 src/sound.o
+                0x0000000020005038                sound_command
+                0x0000000020005044                sound_state
+ *fill*         0x000000002000504b        0x1 
+ COMMON         0x000000002000504c       0x14 src/vario.o
+                0x000000002000504c                p_ipc_v_df_data
+                0x0000000020005050                vario_command
+                0x000000002000505c                temp_climb
+                0x0000000020005060                . = ALIGN (0x4)
+                0x0000000020005060                _ebss = .
+                0x0000000020005060                __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x0000000020004c68      0x400 load address 0x000000000800c01c
-                0x0000000020004c68                . = ALIGN (0x8)
-                0x0000000020004c68                PROVIDE (end, .)
+                0x0000000020005060      0x400 load address 0x000000000800d5ac
+                0x0000000020005060                . = ALIGN (0x8)
+                0x0000000020005060                PROVIDE (end, .)
                 [!provide]                        PROVIDE (_end, .)
-                0x0000000020004c68                . = (. + _Min_Heap_Size)
-                0x0000000020005068                . = (. + _Min_Stack_Size)
- *fill*         0x0000000020004c68      0x400 
-                0x0000000020005068                . = ALIGN (0x8)
+                0x0000000020005060                . = (. + _Min_Heap_Size)
+                0x0000000020005460                . = (. + _Min_Stack_Size)
+ *fill*         0x0000000020005060      0x400 
+                0x0000000020005460                . = ALIGN (0x8)
 
 /DISCARD/
  libc.a(*)
@@ -8787,64 +8823,68 @@ LOAD /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64
  .ARM.attributes
                 0x0000000000000290       0x39 driver/spi.o
  .ARM.attributes
-                0x00000000000002c9       0x39 src/BMS.o
+                0x00000000000002c9       0x39 igc/igc.o
  .ARM.attributes
-                0x0000000000000302       0x39 src/DOGXL240.o
+                0x0000000000000302       0x39 igc/md5.o
  .ARM.attributes
-                0x000000000000033b       0x39 src/datafusion.o
+                0x000000000000033b       0x39 src/BMS.o
  .ARM.attributes
-                0x0000000000000374       0x39 src/exti.o
+                0x0000000000000374       0x39 src/DOGXL240.o
  .ARM.attributes
-                0x00000000000003ad       0x39 src/gps.o
+                0x00000000000003ad       0x39 src/datafusion.o
  .ARM.attributes
-                0x00000000000003e6       0x39 src/gui.o
+                0x00000000000003e6       0x39 src/exti.o
  .ARM.attributes
-                0x000000000000041f       0x39 src/ipc.o
+                0x000000000000041f       0x39 src/gps.o
  .ARM.attributes
-                0x0000000000000458       0x39 src/logging.o
+                0x0000000000000458       0x39 src/gui.o
  .ARM.attributes
-                0x0000000000000491       0x39 src/main.o
+                0x0000000000000491       0x39 src/ipc.o
  .ARM.attributes
-                0x00000000000004ca       0x39 src/ms5611.o
+                0x00000000000004ca       0x39 src/logging.o
  .ARM.attributes
-                0x0000000000000503       0x39 src/oVario_Framework.o
+                0x0000000000000503       0x39 src/main.o
  .ARM.attributes
-                0x000000000000053c       0x39 src/sound.o
+                0x000000000000053c       0x39 src/ms5611.o
  .ARM.attributes
-                0x0000000000000575       0x39 src/timer.o
+                0x0000000000000575       0x39 src/oVario_Framework.o
  .ARM.attributes
-                0x00000000000005ae       0x39 src/vario.o
+                0x00000000000005ae       0x39 src/sound.o
  .ARM.attributes
-                0x00000000000005e7       0x21 startup/startup_stm32.o
+                0x00000000000005e7       0x39 src/timer.o
  .ARM.attributes
-                0x0000000000000608       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_addsubdf3.o)
+                0x0000000000000620       0x39 src/vario.o
  .ARM.attributes
-                0x000000000000062a       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_muldivdf3.o)
+                0x0000000000000659       0x21 startup/startup_stm32.o
  .ARM.attributes
-                0x000000000000064c       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_cmpdf2.o)
+                0x000000000000067a       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_addsubdf3.o)
  .ARM.attributes
-                0x000000000000066e       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_truncdfsf2.o)
+                0x000000000000069c       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_muldivdf3.o)
  .ARM.attributes
-                0x0000000000000690       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_addsubsf3.o)
+                0x00000000000006be       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_cmpdf2.o)
  .ARM.attributes
-                0x00000000000006b2       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-errno.o)
+                0x00000000000006e0       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_truncdfsf2.o)
  .ARM.attributes
-                0x00000000000006e6       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-impure.o)
+                0x0000000000000702       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/libgcc.a(_arm_addsubsf3.o)
  .ARM.attributes
-                0x000000000000071a       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-init.o)
+                0x0000000000000724       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-errno.o)
  .ARM.attributes
-                0x000000000000074e       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
+                0x0000000000000758       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-impure.o)
  .ARM.attributes
-                0x0000000000000782       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-atexit.o)
+                0x000000000000078c       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-init.o)
  .ARM.attributes
-                0x00000000000007b6       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-fini.o)
+                0x00000000000007c0       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
  .ARM.attributes
-                0x00000000000007ea       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__atexit.o)
+                0x00000000000007f4       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-atexit.o)
  .ARM.attributes
-                0x000000000000081e       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtn.o
+                0x0000000000000828       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-fini.o)
+ .ARM.attributes
+                0x000000000000085c       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__atexit.o)
+ .ARM.attributes
+                0x0000000000000890       0x22 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/armv7e-m/fpu/crtn.o
 OUTPUT(OTP15_oVario.elf elf32-littlearm)
 
-.debug_info     0x0000000000000000    0x153f8
+.debug_info     0x0000000000000000    0x170c0
  .debug_info    0x0000000000000000      0x564 StdPeriph_Driver/src/misc.o
  .debug_info    0x0000000000000564      0x749 StdPeriph_Driver/src/stm32f4xx_dma.o
  .debug_info    0x0000000000000cad      0x352 StdPeriph_Driver/src/stm32f4xx_exti.o
@@ -8856,23 +8896,25 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_info    0x0000000000005736      0x7ff driver/i2c.o
  .debug_info    0x0000000000005f35     0x2801 driver/sdio.o
  .debug_info    0x0000000000008736      0x4c7 driver/spi.o
- .debug_info    0x0000000000008bfd      0xc91 src/BMS.o
- .debug_info    0x000000000000988e     0x1954 src/DOGXL240.o
- .debug_info    0x000000000000b1e2      0xc39 src/datafusion.o
- .debug_info    0x000000000000be1b      0xb11 src/exti.o
- .debug_info    0x000000000000c92c     0x17aa src/gps.o
- .debug_info    0x000000000000e0d6     0x3559 src/gui.o
- .debug_info    0x000000000001162f      0x411 src/ipc.o
- .debug_info    0x0000000000011a40      0x819 src/logging.o
- .debug_info    0x0000000000012259      0x3bb src/main.o
- .debug_info    0x0000000000012614      0x7f0 src/ms5611.o
- .debug_info    0x0000000000012e04      0xbce src/oVario_Framework.o
- .debug_info    0x00000000000139d2      0xcea src/sound.o
- .debug_info    0x00000000000146bc      0x635 src/timer.o
- .debug_info    0x0000000000014cf1      0x68d src/vario.o
- .debug_info    0x000000000001537e       0x7a startup/startup_stm32.o
+ .debug_info    0x0000000000008bfd     0x17d3 igc/igc.o
+ .debug_info    0x000000000000a3d0      0x4f5 igc/md5.o
+ .debug_info    0x000000000000a8c5      0xc91 src/BMS.o
+ .debug_info    0x000000000000b556     0x1954 src/DOGXL240.o
+ .debug_info    0x000000000000ceaa      0xc0d src/datafusion.o
+ .debug_info    0x000000000000dab7      0xb11 src/exti.o
+ .debug_info    0x000000000000e5c8     0x17aa src/gps.o
+ .debug_info    0x000000000000fd72     0x3559 src/gui.o
+ .debug_info    0x00000000000132cb      0x411 src/ipc.o
+ .debug_info    0x00000000000136dc      0x819 src/logging.o
+ .debug_info    0x0000000000013ef5      0x3e7 src/main.o
+ .debug_info    0x00000000000142dc      0x7f0 src/ms5611.o
+ .debug_info    0x0000000000014acc      0xbce src/oVario_Framework.o
+ .debug_info    0x000000000001569a      0xcea src/sound.o
+ .debug_info    0x0000000000016384      0x635 src/timer.o
+ .debug_info    0x00000000000169b9      0x68d src/vario.o
+ .debug_info    0x0000000000017046       0x7a startup/startup_stm32.o
 
-.debug_abbrev   0x0000000000000000     0x2eb5
+.debug_abbrev   0x0000000000000000     0x3322
  .debug_abbrev  0x0000000000000000      0x15b StdPeriph_Driver/src/misc.o
  .debug_abbrev  0x000000000000015b      0x17a StdPeriph_Driver/src/stm32f4xx_dma.o
  .debug_abbrev  0x00000000000002d5      0x1cc StdPeriph_Driver/src/stm32f4xx_exti.o
@@ -8884,23 +8926,25 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_abbrev  0x0000000000000e02      0x19e driver/i2c.o
  .debug_abbrev  0x0000000000000fa0      0x2b0 driver/sdio.o
  .debug_abbrev  0x0000000000001250       0xed driver/spi.o
- .debug_abbrev  0x000000000000133d      0x1b6 src/BMS.o
- .debug_abbrev  0x00000000000014f3      0x2fc src/DOGXL240.o
- .debug_abbrev  0x00000000000017ef      0x2ed src/datafusion.o
- .debug_abbrev  0x0000000000001adc      0x188 src/exti.o
- .debug_abbrev  0x0000000000001c64      0x27d src/gps.o
- .debug_abbrev  0x0000000000001ee1      0x25c src/gui.o
- .debug_abbrev  0x000000000000213d      0x157 src/ipc.o
- .debug_abbrev  0x0000000000002294      0x1c6 src/logging.o
- .debug_abbrev  0x000000000000245a      0x101 src/main.o
- .debug_abbrev  0x000000000000255b      0x172 src/ms5611.o
- .debug_abbrev  0x00000000000026cd      0x26b src/oVario_Framework.o
- .debug_abbrev  0x0000000000002938      0x1c9 src/sound.o
- .debug_abbrev  0x0000000000002b01      0x18b src/timer.o
- .debug_abbrev  0x0000000000002c8c      0x217 src/vario.o
- .debug_abbrev  0x0000000000002ea3       0x12 startup/startup_stm32.o
+ .debug_abbrev  0x000000000000133d      0x28f igc/igc.o
+ .debug_abbrev  0x00000000000015cc      0x1dc igc/md5.o
+ .debug_abbrev  0x00000000000017a8      0x1b6 src/BMS.o
+ .debug_abbrev  0x000000000000195e      0x2fc src/DOGXL240.o
+ .debug_abbrev  0x0000000000001c5a      0x2fa src/datafusion.o
+ .debug_abbrev  0x0000000000001f54      0x188 src/exti.o
+ .debug_abbrev  0x00000000000020dc      0x27d src/gps.o
+ .debug_abbrev  0x0000000000002359      0x25c src/gui.o
+ .debug_abbrev  0x00000000000025b5      0x157 src/ipc.o
+ .debug_abbrev  0x000000000000270c      0x1c6 src/logging.o
+ .debug_abbrev  0x00000000000028d2       0xf6 src/main.o
+ .debug_abbrev  0x00000000000029c8      0x172 src/ms5611.o
+ .debug_abbrev  0x0000000000002b3a      0x26b src/oVario_Framework.o
+ .debug_abbrev  0x0000000000002da5      0x1c9 src/sound.o
+ .debug_abbrev  0x0000000000002f6e      0x18b src/timer.o
+ .debug_abbrev  0x00000000000030f9      0x217 src/vario.o
+ .debug_abbrev  0x0000000000003310       0x12 startup/startup_stm32.o
 
-.debug_loc      0x0000000000000000     0x8770
+.debug_loc      0x0000000000000000     0x9159
  .debug_loc     0x0000000000000000      0x18e StdPeriph_Driver/src/misc.o
  .debug_loc     0x000000000000018e      0x48b StdPeriph_Driver/src/stm32f4xx_dma.o
  .debug_loc     0x0000000000000619      0x167 StdPeriph_Driver/src/stm32f4xx_exti.o
@@ -8911,20 +8955,22 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_loc     0x000000000000337a      0x806 StdPeriph_Driver/src/stm32f4xx_usart.o
  .debug_loc     0x0000000000003b80      0x6a6 driver/i2c.o
  .debug_loc     0x0000000000004226     0x1767 driver/sdio.o
- .debug_loc     0x000000000000598d      0x13b src/BMS.o
- .debug_loc     0x0000000000005ac8     0x116d src/DOGXL240.o
- .debug_loc     0x0000000000006c35      0x22c src/datafusion.o
- .debug_loc     0x0000000000006e61      0x3f0 src/gps.o
- .debug_loc     0x0000000000007251      0x690 src/gui.o
- .debug_loc     0x00000000000078e1      0x300 src/ipc.o
- .debug_loc     0x0000000000007be1      0x370 src/logging.o
- .debug_loc     0x0000000000007f51       0x22 src/ms5611.o
- .debug_loc     0x0000000000007f73      0x58d src/oVario_Framework.o
- .debug_loc     0x0000000000008500       0xa7 src/sound.o
- .debug_loc     0x00000000000085a7       0x4b src/timer.o
- .debug_loc     0x00000000000085f2      0x17e src/vario.o
+ .debug_loc     0x000000000000598d      0x5de igc/igc.o
+ .debug_loc     0x0000000000005f6b      0x40b igc/md5.o
+ .debug_loc     0x0000000000006376      0x13b src/BMS.o
+ .debug_loc     0x00000000000064b1     0x116d src/DOGXL240.o
+ .debug_loc     0x000000000000761e      0x22c src/datafusion.o
+ .debug_loc     0x000000000000784a      0x3f0 src/gps.o
+ .debug_loc     0x0000000000007c3a      0x690 src/gui.o
+ .debug_loc     0x00000000000082ca      0x300 src/ipc.o
+ .debug_loc     0x00000000000085ca      0x370 src/logging.o
+ .debug_loc     0x000000000000893a       0x22 src/ms5611.o
+ .debug_loc     0x000000000000895c      0x58d src/oVario_Framework.o
+ .debug_loc     0x0000000000008ee9       0xa7 src/sound.o
+ .debug_loc     0x0000000000008f90       0x4b src/timer.o
+ .debug_loc     0x0000000000008fdb      0x17e src/vario.o
 
-.debug_aranges  0x0000000000000000     0x1018
+.debug_aranges  0x0000000000000000     0x10f8
  .debug_aranges
                 0x0000000000000000       0x40 StdPeriph_Driver/src/misc.o
  .debug_aranges
@@ -8948,37 +8994,41 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_aranges
                 0x0000000000000a38       0x28 driver/spi.o
  .debug_aranges
-                0x0000000000000a60       0x68 src/BMS.o
+                0x0000000000000a60       0x90 igc/igc.o
  .debug_aranges
-                0x0000000000000ac8       0xf8 src/DOGXL240.o
+                0x0000000000000af0       0x50 igc/md5.o
  .debug_aranges
-                0x0000000000000bc0       0x60 src/datafusion.o
+                0x0000000000000b40       0x68 src/BMS.o
  .debug_aranges
-                0x0000000000000c20       0x40 src/exti.o
+                0x0000000000000ba8       0xf8 src/DOGXL240.o
  .debug_aranges
-                0x0000000000000c60       0x68 src/gps.o
+                0x0000000000000ca0       0x60 src/datafusion.o
  .debug_aranges
-                0x0000000000000cc8       0x98 src/gui.o
+                0x0000000000000d00       0x40 src/exti.o
  .debug_aranges
-                0x0000000000000d60       0x50 src/ipc.o
+                0x0000000000000d40       0x68 src/gps.o
  .debug_aranges
-                0x0000000000000db0       0x50 src/logging.o
+                0x0000000000000da8       0x98 src/gui.o
  .debug_aranges
-                0x0000000000000e00       0x20 src/main.o
+                0x0000000000000e40       0x50 src/ipc.o
  .debug_aranges
-                0x0000000000000e20       0x40 src/ms5611.o
+                0x0000000000000e90       0x50 src/logging.o
  .debug_aranges
-                0x0000000000000e60       0xf8 src/oVario_Framework.o
+                0x0000000000000ee0       0x20 src/main.o
  .debug_aranges
-                0x0000000000000f58       0x38 src/sound.o
+                0x0000000000000f00       0x40 src/ms5611.o
  .debug_aranges
-                0x0000000000000f90       0x30 src/timer.o
+                0x0000000000000f40       0xf8 src/oVario_Framework.o
  .debug_aranges
-                0x0000000000000fc0       0x30 src/vario.o
+                0x0000000000001038       0x38 src/sound.o
  .debug_aranges
-                0x0000000000000ff0       0x28 startup/startup_stm32.o
+                0x0000000000001070       0x30 src/timer.o
+ .debug_aranges
+                0x00000000000010a0       0x30 src/vario.o
+ .debug_aranges
+                0x00000000000010d0       0x28 startup/startup_stm32.o
 
-.debug_ranges   0x0000000000000000     0x1110
+.debug_ranges   0x0000000000000000     0x1230
  .debug_ranges  0x0000000000000000       0x30 StdPeriph_Driver/src/misc.o
  .debug_ranges  0x0000000000000030       0xa0 StdPeriph_Driver/src/stm32f4xx_dma.o
  .debug_ranges  0x00000000000000d0       0x48 StdPeriph_Driver/src/stm32f4xx_exti.o
@@ -8990,23 +9040,25 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_ranges  0x0000000000000748       0x70 driver/i2c.o
  .debug_ranges  0x00000000000007b8      0x1f8 driver/sdio.o
  .debug_ranges  0x00000000000009b0       0x18 driver/spi.o
- .debug_ranges  0x00000000000009c8       0x58 src/BMS.o
- .debug_ranges  0x0000000000000a20      0x258 src/DOGXL240.o
- .debug_ranges  0x0000000000000c78       0x68 src/datafusion.o
- .debug_ranges  0x0000000000000ce0       0x30 src/exti.o
- .debug_ranges  0x0000000000000d10       0x88 src/gps.o
- .debug_ranges  0x0000000000000d98       0x88 src/gui.o
- .debug_ranges  0x0000000000000e20       0x70 src/ipc.o
- .debug_ranges  0x0000000000000e90       0x70 src/logging.o
- .debug_ranges  0x0000000000000f00       0x10 src/main.o
- .debug_ranges  0x0000000000000f10       0x30 src/ms5611.o
- .debug_ranges  0x0000000000000f40      0x148 src/oVario_Framework.o
- .debug_ranges  0x0000000000001088       0x28 src/sound.o
- .debug_ranges  0x00000000000010b0       0x20 src/timer.o
- .debug_ranges  0x00000000000010d0       0x20 src/vario.o
- .debug_ranges  0x00000000000010f0       0x20 startup/startup_stm32.o
+ .debug_ranges  0x00000000000009c8       0x98 igc/igc.o
+ .debug_ranges  0x0000000000000a60       0x88 igc/md5.o
+ .debug_ranges  0x0000000000000ae8       0x58 src/BMS.o
+ .debug_ranges  0x0000000000000b40      0x258 src/DOGXL240.o
+ .debug_ranges  0x0000000000000d98       0x68 src/datafusion.o
+ .debug_ranges  0x0000000000000e00       0x30 src/exti.o
+ .debug_ranges  0x0000000000000e30       0x88 src/gps.o
+ .debug_ranges  0x0000000000000eb8       0x88 src/gui.o
+ .debug_ranges  0x0000000000000f40       0x70 src/ipc.o
+ .debug_ranges  0x0000000000000fb0       0x70 src/logging.o
+ .debug_ranges  0x0000000000001020       0x10 src/main.o
+ .debug_ranges  0x0000000000001030       0x30 src/ms5611.o
+ .debug_ranges  0x0000000000001060      0x148 src/oVario_Framework.o
+ .debug_ranges  0x00000000000011a8       0x28 src/sound.o
+ .debug_ranges  0x00000000000011d0       0x20 src/timer.o
+ .debug_ranges  0x00000000000011f0       0x20 src/vario.o
+ .debug_ranges  0x0000000000001210       0x20 startup/startup_stm32.o
 
-.debug_macro    0x0000000000000000    0x14bef
+.debug_macro    0x0000000000000000    0x15245
  .debug_macro   0x0000000000000000      0x29e StdPeriph_Driver/src/misc.o
  .debug_macro   0x000000000000029e      0x8aa StdPeriph_Driver/src/misc.o
  .debug_macro   0x0000000000000b48       0x65 StdPeriph_Driver/src/misc.o
@@ -9063,46 +9115,49 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_macro   0x0000000000010794       0xdc driver/sdio.o
  .debug_macro   0x0000000000010870      0x1fb driver/sdio.o
  .debug_macro   0x0000000000010a6b      0x2d6 driver/spi.o
- .debug_macro   0x0000000000010d41      0x30d src/BMS.o
- .debug_macro   0x000000000001104e      0x343 src/BMS.o
- .debug_macro   0x0000000000011391      0x3d6 src/DOGXL240.o
- .debug_macro   0x0000000000011767      0x1db src/DOGXL240.o
- .debug_macro   0x0000000000011942       0x12 src/DOGXL240.o
- .debug_macro   0x0000000000011954       0x52 src/DOGXL240.o
- .debug_macro   0x00000000000119a6       0x35 src/DOGXL240.o
- .debug_macro   0x00000000000119db       0x9c src/DOGXL240.o
- .debug_macro   0x0000000000011a77      0x174 src/DOGXL240.o
- .debug_macro   0x0000000000011beb       0x52 src/DOGXL240.o
- .debug_macro   0x0000000000011c3d       0x1f src/DOGXL240.o
- .debug_macro   0x0000000000011c5c       0x43 src/DOGXL240.o
- .debug_macro   0x0000000000011c9f       0x20 src/DOGXL240.o
- .debug_macro   0x0000000000011cbf      0x187 src/DOGXL240.o
- .debug_macro   0x0000000000011e46      0x30d src/DOGXL240.o
- .debug_macro   0x0000000000012153       0x10 src/DOGXL240.o
- .debug_macro   0x0000000000012163       0x35 src/DOGXL240.o
- .debug_macro   0x0000000000012198      0x1e1 src/DOGXL240.o
- .debug_macro   0x0000000000012379       0xd6 src/DOGXL240.o
- .debug_macro   0x000000000001244f      0x3e8 src/datafusion.o
- .debug_macro   0x0000000000012837       0x16 src/datafusion.o
- .debug_macro   0x000000000001284d       0x28 src/datafusion.o
- .debug_macro   0x0000000000012875      0x30a src/exti.o
- .debug_macro   0x0000000000012b7f       0x10 src/exti.o
- .debug_macro   0x0000000000012b8f      0x30a src/gps.o
- .debug_macro   0x0000000000012e99       0x70 src/gps.o
- .debug_macro   0x0000000000012f09      0x373 src/gui.o
- .debug_macro   0x000000000001327c      0x2b9 src/ipc.o
- .debug_macro   0x0000000000013535      0x30f src/logging.o
- .debug_macro   0x0000000000013844      0x3f2 src/main.o
- .debug_macro   0x0000000000013c36       0x1c src/main.o
- .debug_macro   0x0000000000013c52       0x10 src/main.o
- .debug_macro   0x0000000000013c62       0x76 src/main.o
- .debug_macro   0x0000000000013cd8      0x2f8 src/ms5611.o
- .debug_macro   0x0000000000013fd0      0x2d5 src/oVario_Framework.o
- .debug_macro   0x00000000000142a5      0x2d5 src/sound.o
- .debug_macro   0x000000000001457a      0x2a6 src/timer.o
- .debug_macro   0x0000000000014820      0x3cf src/vario.o
+ .debug_macro   0x0000000000010d41      0x30d igc/igc.o
+ .debug_macro   0x000000000001104e       0x6a igc/igc.o
+ .debug_macro   0x00000000000110b8      0x2df igc/md5.o
+ .debug_macro   0x0000000000011397      0x30d src/BMS.o
+ .debug_macro   0x00000000000116a4      0x343 src/BMS.o
+ .debug_macro   0x00000000000119e7      0x3d6 src/DOGXL240.o
+ .debug_macro   0x0000000000011dbd      0x1db src/DOGXL240.o
+ .debug_macro   0x0000000000011f98       0x12 src/DOGXL240.o
+ .debug_macro   0x0000000000011faa       0x52 src/DOGXL240.o
+ .debug_macro   0x0000000000011ffc       0x35 src/DOGXL240.o
+ .debug_macro   0x0000000000012031       0x9c src/DOGXL240.o
+ .debug_macro   0x00000000000120cd      0x174 src/DOGXL240.o
+ .debug_macro   0x0000000000012241       0x52 src/DOGXL240.o
+ .debug_macro   0x0000000000012293       0x1f src/DOGXL240.o
+ .debug_macro   0x00000000000122b2       0x43 src/DOGXL240.o
+ .debug_macro   0x00000000000122f5       0x20 src/DOGXL240.o
+ .debug_macro   0x0000000000012315      0x187 src/DOGXL240.o
+ .debug_macro   0x000000000001249c      0x30d src/DOGXL240.o
+ .debug_macro   0x00000000000127a9       0x10 src/DOGXL240.o
+ .debug_macro   0x00000000000127b9       0x35 src/DOGXL240.o
+ .debug_macro   0x00000000000127ee      0x1e1 src/DOGXL240.o
+ .debug_macro   0x00000000000129cf       0xd6 src/DOGXL240.o
+ .debug_macro   0x0000000000012aa5      0x3e8 src/datafusion.o
+ .debug_macro   0x0000000000012e8d       0x16 src/datafusion.o
+ .debug_macro   0x0000000000012ea3       0x28 src/datafusion.o
+ .debug_macro   0x0000000000012ecb      0x30a src/exti.o
+ .debug_macro   0x00000000000131d5       0x10 src/exti.o
+ .debug_macro   0x00000000000131e5      0x30a src/gps.o
+ .debug_macro   0x00000000000134ef       0x70 src/gps.o
+ .debug_macro   0x000000000001355f      0x373 src/gui.o
+ .debug_macro   0x00000000000138d2      0x2b9 src/ipc.o
+ .debug_macro   0x0000000000013b8b      0x30f src/logging.o
+ .debug_macro   0x0000000000013e9a      0x3f2 src/main.o
+ .debug_macro   0x000000000001428c       0x1c src/main.o
+ .debug_macro   0x00000000000142a8       0x10 src/main.o
+ .debug_macro   0x00000000000142b8       0x76 src/main.o
+ .debug_macro   0x000000000001432e      0x2f8 src/ms5611.o
+ .debug_macro   0x0000000000014626      0x2d5 src/oVario_Framework.o
+ .debug_macro   0x00000000000148fb      0x2d5 src/sound.o
+ .debug_macro   0x0000000000014bd0      0x2a6 src/timer.o
+ .debug_macro   0x0000000000014e76      0x3cf src/vario.o
 
-.debug_line     0x0000000000000000     0xd72a
+.debug_line     0x0000000000000000     0xe7ff
  .debug_line    0x0000000000000000      0x66b StdPeriph_Driver/src/misc.o
  .debug_line    0x000000000000066b      0x7d5 StdPeriph_Driver/src/stm32f4xx_dma.o
  .debug_line    0x0000000000000e40      0x6b0 StdPeriph_Driver/src/stm32f4xx_exti.o
@@ -9114,23 +9169,25 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_line    0x000000000000436b      0xbe4 driver/i2c.o
  .debug_line    0x0000000000004f4f      0xd5b driver/sdio.o
  .debug_line    0x0000000000005caa      0x697 driver/spi.o
- .debug_line    0x0000000000006341      0x824 src/BMS.o
- .debug_line    0x0000000000006b65      0xbe5 src/DOGXL240.o
- .debug_line    0x000000000000774a      0x904 src/datafusion.o
- .debug_line    0x000000000000804e      0x708 src/exti.o
- .debug_line    0x0000000000008756      0x836 src/gps.o
- .debug_line    0x0000000000008f8c      0xb1c src/gui.o
- .debug_line    0x0000000000009aa8      0x6f5 src/ipc.o
- .debug_line    0x000000000000a19d      0x7e1 src/logging.o
- .debug_line    0x000000000000a97e      0x7c2 src/main.o
- .debug_line    0x000000000000b140      0x751 src/ms5611.o
- .debug_line    0x000000000000b891      0x8fd src/oVario_Framework.o
- .debug_line    0x000000000000c18e      0x701 src/sound.o
- .debug_line    0x000000000000c88f      0x676 src/timer.o
- .debug_line    0x000000000000cf05      0x7a9 src/vario.o
- .debug_line    0x000000000000d6ae       0x7c startup/startup_stm32.o
+ .debug_line    0x0000000000006341      0x957 igc/igc.o
+ .debug_line    0x0000000000006c98      0x77f igc/md5.o
+ .debug_line    0x0000000000007417      0x824 src/BMS.o
+ .debug_line    0x0000000000007c3b      0xbe5 src/DOGXL240.o
+ .debug_line    0x0000000000008820      0x901 src/datafusion.o
+ .debug_line    0x0000000000009121      0x708 src/exti.o
+ .debug_line    0x0000000000009829      0x836 src/gps.o
+ .debug_line    0x000000000000a05f      0xb1c src/gui.o
+ .debug_line    0x000000000000ab7b      0x6f5 src/ipc.o
+ .debug_line    0x000000000000b270      0x7e1 src/logging.o
+ .debug_line    0x000000000000ba51      0x7c4 src/main.o
+ .debug_line    0x000000000000c215      0x751 src/ms5611.o
+ .debug_line    0x000000000000c966      0x8fd src/oVario_Framework.o
+ .debug_line    0x000000000000d263      0x701 src/sound.o
+ .debug_line    0x000000000000d964      0x676 src/timer.o
+ .debug_line    0x000000000000dfda      0x7a9 src/vario.o
+ .debug_line    0x000000000000e783       0x7c startup/startup_stm32.o
 
-.debug_str      0x0000000000000000    0x68dea
+.debug_str      0x0000000000000000    0x69008
  .debug_str     0x0000000000000000    0x5e20d StdPeriph_Driver/src/misc.o
                                       0x5e3c1 (size before relaxing)
  .debug_str     0x000000000005e20d      0x6a8 StdPeriph_Driver/src/stm32f4xx_dma.o
@@ -9153,33 +9210,37 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
                                       0x5f8bc (size before relaxing)
  .debug_str     0x0000000000062819       0x55 driver/spi.o
                                       0x5e754 (size before relaxing)
- .debug_str     0x000000000006286e      0xc3e src/BMS.o
+ .debug_str     0x000000000006286e      0x554 igc/igc.o
+                                      0x5f6cc (size before relaxing)
+ .debug_str     0x0000000000062dc2       0x8c igc/md5.o
+                                      0x5e968 (size before relaxing)
+ .debug_str     0x0000000000062e4e      0xbe6 src/BMS.o
                                       0x5f6e1 (size before relaxing)
- .debug_str     0x00000000000634ac     0x423b src/DOGXL240.o
+ .debug_str     0x0000000000063a34     0x4232 src/DOGXL240.o
                                       0x62aef (size before relaxing)
- .debug_str     0x00000000000676e7      0x341 src/datafusion.o
-                                      0x624ed (size before relaxing)
- .debug_str     0x0000000000067a28      0x5d9 src/exti.o
+ .debug_str     0x0000000000067c66      0x229 src/datafusion.o
+                                      0x624e1 (size before relaxing)
+ .debug_str     0x0000000000067e8f      0x5d9 src/exti.o
                                       0x5f2d2 (size before relaxing)
- .debug_str     0x0000000000068001      0x3b5 src/gps.o
+ .debug_str     0x0000000000068468      0x3b4 src/gps.o
                                       0x5f849 (size before relaxing)
- .debug_str     0x00000000000683b6      0x2c1 src/gui.o
+ .debug_str     0x000000000006881c      0x2c1 src/gui.o
                                       0x5f727 (size before relaxing)
- .debug_str     0x0000000000068677       0xe5 src/ipc.o
+ .debug_str     0x0000000000068add       0xe5 src/ipc.o
                                       0x5e462 (size before relaxing)
- .debug_str     0x000000000006875c       0xe7 src/logging.o
+ .debug_str     0x0000000000068bc2       0xc9 src/logging.o
                                       0x5f211 (size before relaxing)
- .debug_str     0x0000000000068843      0x280 src/main.o
-                                      0x60500 (size before relaxing)
- .debug_str     0x0000000000068ac3       0x79 src/ms5611.o
+ .debug_str     0x0000000000068c8b       0xdb src/main.o
+                                      0x60512 (size before relaxing)
+ .debug_str     0x0000000000068d66       0x79 src/ms5611.o
                                       0x5eb38 (size before relaxing)
- .debug_str     0x0000000000068b3c      0x14d src/oVario_Framework.o
+ .debug_str     0x0000000000068ddf       0xc8 src/oVario_Framework.o
                                       0x5ed0b (size before relaxing)
- .debug_str     0x0000000000068c89       0xae src/sound.o
+ .debug_str     0x0000000000068ea7       0xae src/sound.o
                                       0x5f173 (size before relaxing)
- .debug_str     0x0000000000068d37        0xf src/timer.o
+ .debug_str     0x0000000000068f55        0xf src/timer.o
                                       0x5e4d3 (size before relaxing)
- .debug_str     0x0000000000068d46       0xa4 src/vario.o
+ .debug_str     0x0000000000068f64       0xa4 src/vario.o
                                       0x620ea (size before relaxing)
 
 .comment        0x0000000000000000       0x6e
@@ -9195,6 +9256,8 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .comment       0x000000000000006e       0x6f driver/i2c.o
  .comment       0x000000000000006e       0x6f driver/sdio.o
  .comment       0x000000000000006e       0x6f driver/spi.o
+ .comment       0x000000000000006e       0x6f igc/igc.o
+ .comment       0x000000000000006e       0x6f igc/md5.o
  .comment       0x000000000000006e       0x6f src/BMS.o
  .comment       0x000000000000006e       0x6f src/DOGXL240.o
  .comment       0x000000000000006e       0x6f src/datafusion.o
@@ -9210,7 +9273,7 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .comment       0x000000000000006e       0x6f src/timer.o
  .comment       0x000000000000006e       0x6f src/vario.o
 
-.debug_frame    0x0000000000000000     0x29dc
+.debug_frame    0x0000000000000000     0x2c54
  .debug_frame   0x0000000000000000       0x74 StdPeriph_Driver/src/misc.o
  .debug_frame   0x0000000000000074      0x17c StdPeriph_Driver/src/stm32f4xx_dma.o
  .debug_frame   0x00000000000001f0       0xa4 StdPeriph_Driver/src/stm32f4xx_exti.o
@@ -9222,23 +9285,25 @@ OUTPUT(OTP15_oVario.elf elf32-littlearm)
  .debug_frame   0x0000000000001068      0x1b0 driver/i2c.o
  .debug_frame   0x0000000000001218      0x62c driver/sdio.o
  .debug_frame   0x0000000000001844       0x38 driver/spi.o
- .debug_frame   0x000000000000187c      0x128 src/BMS.o
- .debug_frame   0x00000000000019a4      0x374 src/DOGXL240.o
- .debug_frame   0x0000000000001d18      0x170 src/datafusion.o
- .debug_frame   0x0000000000001e88       0xa8 src/exti.o
- .debug_frame   0x0000000000001f30      0x148 src/gps.o
- .debug_frame   0x0000000000002078      0x234 src/gui.o
- .debug_frame   0x00000000000022ac       0xac src/ipc.o
- .debug_frame   0x0000000000002358      0x10c src/logging.o
- .debug_frame   0x0000000000002464       0x28 src/main.o
- .debug_frame   0x000000000000248c       0x9c src/ms5611.o
- .debug_frame   0x0000000000002528      0x220 src/oVario_Framework.o
- .debug_frame   0x0000000000002748       0x84 src/sound.o
- .debug_frame   0x00000000000027cc       0x50 src/timer.o
- .debug_frame   0x000000000000281c       0x9c src/vario.o
- .debug_frame   0x00000000000028b8       0x20 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-errno.o)
- .debug_frame   0x00000000000028d8       0x2c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-init.o)
- .debug_frame   0x0000000000002904       0x50 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
- .debug_frame   0x0000000000002954       0x20 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-atexit.o)
- .debug_frame   0x0000000000002974       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-fini.o)
- .debug_frame   0x00000000000029a8       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__atexit.o)
+ .debug_frame   0x000000000000187c      0x1b8 igc/igc.o
+ .debug_frame   0x0000000000001a34       0xc8 igc/md5.o
+ .debug_frame   0x0000000000001afc      0x128 src/BMS.o
+ .debug_frame   0x0000000000001c24      0x374 src/DOGXL240.o
+ .debug_frame   0x0000000000001f98      0x168 src/datafusion.o
+ .debug_frame   0x0000000000002100       0xa8 src/exti.o
+ .debug_frame   0x00000000000021a8      0x148 src/gps.o
+ .debug_frame   0x00000000000022f0      0x234 src/gui.o
+ .debug_frame   0x0000000000002524       0xac src/ipc.o
+ .debug_frame   0x00000000000025d0      0x10c src/logging.o
+ .debug_frame   0x00000000000026dc       0x28 src/main.o
+ .debug_frame   0x0000000000002704       0x9c src/ms5611.o
+ .debug_frame   0x00000000000027a0      0x220 src/oVario_Framework.o
+ .debug_frame   0x00000000000029c0       0x84 src/sound.o
+ .debug_frame   0x0000000000002a44       0x50 src/timer.o
+ .debug_frame   0x0000000000002a94       0x9c src/vario.o
+ .debug_frame   0x0000000000002b30       0x20 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-errno.o)
+ .debug_frame   0x0000000000002b50       0x2c /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-init.o)
+ .debug_frame   0x0000000000002b7c       0x50 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__call_atexit.o)
+ .debug_frame   0x0000000000002bcc       0x20 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-atexit.o)
+ .debug_frame   0x0000000000002bec       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-fini.o)
+ .debug_frame   0x0000000000002c20       0x34 /Users/Sebastian/.p2/pool/plugins/fr.ac6.mcu.externaltools.arm-none.macos64_1.13.1.201703061524/tools/compiler/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv7e-m/fpu/libc.a(lib_a-__atexit.o)

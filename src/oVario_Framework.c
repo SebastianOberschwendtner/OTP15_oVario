@@ -240,11 +240,11 @@ unsigned char get_day_lct(void)
  */
 unsigned char get_month_utc(void)
 {
-	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0x1F);
+	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0xF);
 };
 unsigned char get_month_lct(void)
 {
-	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0x1F);
+	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0xF);
 };
 
 /*
