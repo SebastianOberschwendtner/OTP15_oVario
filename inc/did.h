@@ -26,5 +26,6 @@
 #define		did_FILE2		13
 #define 	did_VARIO		14
 #define		did_IGC			15
+#define 	did_ADC 		16
 
 #endif /* DID_H_ */

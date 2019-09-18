@@ -286,4 +286,15 @@ typedef struct
 	unsigned long long message_length;
 }MD5_T;
 #pragma pack(pop)
+
+
+// ADC Battery
+#pragma pack(push, 1)
+typedef struct
+{
+	float voltage;
+	float i_charge;
+}ADC_T;
+#pragma pack(pop)
+
 #endif /* VARIABLES_H_ */

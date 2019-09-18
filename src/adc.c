@@ -1,21 +1,14 @@
-//--------------------------------------------------------------
-// File     : stm32_ub_adc1_single.c
-// Datum    : 16.02.2013
-// Version  : 1.0
-// Autor    : UB
-// EMail    : mc-4u(@)t-online.de
-// Web      : www.mikrocontroller-4u.de
-// CPU      : STM32F4
-// IDE      : CooCox CoIDE 1.7.0
-// Module   : GPIO,ADC
-// Funktion : AD-Wandler (ADC1 im Single-Conversion-Mode)
-//--------------------------------------------------------------
-
 
 //--------------------------------------------------------------
 // Includes
 //--------------------------------------------------------------
 #include <adc.h>
+#include "Variables.h"
+#include "ipc.h"
+
+
+ADC_T* adc_data;
+
 
 
 //--------------------------------------------------------------
@@ -23,9 +16,9 @@
 // Reihenfolge wie bei ADC1s_NAME_t
 //--------------------------------------------------------------
 ADC1s_t ADC1s[] = {
-  //NAME  ,PORT , PIN      , CLOCK              , Kanal        , Mittelwerte
-  {ADC_PA6,GPIOA,GPIO_Pin_6,RCC_AHB1Periph_GPIOA,ADC_Channel_6},   // ADC an PA6 = ADC1_IN6
-  {ADC_PA7,GPIOA,GPIO_Pin_7,RCC_AHB1Periph_GPIOA,ADC_Channel_7}, // ADC an PA7 = ADC1_IN7
+  //NAME  ,PORT , PIN      , CLOCK              , Kanal
+  {ADC_PA6,GPIOA,GPIO_Pin_6,RCC_AHB1Periph_GPIOA,ADC_Channel_6},   	// ADC an PA6 = ADC1_IN6
+  {ADC_PA7,GPIOA,GPIO_Pin_7,RCC_AHB1Periph_GPIOA,ADC_Channel_7}, 	// ADC an PA7 = ADC1_IN7
 };
 
 
@@ -44,6 +37,8 @@ void UB_ADC1_SINGLE_Init(void)
 {
   P_ADC1s_InitIO();
   P_ADC1s_InitADC();
+
+  adc_data = ipc_memory_register(8, did_ADC);
 }
 
 
@@ -56,6 +51,9 @@ void adc_task()
 	U_Bat 	= ((float)UB_ADC1_SINGLE_Read(ADC_PA7)) / 4095 * 3.3 * 2;		// Measure battery voltage [V]
 	U_Prog 	= ((float)UB_ADC1_SINGLE_Read(ADC_PA6)) / 4095 * 3.3;			// Measure prog voltage [V]
 	I_Bat   = U_Prog / 5000 * 1000;
+
+	adc_data->voltage 	= U_Bat;
+	adc_data->i_charge 	= I_Bat;
 }
 
 

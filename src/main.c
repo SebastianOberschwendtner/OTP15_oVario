@@ -31,6 +31,8 @@
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
 
+ADC_T* ipc_main_adc_data;
+
 int main(void)
 {
 
@@ -68,6 +70,9 @@ int main(void)
 		set_led_red(ON);
 
 
+	ipc_main_adc_data = ipc_memory_get(did_ADC);
+
+
 	while(1)
 	{
 		if(TICK_PASSED)
@@ -79,23 +84,42 @@ int main(void)
 			vario_task();
 			adc_task();
 			//gui_task();
-			//gps_task();
 
-			//BMS_set_charge_current(800);
-			//BMS_task();
-			//log_exe_txt();
 
 
 
 			l_count_tick++;
 			if(l_count_tick == 5)
 			{
-				set_led_green(ON);
+				if(ipc_main_adc_data->voltage > 4.0)
+				{
+					set_led_green(ON);
+					set_led_red(OFF);
+				}
+				else if(ipc_main_adc_data->voltage > 3.5)
+				{
+					set_led_green(ON);
+					set_led_red(ON);
+				}
+				else
+				{
+					set_led_red(ON);
+					set_led_green(OFF);
+				}
+
 			}
 			else if (l_count_tick == 10)
 			{
-				set_led_green(OFF);
-				//igc_task();
+				if(ipc_main_adc_data->i_charge < 0.1)
+				{
+					set_led_green(OFF);
+					set_led_red(OFF);
+				}
+				else
+				{
+					;
+				}
+
 				l_count_tick = 0;
 			}
 		}
