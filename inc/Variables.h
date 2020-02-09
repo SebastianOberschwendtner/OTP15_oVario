@@ -59,6 +59,7 @@
 #define data_info_keypad_1			10
 #define data_info_keypad_2			11
 #define data_info_keypad_3			12
+#define data_info_msg_with_payload	13
 
 
 // ******* TYPEDEF *******

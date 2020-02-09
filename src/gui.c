@@ -18,6 +18,7 @@
 typedef struct
 {
 	uint8_t 	message;
+	uint8_t		msg_payload;
 	uint16_t	lifetime;
 }InfoBox_T;
 
@@ -946,32 +947,39 @@ void fkt_runtime_errors(void)
 		switch(error_var)
 		{
 		case err_no_memory_left:
-			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
+			InfoBox.msg_payload = err_no_memory_left;		//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_queue_overrun:
-			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
+			InfoBox.msg_payload = err_queue_overrun;		//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_bms_fault:
-			InfoBox.message = data_info_bms_fault;		//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_bms_fault;			//Message with BMS error
+			InfoBox.msg_payload = err_bms_fault;			//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_coloumb_fault:
-			InfoBox.message = data_info_coloumb_fault;	//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_coloumb_fault;		//Message with Battery Gauge error
+			InfoBox.msg_payload = err_coloumb_fault;		//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_baro_fault:
-			InfoBox.message = data_info_baro_fault;		//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_baro_fault;			//Message with Baro fault
+			InfoBox.msg_payload = err_baro_fault;			//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_sd_fault:
-			InfoBox.message = data_info_sd_fault;		//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_sd_fault;			//Message with SD fault
+			InfoBox.msg_payload = err_sd_fault;				//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		default:
-			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
+			InfoBox.msg_payload = 99;						//Define message payload, in this case an error number which is not assigned yet
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		}
 		error_var = 0;
@@ -1051,9 +1059,12 @@ void fkt_infobox(void)
 			lcd_set_fontsize(2);
 			lcd_string2buffer("Keypad 3");
 			break;
-
-
-
+		case data_info_msg_with_payload:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Error:");
+			lcd_num2buffer(InfoBox.msg_payload, 3);
+			break;
 		default:
 			break;
 		}
