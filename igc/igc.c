@@ -95,7 +95,7 @@ void igc_task(void)
 				//Send infobox
 				IgcCmd.did 			= did_IGC;
 				IgcCmd.cmd			= cmd_gui_set_std_message;
-				IgcCmd.data 		= data_info_error;
+				IgcCmd.data 		= data_info_igc_start_error;
 				IgcCmd.timestamp 	= TIM5->CNT;
 				ipc_queue_push(&IgcCmd, 10, did_GUI);
 			}

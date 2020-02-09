@@ -290,10 +290,6 @@ void fkt_Vario (void)
 				break;
 
 			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
@@ -587,15 +583,11 @@ void fkt_GPS(void)
 				break;
 			case data_KEYPAD_pad_DOWN:
 				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
+				GUI_cmd.cmd 		= cmd_igc_stop_logging;
 				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 				break;
 			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 				break;
 			case data_KEYPAD_pad_RIGHT:
 				break;
@@ -1064,6 +1056,11 @@ void fkt_infobox(void)
 			lcd_set_fontsize(2);
 			lcd_string2buffer("Error:");
 			lcd_num2buffer(InfoBox.msg_payload, 3);
+			break;
+		case data_info_igc_start_error:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("IGC Start Error");
 			break;
 		default:
 			break;

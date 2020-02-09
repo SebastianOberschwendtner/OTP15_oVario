@@ -307,11 +307,11 @@ void gps_task ()
 		}
 	}
 
-	gps_SetSysDate();
 	if(p_GPS_data->fix) // if fix -> set Sys Date and timezone
 	{
 		set_timezone();
 		gps_SetSysTime();
+		gps_SetSysDate();
 	}
 
 	p_GPS_data->Rd_Idx 		= (float)Rd_Idx;
