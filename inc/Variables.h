@@ -13,7 +13,8 @@
 
 
 // ******* QUEUE MESSAGES *******
-// KEYPAD
+// KEYPAD, Do not change the number assginment since it
+// is used in the gui to index and array with corresponding key function
 #define data_KEYPAD_pad_LEFT	0
 #define data_KEYPAD_pad_DOWN	1
 #define data_KEYPAD_pad_UP		2
