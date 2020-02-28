@@ -10,6 +10,7 @@
 #include "ipc.h"
 
 BMS_T* pBMS;
+unsigned char bat_health = 100;
 
 extern unsigned long error_var;
 
@@ -19,6 +20,14 @@ extern unsigned long error_var;
  */
 void init_BMS(void)
 {
+	/*
+	 *********  IPC Stuff ************
+	 */
+	//Register memory
+	pBMS = ipc_memory_register(49,did_BMS);
+	//Register command queue
+	ipc_register_queue(200, did_BMS);
+
 	/*
 	 * Set BMS specific IOs
 	 * PA0	Output	PUSH_PULL	EN_OTG
@@ -75,10 +84,12 @@ void init_BMS(void)
 	//Check communication status
 	if(i2c_get_error())
 	{
-		pBMS->com_err = (unsigned char)0xFFFE;
-		error_var |= err_coloumb_fault;
+		pBMS->com_err = (unsigned char)0xF0;
+		pBMS->charging_state &= ~STATUS_GAUGE_ACTIVE; // deactivate the gauge, when it is not present at startup
 		i2c_reset_error();
 	}
+	else
+		pBMS->charging_state |= STATUS_GAUGE_ACTIVE;
 
 	//wait for flash write to finish
 	wait_systick(1);
@@ -99,7 +110,7 @@ void init_BMS(void)
 	/*
 	 * Set Charge Option 1 register
 	 */
-	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_1_addr,0);
+	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_1_addr,AUTO_WAKEUP_EN);
 	/*
 	 * Set Charge Option 2 register
 	 */
@@ -140,9 +151,6 @@ void init_BMS(void)
 	 */
 	i2c_send_int_register_LSB(i2c_addr_BMS,INPUT_LIMIT_HOST_addr,((MAX_CURRENT/50)<<8));
 
-	//Register memory
-	pBMS = ipc_memory_register(49,did_BMS);
-
 	//Set charging current
 	pBMS->max_charge_current = 800;
 
@@ -153,12 +161,12 @@ void init_BMS(void)
 	//Check communication status
 	if(i2c_get_error())
 	{
-		pBMS->com_err = (unsigned char)0xFFFF;
-		error_var |= err_bms_fault;
+		pBMS->com_err = (unsigned char)0x0F;
+		pBMS->charging_state &= ~STATUS_BMS_ACTIVE; // deactivate the BMS when it is not responding at startup
 		i2c_reset_error();
 	}
-
-	ipc_register_queue(200, did_BMS);
+	else
+		pBMS->charging_state |= (STATUS_BMS_ACTIVE | STATUS_BAT_PRESENT);
 };
 
 /*
@@ -170,6 +178,11 @@ void BMS_task(void)
 	BMS_get_adc();
 	BMS_gauge_get_adc();
 	BMS_get_status();
+	BMS_check_battery();
+
+	// set charge current when input source is present
+	if (pBMS->charging_state & STATUS_INPUT_PRESENT)
+		BMS_set_charge_current(800);
 
 	// Handle Commands
 	uint8_t ipc_no_bytes = ipc_get_queue_bytes(did_BMS);
@@ -230,8 +243,8 @@ void BMS_SolarPanelController(void)
 
 void BMS_adc_start(void)
 {
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when BMS is active and responding
+	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
 	{
 		//Reset i2c error
 		i2c_reset_error();
@@ -244,12 +257,14 @@ void BMS_adc_start(void)
 
 		//check communication error
 		pBMS->com_err += i2c_get_error();
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_BMS)
+		{
+			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
+			error_var |= err_bms_fault;
+			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
+		}
 	}
-	else
-	{
-		error_var |= err_bms_fault;
-	}
-
 };
 
 /*
@@ -260,8 +275,8 @@ void BMS_get_adc(void)
 {
 	unsigned int i_temp = 0;
 
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when BMS is active and responding
+	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
 	{
 		//Reset i2c error
 		i2c_reset_error();
@@ -321,10 +336,13 @@ void BMS_get_adc(void)
 		}
 		//check communication error
 		pBMS->com_err += i2c_get_error();
-	}
-	else
-	{
-		error_var |= err_bms_fault;
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_BMS)
+		{
+			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
+			error_var |= err_bms_fault;
+			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
+		}
 	}
 };
 
@@ -334,8 +352,8 @@ void BMS_get_adc(void)
 //TODO can the reset of the options bits be optimized?
 void BMS_get_status(void)
 {
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when BMS is active and responding
+	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
 	{
 		i2c_reset_error();
 		unsigned i_temp = i2c_read_int_LSB(i2c_addr_BMS,CHARGER_STATUS_addr);
@@ -376,10 +394,13 @@ void BMS_get_status(void)
 
 		//check communication error
 		pBMS->com_err += i2c_get_error();
-	}
-	else
-	{
-		error_var |= err_bms_fault;
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_BMS)
+		{
+			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
+			error_var |= err_bms_fault;
+			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
+		}
 	}
 };
 
@@ -389,11 +410,10 @@ void BMS_get_status(void)
  */
 void BMS_charge_start(void)
 {
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when BMS is active and responding and when battery is present
+		if((pBMS->charging_state & STATUS_BMS_ACTIVE)&&(pBMS->charging_state & STATUS_BAT_PRESENT))
 	{
 		i2c_reset_error();
-
 
 		//Check input source and if in OTG mode
 		if((pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
@@ -415,13 +435,57 @@ void BMS_charge_start(void)
 				i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((pBMS->max_charge_current/64)<<6));
 			}
 		}
-		pBMS += i2c_get_error();
-	}
-	else
-	{
-		error_var |= err_bms_fault;
+		//check communication error
+		pBMS->com_err += i2c_get_error();
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_BMS)
+		{
+			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
+			error_var |= err_bms_fault;
+			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
+		}
 	}
 };
+/*
+ * check whether battery is present or not
+ */
+void BMS_check_battery(void)
+{
+
+	// When already in charging mode, check whether a battery is present via the actual chargin current
+	if (pBMS->charging_state & STATUS_FAST_CHARGE)
+	{
+		// When the charging current is bigger than 10 mA the battery should be present, otherwise decrease the
+		// battery health
+		if((pBMS->current < 10) && (pBMS->current > -10))
+			bat_health--;
+	}
+	// When no battery should be present, but the Battery Gauge can measure a voltage, reset the battery presence
+	// When not in fast charge mode. In charge mode the battery voltage is present regardless whether there is
+	// a battery present.
+	else
+	{
+		if((pBMS->charging_state & STATUS_GAUGE_ACTIVE)
+				&&(pBMS->battery_voltage>2880)
+				&&!(pBMS->charging_state & STATUS_BAT_PRESENT))
+			bat_health++;
+	}
+
+	// check the bat health whether the battery is present or not. The variable is used as a counter, because the
+	// voltage response of the battery removal takes some time.
+	if(bat_health > 115)
+	{
+		pBMS->charging_state |= STATUS_BAT_PRESENT;
+		bat_health = 100;
+	}
+	else if (bat_health < 98)
+	{
+		// when the charging current is to small, disable the charging
+		BMS_set_charge_current(0);
+		pBMS->charging_state &= ~STATUS_BAT_PRESENT;
+		bat_health = 100;
+	}
+}
 
 /*
  * Set battery charging current.
@@ -429,8 +493,8 @@ void BMS_charge_start(void)
  */
 void BMS_set_charge_current(unsigned  int i_current)
 {
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when BMS is active and responding and when battery is present
+	if((pBMS->charging_state & STATUS_BMS_ACTIVE)&&(pBMS->charging_state & STATUS_BAT_PRESENT))
 	{
 		i2c_reset_error();
 
@@ -448,11 +512,16 @@ void BMS_set_charge_current(unsigned  int i_current)
 			i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((i_current/64)<<6));
 			pBMS->max_charge_current = i_current;
 		}
-		pBMS += i2c_get_error();
-	}
-	else
-	{
-		error_var |= err_bms_fault;
+
+		//check communication error
+		pBMS->com_err += i2c_get_error();
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_BMS)
+		{
+			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
+			error_var |= err_bms_fault;
+			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
+		}
 	}
 };
 
@@ -462,8 +531,8 @@ void BMS_set_charge_current(unsigned  int i_current)
 //TODO Implement an error if OTG is enabled during charging
 void BMS_set_otg(unsigned char ch_state)
 {
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when BMS is active and responding
+	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
 	{
 		i2c_reset_error();
 
@@ -509,11 +578,15 @@ void BMS_set_otg(unsigned char ch_state)
 			GPIOA->BSRRH |= GPIO_BSRR_BR_0;										//Set EN_OTG low
 			i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_3_addr,0);
 		}
+		//check communication error
 		pBMS->com_err += i2c_get_error();
-	}
-	else
-	{
-		error_var |= err_bms_fault;
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_BMS)
+		{
+			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
+			error_var |= err_bms_fault;
+			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
+		}
 	}
 };
 
@@ -523,9 +596,8 @@ void BMS_set_otg(unsigned char ch_state)
 //TODO discuss whether signed int for current should be used, problem: i2c data register is unsigned
 void BMS_gauge_get_adc(void)
 {
-
-	//If no communication error occurred
-	if(!(pBMS->com_err & SENSOR_ERROR))
+	//Only when GAUGE is active and responding and when battery is present
+	if((pBMS->charging_state & STATUS_GAUGE_ACTIVE)&&(pBMS->charging_state & STATUS_BAT_PRESENT))
 	{
 		i2c_reset_error();
 
@@ -547,10 +619,14 @@ void BMS_gauge_get_adc(void)
 		else
 			pBMS->discharged_capacity = i_temp;
 
-		pBMS->com_err += i2c_get_error();
-	}
-	else
-	{
-		error_var |= err_bms_fault;
+		//check communication error
+		pBMS->com_err += (i2c_get_error()<<4);
+		//when to many communication errors occur, set the global error variable and disable the sensor.
+		if(pBMS->com_err & SENSOR_ERROR_GAUGE)
+		{
+			pBMS->com_err &= 0b00001111; //Reset the communication error for the gauge
+			error_var |= err_coloumb_fault; //Set the global error variable
+			pBMS->charging_state &= ~(STATUS_GAUGE_ACTIVE); //Set the sensor as inactive
+		}
 	}
 };

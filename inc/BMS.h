@@ -167,6 +167,9 @@
 #define STATUS_ADC_REQUESTED		(1<<11)
 #define STATUS_ADC_FINISHED			(1<<10)
 #define STATUS_CHRG_OK				(1<<9)	//Status of the CHRG_OK pin
+#define STATUS_BMS_ACTIVE			(1<<8)  //The BMS sensor is healthy and responding
+#define STATUS_GAUGE_ACTIVE         (1<<7)	//The battery gauge (coloumb counter) is healthy and responding
+#define STATUS_BAT_PRESENT			(1<<6)  //Whether a battery is present or not, this is detected via the charge current
 
 //********************BQ34110*************************************************************
 // CONFIG_A
@@ -200,6 +203,7 @@ void 			BMS_adc_start			(void);
 void 			BMS_get_adc				(void);
 void 			BMS_get_status			(void);
 void 			BMS_charge_start		(void);
+void 			BMS_check_battery		(void);
 void 			BMS_set_charge_current	(unsigned  int i_current);
 void		 	BMS_set_otg				(unsigned char ch_state);
 void 			BMS_gauge_get_adc		(void);

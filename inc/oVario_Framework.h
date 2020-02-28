@@ -11,6 +11,9 @@
 #include "stm32f4xx.h"
 #include "did.h"
 #include "ipc.h"
+#include "sdio.h"
+#include "igc.h"
+#include "BMS.h"
 
 
 /*
@@ -63,6 +66,15 @@
 #define OFF				0
 #define TOGGLE			3
 
+//sys state defines
+#define INITIATE		1
+#define RUN				2
+#define SHUTDOWN		3
+#define FILECLOSING		4
+#define SAVESOC			5
+#define HALTSYSTEM		6
+#define NOSTATES		7
+
 //Positions for date and time bits
 #define SYS_DATE_YEAR_pos		9
 #define SYS_DATE_MONTH_pos		5
@@ -72,12 +84,15 @@
 #define SYS_TIME_MINUTE_pos		6
 #define SYS_TIME_SECONDS_pos	0
 
+//defines for pin access
+#define SHUTDOWN_SENSE			(GPIOC->IDR & (GPIO_IDR_IDR_7))
 
 
+void system_task(void);
 void init_clock(void);
 void gpio_en(unsigned char ch_port);
 void init_systick_ms(unsigned long l_ticktime);
-void init_led(void);
+void init_gpio(void);
 void set_led_green(unsigned char ch_state);
 void set_led_red(unsigned char ch_state);
 void wait_ms(unsigned long l_time);

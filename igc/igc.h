@@ -18,9 +18,9 @@
 //*********** Defines **************
 #define IGC_MANUF_ID		"XCS"		//The igc code has to mimic the XCSOAR header!
 #define IGC_LOGGER_ID		"AAA"		//The unique id of the logger for the A-record
-#define IGC_PILOT_NAME		"He du"
+#define IGC_PILOT_NAME		"Sebastian Oberschwendtner"
 #define IGC_GLIDER_TYPE		"Paraglider"
-#define IGC_GLIDER_ID		"VQUADRAT"
+#define IGC_GLIDER_ID		"none"
 #define IGC_FIRMWARE_VER	"V1.0"
 #define IGC_HARDWARE_VER	"REVA"
 #define IGC_FR_TYPE			"XCSOAR,XCSOAR Android 6.5 Mar  8 2013"	//Important to mimic XCSOAR header!
@@ -54,6 +54,7 @@ void igc_FRecord(void);
 void igc_BRecord(void);
 void igc_sign(void);
 void igc_close(void);
+unsigned char igc_get_state(void);
 //void igc_PlotLine(void);
 
 #endif /* IGC_H_ */

@@ -106,7 +106,7 @@ void gui_task (void)
 	fkt_eval_keys();
 
 	// display the key functions
-	fkt_display_key_functions(Main_Keys.show_functions);
+	fkt_display_key_functions();
 
 	// Check for runtime errors
 	fkt_runtime_errors();
@@ -365,7 +365,7 @@ void fkt_BMS(void)
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Temperature:");
 	lcd_set_cursor(c1, y);
-	lcd_num2buffer(p_ipc_gui_bms_data->temperature,4);
+	lcd_num2buffer((p_ipc_gui_bms_data->charging_state | STATUS_ADC_REQUESTED | STATUS_ADC_FINISHED),6);
 	lcd_string2buffer(" C");
 }
 
@@ -656,7 +656,7 @@ void fkt_assign_key_function(void)
 	case Gui_GPS:
 		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
 		Main_Keys.function[data_KEYPAD_pad_RIGHT]	= gui_cmd_startmenu;
-		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= gui_cmd_startigc;
 		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= gui_cmd_stopigc;
 		break;
 	case Gui_MS5611:
@@ -761,6 +761,13 @@ void fkt_set_ipc_command(uint8_t command_number)
 		else
 			Main_Keys.show_functions = 1;
 		break;
+		// Start another igc log
+	case gui_cmd_startigc:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_igc_start_logging;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+		break;
 	default:
 		break;
 	}
@@ -800,6 +807,9 @@ char* fkt_get_cmd_string(uint8_t command_number)
 	case gui_cmd_togglebottombar:
 		return "Hide Key";
 		break;
+	case gui_cmd_startigc:
+		return "StartIGC";
+		break;
 	default:
 		return "        ";
 		break;
@@ -809,9 +819,9 @@ char* fkt_get_cmd_string(uint8_t command_number)
 /*
  * Display the current key functions at the bottom of the screen
  */
-void fkt_display_key_functions(uint8_t visible)
+void fkt_display_key_functions(void)
 {
-	if(visible)
+	if(Main_Keys.show_functions)
 	{
 		//make blank space for functions bar
 		lcd_set_inverted(1);
@@ -890,7 +900,7 @@ void fkt_runtime_errors(void)
 			break;
 		default:
 			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
-			InfoBox.msg_payload = 99;						//Define message payload, in this case an error number which is not assigned yet
+			InfoBox.msg_payload = (uint8_t) error_var;						//Define message payload, in this case an error number which is not assigned yet
 			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		}
@@ -980,7 +990,22 @@ void fkt_infobox(void)
 		case data_info_igc_start_error:
 			lcd_set_cursor(40, 73);
 			lcd_set_fontsize(2);
-			lcd_string2buffer("IGC Start Error");
+			lcd_string2buffer("IGC Start Err");
+			break;
+		case data_info_shutting_down:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Shutting Down");
+			break;
+		case data_info_stopping_log:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Stopping Log");
+			break;
+		case data_info_no_gps_fix:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("No GPS Fix!");
 			break;
 		default:
 			break;
@@ -1192,14 +1217,14 @@ void gui_status_bar(void)
 	 */
 	lcd_set_cursor(196, 8);
 	//if not charging
-	if(p_ipc_gui_bms_data->charging_state & (1<<14))
+	if(p_ipc_gui_bms_data->charging_state & STATUS_FAST_CHARGE)
 	{
 		lcd_bat2buffer(ch_status_counter/10);
 		ch_status_counter++;
-		if(ch_status_counter >= 50)
+		if(ch_status_counter >= 40)
 			ch_status_counter = 0;
 	}
-	else
+	else if(p_ipc_gui_bms_data->charging_state & STATUS_BAT_PRESENT)
 	{
 		if(p_ipc_gui_bms_data->battery_voltage >= 4000)
 			lcd_bat2buffer(3);
@@ -1210,6 +1235,8 @@ void gui_status_bar(void)
 		else
 			lcd_bat2buffer(0);
 	}
+	else
+		lcd_bat2buffer(4);
 
 	/*
 	 * Display Clock

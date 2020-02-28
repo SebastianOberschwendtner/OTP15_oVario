@@ -34,7 +34,7 @@ int main(void)
 
 	init_clock();
 	init_systick_ms(SYSTICK);
-	init_led();
+	init_gpio();
 
 	set_led_red(ON);
 	init_lcd();
@@ -63,14 +63,13 @@ int main(void)
 		if(TICK_PASSED)
 		{
 			i2c_reset_error();
+			system_task();
 			sound_task();
 			ms5611_task();
 			datafusion_task();
 			vario_task();
 			gui_task();
 			gps_task();
-
-			BMS_set_charge_current(800);
 			BMS_task();
 
 			l_count_tick++;

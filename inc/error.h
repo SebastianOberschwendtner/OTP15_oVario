@@ -18,7 +18,9 @@
 #define err_sd_fault		(1<<5)
 
 //Bit defines
-#define SENSOR_ERROR		(1<<7)
+#define SENSOR_ERROR_BMS		(1<<3)
+#define SENSOR_ERROR_GAUGE		(1<<7)
+#define SENSOR_ERROR			(1<<7)
 
 
 

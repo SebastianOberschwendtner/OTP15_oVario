@@ -8,7 +8,99 @@
 #include "oVario_Framework.h"
 #include "Variables.h"
 
+SDIO_T* p_ipc_sys_sd_data;
+BMS_T* 	p_ipc_sys_bms_data;
+
 SYS_T* sys;
+T_command SysCmd;
+
+//Important!: When there is no softbutton installed, initialize the sys_state with NOSTATES
+uint8_t sys_state = INITIATE;
+uint8_t count = 0;
+
+/*
+ * System task, which monitors whether the system should be shutdown
+ */
+void system_task(void)
+{
+	// perform action according to current state of system
+	switch(sys_state)
+	{
+	// do not use state machine
+	case NOSTATES:
+		break;
+
+	// Initiate the sys state machine
+	case INITIATE:
+		// get the ipc pointer addresses for the needed data
+		p_ipc_sys_sd_data		= ipc_memory_get(did_SDIO);
+		p_ipc_sys_bms_data 		= ipc_memory_get(did_BMS);
+		sys_state = RUN;
+		break;
+
+	// Normal Run state
+	case RUN:
+		GPIOC->BSRRL =GPIO_BSRR_BS_6;
+		// When power switch is off, initiate shutdown procedure
+		// Unless there is input power present or no battery is present
+		if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
+				sys_state = SHUTDOWN;
+		break;
+
+	// When the power switch was switched
+	case SHUTDOWN:
+		if(!SHUTDOWN_SENSE)	// Check whether the power switch is still in the off position
+		{
+				// When no log is going on, but a sd-card is inserted, eject the card
+				SysCmd.did 		= did_SYS;
+				SysCmd.cmd 		= cmd_igc_eject_card;
+				SysCmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&SysCmd, 10, did_IGC);
+
+				sys_state = FILECLOSING;
+		}
+		else // When the power switch just bounced, go back to run state
+			sys_state = RUN;
+		break;
+
+	// Wait until the sd card is ejected
+	case FILECLOSING:
+		// Check whether there is no sd card active
+		if(!(p_ipc_sys_sd_data->state & SD_CARD_DETECTED))
+			sys_state = SAVESOC;
+		break;
+
+	// Save current state of charge of the battery
+	case SAVESOC:
+		//#TODO Actually save the SOC of the battery
+		count++;
+		if(count == 10)
+		{
+			count = 0;
+			sys_state = HALTSYSTEM;
+			//Send infobox
+			SysCmd.did 			= did_SYS;
+			SysCmd.cmd			= cmd_gui_set_std_message;
+			SysCmd.data 		= data_info_shutting_down;
+			SysCmd.timestamp 	= TIM5->CNT;
+			ipc_queue_push(&SysCmd, 10, did_GUI);
+		}
+		break;
+
+	// Halt the system and cut the power
+	case HALTSYSTEM:
+		count++;
+		if(count == 10){
+		// Shutdown power and set PC6 low
+		GPIOC->BSRRH =GPIO_BSRR_BS_6;
+		}
+		break;
+
+	default:
+		sys_state = NOSTATES;
+		break;
+	}
+};
 
 /*
  * Init Clock
@@ -89,19 +181,33 @@ void init_systick_ms(unsigned long l_ticktime)
 	// Systick from AHB
 	SysTick->CTRL = SysTick_CTRL_ENABLE_Msk;
 }
+
 /*
- * Init LED ports
- * PB1: OUT LED_RED
- * PB0: OUT LED_GREEN
+ * Init system GPIO ports and pins
+ * PB1: OUT Push-Pull	LED_RED
+ * PB0: OUT Push-Pull	LED_GREEN
+ * PC6: OUT	Push-Pull	SHUTDOWN_OUT
+ * PC7: In	Hi-Z		SHUTDOWN_SENSE
  */
-void init_led(void)
+void init_gpio(void)
 {
 	//Enable clock
 	gpio_en(GPIO_B);
+	gpio_en(GPIO_C);
 
 	//Set output
+	// PB0 and PB1
 	GPIOB->MODER |= GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0;
-}
+	// PC6 and PC7
+	GPIOC->MODER |= GPIO_MODER_MODER6_0;
+
+	//Set Pin configuration
+	//GPIOC->OTYPER |= GPIO_OTYPER_OT_6;
+
+	//Set SHUTDOWN_OUT to high
+	GPIOC->BSRRL = GPIO_BSRR_BS_6;
+};
+
 /*
  * Set green LED
  */
@@ -129,7 +235,7 @@ void set_led_red(unsigned char ch_state)
 /*
  * Wait for a certain time in ms
  * The function counts up to a specific value to reach the desired wait time.
- * The coutn value is calculated using the system cock speed F_CPU.
+ * The count value is calculated using the system clock speed F_CPU.
  */
 void wait_ms(unsigned long l_time)
 {

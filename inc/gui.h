@@ -41,7 +41,7 @@ enum states
 };
 #define num_states 8
 
-//********commands which can be set from the gui******
+//********commands which can be sent from the gui******
 #define gui_cmd_nextmenu		1
 #define gui_cmd_startmenu		2
 #define gui_cmd_stopigc			3
@@ -49,6 +49,7 @@ enum states
 #define gui_cmd_otgoff			5
 #define gui_cmd_togglesinktone	6
 #define gui_cmd_togglebottombar 7
+#define gui_cmd_startigc		8
 
 
 // Functions
@@ -68,7 +69,7 @@ void fkt_assign_key_function	(void);
 void fkt_eval_keys				(void);
 void fkt_set_ipc_command		(uint8_t command_number);
 char* fkt_get_cmd_string		(uint8_t command_number);
-void fkt_display_key_functions	(uint8_t visible);
+void fkt_display_key_functions	(void);
 void fkt_runtime_errors			(void);
 void fkt_infobox				(void);
 void gui_bootlogo				(void);

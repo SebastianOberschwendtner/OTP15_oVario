@@ -13,8 +13,8 @@
 
 
 // ******* QUEUE MESSAGES *******
-// KEYPAD, Do not change the number assginment since it
-// is used in the gui to index and array with corresponding key function
+// KEYPAD, Do not change the number assignment since it
+// is used in the gui to index the array with corresponding key function
 #define data_KEYPAD_pad_LEFT	0
 #define data_KEYPAD_pad_DOWN	1
 #define data_KEYPAD_pad_UP		2
@@ -42,6 +42,8 @@
 
 //IGC Logging
 #define cmd_igc_stop_logging		1
+#define cmd_igc_eject_card			2
+#define cmd_igc_start_logging		3
 
 //GUI
 #define cmd_gui_eval_keypad			1
@@ -62,6 +64,9 @@
 #define data_info_keypad_3			12
 #define data_info_msg_with_payload	13
 #define data_info_igc_start_error	14
+#define data_info_shutting_down		15
+#define data_info_stopping_log		16
+#define data_info_no_gps_fix		17
 
 
 // ******* TYPEDEF *******

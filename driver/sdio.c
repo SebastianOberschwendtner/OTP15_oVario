@@ -262,10 +262,14 @@ void sdio_select_card(void)
  */
 void sdio_set_inactive(void)
 {
-	//got to inactive state
-	sdio_send_cmd(CMD15,(SD->RCA<<16)); 	//Send command
-	//Delete flags for seleted card
-	SD->state &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
+	// Only eject card, when card is selected and detected
+	if(SD->state & SD_CARD_DETECTED)
+	{
+		//got to inactive state
+		sdio_send_cmd(CMD15,(SD->RCA<<16)); 	//Send command
+		//Delete flags for seleted card
+		SD->state &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
+	}
 }
 /*
  * Read block data from card at specific block address. Data is stored in buffer specified at function call.
