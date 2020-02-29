@@ -119,6 +119,37 @@ void i2c_send_char(unsigned char ch_address, unsigned char ch_data)
 };
 
 /*
+ * send char value to register
+ */
+
+void i2c_send_char_register(unsigned char ch_address, unsigned char ch_register, unsigned char ch_data)
+{
+	//Only if no error occured
+	if(!ch_i2c_error)
+	{
+		WAIT_FOR(I2C1->SR2 & I2C_SR2_BUSY,TIMEOUT);
+
+		I2C1->CR1 |= I2C_CR1_START;  					// Start generation
+		WAIT_FOR(!(I2C1->SR1 & I2C_SR1_SB),TIMEOUT);	// Wait for start condition
+
+		I2C1->DR = ch_address;							// Write Adress to register
+		WAIT_FOR(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL)),TIMEOUT); // Adress sent and Master Mode
+
+		//transmit register address
+		I2C1->DR = ch_register;							// Write Data to register
+		WAIT_FOR(!(I2C1->SR1 & I2C_SR1_TXE),TIMEOUT);	// Data register empty
+		WAIT_FOR(!(I2C1->SR2 & I2C_SR2_MSL),TIMEOUT);	// Interface in Master Mode
+
+		//transmit byte
+		I2C1->DR = ch_data;								// Write Data to register
+		WAIT_FOR(!(I2C1->SR1 & I2C_SR1_TXE),TIMEOUT);	// Data register empty
+		WAIT_FOR(!(I2C1->SR2 & I2C_SR2_MSL),TIMEOUT);	// Interface in Master Mode
+
+		I2C1->CR1 |= I2C_CR1_STOP;						// Stop generation
+	}
+};
+
+/*
  * send int
  */
 
