@@ -35,12 +35,21 @@ void system_task(void)
 		// get the ipc pointer addresses for the needed data
 		p_ipc_sys_sd_data		= ipc_memory_get(did_SDIO);
 		p_ipc_sys_bms_data 		= ipc_memory_get(did_BMS);
+
+		// to prevent unwanted behaviour engage the watchdog
+		sys_watchdog(ON);
+
+		// goto run state
 		sys_state = RUN;
 		break;
 
 	// Normal Run state
 	case RUN:
-		GPIOC->BSRRL =GPIO_BSRR_BS_6;
+		// Pet the watchdog
+		sys_watchdog(PET);
+
+		// Keep the system on
+		GPIOC->BSRRL = GPIO_BSRR_BS_6;
 		// When power switch is off, initiate shutdown procedure
 		// Unless there is input power present or no battery is present
 		if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
@@ -49,6 +58,9 @@ void system_task(void)
 
 	// When the power switch was switched
 	case SHUTDOWN:
+		// Pet the watchdog
+		sys_watchdog(PET);
+
 		if(!SHUTDOWN_SENSE)	// Check whether the power switch is still in the off position
 		{
 				// When no log is going on, but a sd-card is inserted, eject the card
@@ -65,6 +77,9 @@ void system_task(void)
 
 	// Wait until the sd card is ejected
 	case FILECLOSING:
+		// Pet the watchdog
+		sys_watchdog(PET);
+
 		// Check whether there is no sd card active
 		if(!(p_ipc_sys_sd_data->state & SD_CARD_DETECTED))
 			sys_state = SAVESOC;
@@ -72,6 +87,9 @@ void system_task(void)
 
 	// Save current state of charge of the battery
 	case SAVESOC:
+		// Pet the watchdog
+		sys_watchdog(PET);
+
 		//#TODO Actually save the SOC of the battery
 		count++;
 		if(count == 10)
@@ -89,6 +107,9 @@ void system_task(void)
 
 	// Halt the system and cut the power
 	case HALTSYSTEM:
+		// Pet the watchdog
+		sys_watchdog(PET);
+
 		count++;
 		if(count == 10){
 		// Shutdown power and set PC6 low
@@ -139,6 +160,11 @@ void init_clock(void)
 	 * RTC:	   		 1 MHz 25  (RTCPRE)
 	 */
 	RCC->CFGR |= RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV4 | (25<<16);
+
+	/*
+	 * Activate clock (LSI) for independent watchdog
+	 */
+	RCC->CSR |= RCC_CSR_LSION;
 
 	//Activate FPU
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
@@ -452,3 +478,29 @@ unsigned char sys_hex2str(char* string, unsigned long l_number, unsigned char ch
 	}
 	return 1;
 };
+
+/*
+ * Function to handle the watchdog timer. you can activate, reset and deactivate the timer.
+ * Timeout is fixed to approx. 500ms.
+ */
+void sys_watchdog(unsigned char action)
+{
+	// check which action to perform
+	switch(action)
+	{
+	case ON:
+		IWDG->KR  = 0x5555;	//Enable write to PR
+		IWDG->PR  = 1;		// Set prescaler to 8
+		IWDG->KR  = 0x5555;	//Enable write to RL
+		IWDG->RLR = 0x3FF;	// Set relaod value to 2047 -> gives a timeout of approx. 512ms
+		IWDG->KR  = 0xCCCC;	//Unleash the watchdog
+		break;
+	case OFF:
+		break;
+	case PET:
+		IWDG->KR = 0xAAAA;	//pet the watchdog
+		break;
+	default:
+		break;
+	}
+}

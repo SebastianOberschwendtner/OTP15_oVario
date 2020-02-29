@@ -65,6 +65,7 @@
 #define ON				1
 #define OFF				0
 #define TOGGLE			3
+#define PET				4
 
 //sys state defines
 #define INITIATE		1
@@ -88,34 +89,35 @@
 #define SHUTDOWN_SENSE			(GPIOC->IDR & (GPIO_IDR_IDR_7))
 
 
-void system_task(void);
-void init_clock(void);
-void gpio_en(unsigned char ch_port);
-void init_systick_ms(unsigned long l_ticktime);
-void init_gpio(void);
-void set_led_green(unsigned char ch_state);
-void set_led_red(unsigned char ch_state);
-void wait_ms(unsigned long l_time);
-void wait_systick(unsigned long l_ticks);
-void set_timezone(void);
-void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second);
-unsigned char get_seconds_utc(void);
-unsigned char get_seconds_lct(void);
-unsigned char get_minutes_utc(void);
-unsigned char get_minutes_lct(void);
-unsigned char get_hours_utc(void);
-unsigned char get_hours_lct(void);
-void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year);
-unsigned char get_day_utc(void);
-unsigned char get_day_lct(void);
-unsigned char get_month_utc(void);
-unsigned char get_month_lct(void);
-unsigned int get_year_utc(void);
-unsigned int get_year_lct(void);
-unsigned char sys_strcmp(char* pch_string1, char* pch_string2);
-unsigned char sys_strcpy(char* pch_string1, char* pch_string2);
-unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits);
-void sys_memcpy(void* data1, void* data2, unsigned char length);
-unsigned char sys_hex2str(char* string, unsigned long l_number, unsigned char ch_digits);
+void 			system_task(void);
+void 			init_clock(void);
+void 			gpio_en(unsigned char ch_port);
+void 			init_systick_ms(unsigned long l_ticktime);
+void 			init_gpio(void);
+void 			set_led_green(unsigned char ch_state);
+void 			set_led_red(unsigned char ch_state);
+void 			wait_ms(unsigned long l_time);
+void 			wait_systick(unsigned long l_ticks);
+void 			set_timezone(void);
+void			set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second);
+unsigned char	get_seconds_utc(void);
+unsigned char 	get_seconds_lct(void);
+unsigned char 	get_minutes_utc(void);
+unsigned char 	get_minutes_lct(void);
+unsigned char 	get_hours_utc(void);
+unsigned char 	get_hours_lct(void);
+void 			set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year);
+unsigned char 	get_day_utc(void);
+unsigned char 	get_day_lct(void);
+unsigned char 	get_month_utc(void);
+unsigned char 	get_month_lct(void);
+unsigned int 	get_year_utc(void);
+unsigned int 	get_year_lct(void);
+unsigned char 	sys_strcmp(char* pch_string1, char* pch_string2);
+unsigned char 	sys_strcpy(char* pch_string1, char* pch_string2);
+unsigned char 	sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits);
+void 			sys_memcpy(void* data1, void* data2, unsigned char length);
+unsigned char 	sys_hex2str(char* string, unsigned long l_number, unsigned char ch_digits);
+void 			sys_watchdog(unsigned char action);
 
 #endif /* OVARIO_FRAMEWORK_H_ */

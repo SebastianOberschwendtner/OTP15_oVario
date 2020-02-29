@@ -57,7 +57,6 @@ int main(void)
 
 	init_igc();
 
-
 	while(1)
 	{
 		if(TICK_PASSED)
