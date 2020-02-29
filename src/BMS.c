@@ -24,7 +24,7 @@ void init_BMS(void)
 	 *********  IPC Stuff ************
 	 */
 	//Register memory
-	pBMS = ipc_memory_register(49,did_BMS);
+	pBMS = ipc_memory_register(sizeof(BMS_T),did_BMS);
 	//Register command queue
 	ipc_register_queue(200, did_BMS);
 
@@ -58,7 +58,7 @@ void init_BMS(void)
 		i_checksum += (i_config & 0xFF);
 		i_checksum = ~i_checksum;
 		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(i_checksum<<8)+0x06);
-
+		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_LEN_addr,2);
 	}
 	//wait for flash write to finish
 	wait_systick(1);
@@ -79,7 +79,7 @@ void init_BMS(void)
 		i_checksum += (i_config & 0xFF);
 		i_checksum = ~i_checksum;
 		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(i_checksum<<8)+0x06);
-
+		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_LEN_addr,2);
 	}
 	//Check communication status
 	if(i2c_get_error())
@@ -601,6 +601,10 @@ void BMS_gauge_get_adc(void)
 	{
 		i2c_reset_error();
 
+		//get temperature
+		pBMS->temperature = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,TEMPERATURE_addr);
+
+		//get battery voltage
 		pBMS->battery_voltage = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,VOLTAGE_addr);
 
 		//Get battery current, has to be converted from unsigned to signed
@@ -615,9 +619,9 @@ void BMS_gauge_get_adc(void)
 
 		i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,ACC_CHARGE_addr);
 		if(i_temp > 32767)
-			pBMS->discharged_capacity = i_temp - 65535;
+			pBMS->discharged_capacity += i_temp - 65535;
 		else
-			pBMS->discharged_capacity = i_temp;
+			pBMS->discharged_capacity += i_temp;
 
 		//check communication error
 		pBMS->com_err += (i2c_get_error()<<4);

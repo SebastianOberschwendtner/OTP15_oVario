@@ -53,7 +53,7 @@ void MS5611_init()
 	wait_systick(1);
 	wait_ms(100ul);
 
-	msdata = ipc_memory_register(45, did_MS5611);
+	msdata = ipc_memory_register(sizeof(ms5611_T), did_MS5611);
 	//Check communication status
 	if(i2c_get_error())
 	{

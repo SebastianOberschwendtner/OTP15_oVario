@@ -204,7 +204,7 @@ typedef struct
 	unsigned int max_charge_current;	//[mA]
 	signed int current;
 	signed int discharged_capacity;		//[mA]
-	unsigned int temperature;			//[degC]
+	unsigned int temperature;			//[mK]
 	unsigned char com_err;
 }BMS_T;
 #pragma pack(pop)

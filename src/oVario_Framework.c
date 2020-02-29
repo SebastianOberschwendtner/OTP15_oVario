@@ -39,6 +39,14 @@ void system_task(void)
 		// to prevent unwanted behaviour engage the watchdog
 		sys_watchdog(ON);
 
+		// when battery gauge is active, read the old capacity from the gauge flash
+		if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
+		{
+			//Read the bytes beginning from flash address 0x4042
+			i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_INFO_BLOCK_addr);
+			p_ipc_sys_bms_data->discharged_capacity = 1243;//i2c_read_int(i2c_addr_BMS_GAUGE,MAC_DATA_addr);
+		}
+
 		// goto run state
 		sys_state = RUN;
 		break;
@@ -91,6 +99,7 @@ void system_task(void)
 		sys_watchdog(PET);
 
 		//#TODO Actually save the SOC of the battery
+
 		count++;
 		if(count == 10)
 		{
@@ -102,6 +111,20 @@ void system_task(void)
 			SysCmd.data 		= data_info_shutting_down;
 			SysCmd.timestamp 	= TIM5->CNT;
 			ipc_queue_push(&SysCmd, 10, did_GUI);
+
+			// when battery gauge is active, save the capacity to the the gauge flash
+			if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
+			{
+				i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_DF_WRITE_addr);
+				i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_DATA_addr,(unsigned int)1234);
+				//calculate checksum
+				unsigned int i_checksum = (MAC_DF_WRITE_addr>>8) + (MAC_DF_WRITE_addr & 0xFF);
+				i_checksum += (((unsigned int)1234)>>8);
+				i_checksum += (((unsigned int)1234) & 0xFF);
+				i_checksum = ~i_checksum;
+				i2c_send_char_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(unsigned char)((i_checksum<<8)+0x06));
+				i2c_send_char_register(i2c_addr_BMS_GAUGE,MAC_LEN_addr,2);
+			}
 		}
 		break;
 
@@ -111,7 +134,7 @@ void system_task(void)
 		sys_watchdog(PET);
 
 		count++;
-		if(count == 10){
+		if(count == 50){
 		// Shutdown power and set PC6 low
 		GPIOC->BSRRH =GPIO_BSRR_BS_6;
 		}
@@ -170,7 +193,7 @@ void init_clock(void)
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
 
 	//register system struct
-	sys = ipc_memory_register(9,did_SYS);
+	sys = ipc_memory_register(sizeof(SYS_T),did_SYS);
 	sys->TimeOffset = 0;
 	set_time(20,15,00);
 	set_date(23,2,2018);

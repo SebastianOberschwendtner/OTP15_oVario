@@ -55,7 +55,7 @@ uint8_t tcnt = 0;
 void datafusion_init(void)
 {
 	ipc_df_data 	= ipc_memory_get(did_MS5611);
-	df_data			= ipc_memory_register(121 + 201 + 48 + 17 + 122,did_DATAFUSION);
+	df_data			= ipc_memory_register(sizeof(datafusion_T),did_DATAFUSION);
 	ipc_df_gps_data = ipc_memory_get(did_GPS);
 
 

@@ -129,7 +129,7 @@ void gps_init ()
 
 	// get memory
 	pDMABuff 	= ipc_memory_register(dma_buf_size, did_GPS_DMA);
-	p_GPS_data 	= ipc_memory_register(80, did_GPS);
+	p_GPS_data 	= ipc_memory_register(sizeof(GPS_T), did_GPS);
 	sys			= ipc_memory_get(did_SYS);
 
 

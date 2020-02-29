@@ -308,7 +308,7 @@ void fkt_BMS(void)
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("I: ");
-	lcd_set_cursor(c1, y);
+	lcd_set_cursor(c1 - FONT_X, y);
 	lcd_signed_num2buffer(p_ipc_gui_bms_data->current,4);
 	lcd_string2buffer(" mA");
 
@@ -322,7 +322,7 @@ void fkt_BMS(void)
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("C Discharged:");
-	lcd_set_cursor(c1, y);
+	lcd_set_cursor(c1 - FONT_X, y);
 	lcd_signed_num2buffer(p_ipc_gui_bms_data->discharged_capacity,4);
 	lcd_string2buffer(" mAh");
 
@@ -364,9 +364,12 @@ void fkt_BMS(void)
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Temperature:");
-	lcd_set_cursor(c1, y);
-	lcd_num2buffer((p_ipc_gui_bms_data->charging_state | STATUS_ADC_REQUESTED | STATUS_ADC_FINISHED),6);
-	lcd_string2buffer(" C");
+	lcd_set_cursor(c1 - FONT_X, y);
+	float temperature = (p_ipc_gui_bms_data->temperature/10)-273.15;
+	lcd_float2buffer(temperature, 2, 1);
+	lcd_char2buffer(' ');
+	lcd_char2buffer(248); // degree symbol
+	lcd_char2buffer('C');
 }
 
 void fkt_GPS(void)

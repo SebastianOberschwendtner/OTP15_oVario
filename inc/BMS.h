@@ -47,6 +47,8 @@
 //BQ34110
 #define CONFIGURATION_A_df_addr		0x413A	// R/W Configration Register, only FLASH access!
 #define MAC_STATUS_INIT_df_addr		0x40D7	// R/W Manufacturer status init, only FLASH access!
+#define MAC_DF_WRITE_addr			0x0040  // Write Flash data
+#define MAC_INFO_BLOCK_addr			0x0070  // Command to acces the MAC Info block, only FLASH access!
 #define MAC_addr					0x3E	// R/W Manufacturer Access Control to write commands
 #define MAC_DATA_addr				0x40	// R/W
 #define MAC_SUM_addr				0x60	// R/W Checksum for commands
