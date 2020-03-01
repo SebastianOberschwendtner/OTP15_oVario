@@ -123,6 +123,7 @@ void init_sdio(void)
 
 		//Set bus mode to 4 bit
 
+#ifdef SDIO_4WIRE
 		sdio_select_card();
 		if(SD->state & SD_CARD_SELECTED)
 		{
@@ -134,6 +135,7 @@ void init_sdio(void)
 			if(!(SD->response & R1_ERROR))
 				SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
 		}
+#endif
 
 		wait_ms(1);
 		//Increase clock speed to 4 MHz

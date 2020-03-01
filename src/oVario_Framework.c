@@ -15,7 +15,11 @@ SYS_T* sys;
 T_command SysCmd;
 
 //Important!: When there is no softbutton installed, initialize the sys_state with NOSTATES
+#ifndef SOFTSWITCH
+uint8_t sys_state = NOSTATES;
+#else
 uint8_t sys_state = INITIATE;
+#endif
 uint8_t count = 0;
 
 /*
