@@ -42,6 +42,8 @@ enum states
 #define num_states 8
 
 //********commands which can be sent from the gui******
+// commands have to be defined in fkt_set_ipc_command() and in fkt_get_cmd_string()
+// the commands are assigned to the key in fkt_assign_key_function()
 #define gui_cmd_nextmenu		1
 #define gui_cmd_startmenu		2
 #define gui_cmd_stopigc			3
@@ -50,6 +52,7 @@ enum states
 #define gui_cmd_togglesinktone	6
 #define gui_cmd_togglebottombar 7
 #define gui_cmd_startigc		8
+#define gui_cmd_resetcapacity	9
 
 
 // Functions

@@ -31,5 +31,8 @@ unsigned int 	i2c_read_int(unsigned char ch_address, unsigned char ch_command);
 unsigned int 	i2c_read_int_LSB(unsigned char ch_address, unsigned char ch_command);
 unsigned long 	i2c_read_24bit(unsigned char ch_address, unsigned char ch_command);
 unsigned long 	i2c_read_long(unsigned char ch_address, unsigned char ch_command);
+unsigned char 	i2c_read_array(unsigned char ch_address, unsigned char ch_command, unsigned char* p_array, unsigned char array_size);
+unsigned char 	i2c_send_array(unsigned char ch_address, unsigned char* p_array, unsigned char array_size);
+unsigned char 	i2c_send_read_array(unsigned char ch_address, unsigned char* array_in, unsigned char size_in, unsigned char* array_out, unsigned char size_out);
 
 #endif /* I2C_H_ */

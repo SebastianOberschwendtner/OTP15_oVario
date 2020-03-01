@@ -323,7 +323,7 @@ void fkt_BMS(void)
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("C Discharged:");
 	lcd_set_cursor(c1 - FONT_X, y);
-	lcd_signed_num2buffer(p_ipc_gui_bms_data->discharged_capacity,4);
+	lcd_num2buffer(p_ipc_gui_bms_data->discharged_capacity,4);
 	lcd_string2buffer(" mAh");
 
 	y +=ls;
@@ -652,7 +652,7 @@ void fkt_assign_key_function(void)
 		break;
 	case Gui_BMS:
 		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
-		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_resetcapacity;
 		Main_Keys.function[data_KEYPAD_pad_UP] 		= gui_cmd_otgon;
 		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= gui_cmd_otgoff;
 		break;
@@ -771,6 +771,13 @@ void fkt_set_ipc_command(uint8_t command_number)
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 		break;
+		// reset the capacity count of the coulomb counter
+	case gui_cmd_resetcapacity:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_BMS_ResetCapacity;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		break;
 	default:
 		break;
 	}
@@ -812,6 +819,10 @@ char* fkt_get_cmd_string(uint8_t command_number)
 		break;
 	case gui_cmd_startigc:
 		return "StartIGC";
+		break;
+	// reset the capacity count of the coulomb counter
+	case gui_cmd_resetcapacity:
+		return "RST mAh";
 		break;
 	default:
 		return "        ";
@@ -1141,7 +1152,7 @@ void gui_bootlogo(void)
 	lcd_set_cursor(84, 105);
 	lcd_set_fontsize(0);
 	lcd_set_inverted(0);
-	lcd_string2buffer("V 1.00");
+	lcd_string2buffer("V 2.00");
 	lcd_send_buffer();
 };
 

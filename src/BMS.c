@@ -11,6 +11,8 @@
 
 BMS_T* pBMS;
 unsigned char bat_health = 100;
+unsigned char gauge_command[3];
+unsigned char gauge_buffer[32];
 
 extern unsigned long error_var;
 
@@ -41,46 +43,23 @@ void init_BMS(void)
 
 	//***********************Setup the coulomb counter**********************************************
 	//save the desired manufacturer status init register value
-	//At startup without the battery the i2c command waits for a response. Use timeouts? -> Fixed
+	//At startup without the battery the i2c command waits for a response. Use timeouts -> Fixed
 
-	unsigned int i_config = IGNORE_SD_EN | ACCHG_EN | ACDSG_EN;
-	//check the configuration value on the flash
-	i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_STATUS_INIT_df_addr);
-	if(i_config != i2c_read_int(i2c_addr_BMS_GAUGE,MAC_DATA_addr))
-	{
-		//If the configuration on the flash doesn't match, write the flash.
-		//Changes take affect on next restart.
-		i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,MAC_STATUS_INIT_df_addr);
-		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_DATA_addr,i_config);
-		//calculate checksum
-		unsigned int i_checksum = (MAC_STATUS_INIT_df_addr>>8) + (MAC_STATUS_INIT_df_addr & 0xFF);
-		i_checksum += (i_config>>8);
-		i_checksum += (i_config & 0xFF);
-		i_checksum = ~i_checksum;
-		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(i_checksum<<8)+0x06);
-		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_LEN_addr,2);
-	}
-	//wait for flash write to finish
-	wait_systick(1);
+	// check the Manufacturing status init, this bits should be set:
+	// IGNORE_SD_EN:  	Ignore Self-discharge control
+	// ACCHG_EN:		Accumulated Charge Enable for Charging Current Integration
+	// ACDSG_EN:		Accumulated Charge Enable for Discharging Current Integration
+	unsigned int i_config = BMS_gauge_read_flash_int(MAC_STATUS_INIT_df_addr);
+	if (i_config != (IGNORE_SD_EN | ACCHG_EN | ACDSG_EN))
+		BMS_gauge_send_flash_int(MAC_STATUS_INIT_df_addr, (IGNORE_SD_EN | ACCHG_EN | ACDSG_EN));
 
-	//save the desired configuration register value
-	i_config = 0x00;
-	//check the configuration value on the flash
-	i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,CONFIGURATION_A_df_addr);
-	if(i_config != i2c_read_int(i2c_addr_BMS_GAUGE,MAC_DATA_addr))
-	{
-		//If the configuration on the flash doesn't match, write the flash.
-		//Changes take affect on next restart.
-		i2c_send_int_register_LSB(i2c_addr_BMS_GAUGE,MAC_addr,CONFIGURATION_A_df_addr);
-		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_DATA_addr,i_config);
-		//calculate checksum
-		unsigned int i_checksum = (CONFIGURATION_A_df_addr>>8) + (CONFIGURATION_A_df_addr & 0xFF);
-		i_checksum += (i_config>>8);
-		i_checksum += (i_config & 0xFF);
-		i_checksum = ~i_checksum;
-		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_SUM_addr,(i_checksum<<8)+0x06);
-		i2c_send_int_register(i2c_addr_BMS_GAUGE,MAC_LEN_addr,2);
-	}
+	//Operation Config A Register, this bits should be set:
+	// none
+	i_config = BMS_gauge_read_flash_int(CONFIGURATION_A_df_addr);
+	if (i_config != 0)
+		BMS_gauge_send_flash_int(CONFIGURATION_A_df_addr, 0);
+
+
 	//Check communication status
 	if(i2c_get_error())
 	{
@@ -90,9 +69,6 @@ void init_BMS(void)
 	}
 	else
 		pBMS->charging_state |= STATUS_GAUGE_ACTIVE;
-
-	//wait for flash write to finish
-	wait_systick(1);
 
 	//***********************Setup the BMS**********************************************************
 	/*
@@ -212,6 +188,9 @@ void BMS_task(void)
 		case cmd_BMS_OTG_OFF:
 			BMS_set_otg(OFF);
 			break;
+		case cmd_BMS_ResetCapacity:
+			pBMS->old_capacity = 0;
+			pBMS->discharged_capacity = 0;
 		default:
 			break;
 		}
@@ -619,9 +598,10 @@ void BMS_gauge_get_adc(void)
 
 		i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,ACC_CHARGE_addr);
 		if(i_temp > 32767)
-			pBMS->discharged_capacity += i_temp - 65535;
+			pBMS->discharged_capacity = i_temp - 65535;
 		else
-			pBMS->discharged_capacity += i_temp;
+			pBMS->discharged_capacity = i_temp;
+		pBMS->discharged_capacity += pBMS->old_capacity;
 
 		//check communication error
 		pBMS->com_err += (i2c_get_error()<<4);
@@ -634,3 +614,56 @@ void BMS_gauge_get_adc(void)
 		}
 	}
 };
+
+// Read an integer register in the flash of the gauge
+unsigned int BMS_gauge_read_flash_int(unsigned int register_address)
+{
+	gauge_command[0] = (unsigned char)MAC_addr; 				//Read the MAC of the Gauge
+	gauge_command[1] = (unsigned char)(register_address>>0);  //LSB of Address
+	gauge_command[2] = (unsigned char)(register_address>>8);	//MSB of Address
+
+	//send the command to read flash and read flash
+	unsigned char read_successful = i2c_send_read_array(i2c_addr_BMS_GAUGE, gauge_command, 3, gauge_buffer, 32);
+	//update the checksum and length of the command
+	pBMS->crc = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_SUM_addr);
+	pBMS->len = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_LEN_addr);
+
+	//when read was successful return the read value
+	if(read_successful)
+		return (gauge_buffer[0]<<8) | gauge_buffer[1];
+	else
+		return (unsigned int) 0;
+};
+
+// Write an integer to a register in the flash of the gauge
+void BMS_gauge_send_flash_int(unsigned int register_address, unsigned int data)
+{
+	unsigned char crc = 0;
+
+	gauge_command[0] = (unsigned char)MAC_addr; 				//Read the MAC of the Gauge
+	gauge_command[1] = (unsigned char)(register_address>>0);  //LSB of Address
+	gauge_command[2] = (unsigned char)(register_address>>8);	//MSB of Address
+
+	//send the command to read flash and read flash
+	if(i2c_send_read_array(i2c_addr_BMS_GAUGE, gauge_command, 3, gauge_buffer, 32))
+	{
+		//set the new data in the buffer
+		gauge_buffer[1] = (unsigned char) (data&0xFF);		//Set new MSB
+		gauge_buffer[0] = (unsigned char) (data>>8);		//SET new LSB
+
+		//calculate the new checksum
+		for(unsigned char count  = 0; count<32;count++)
+			crc += gauge_buffer[count];
+		crc += gauge_command[1];
+		crc += gauge_command[2];
+
+		// write the command to set the new flash data and write the data
+		i2c_send_array(i2c_addr_BMS_GAUGE, gauge_command, 3);
+		i2c_send_array(i2c_addr_BMS_GAUGE, gauge_buffer, 32);
+		//set the new checksum and length to intiate the flash write
+		i2c_send_int(i2c_addr_BMS_GAUGE, ((~crc)<<8)+0x24);
+
+		//wait for flash write to finish
+		wait_systick(1);
+	}
+}

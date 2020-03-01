@@ -23,6 +23,7 @@
 // BMS
 #define cmd_BMS_OTG_OFF			0
 #define cmd_BMS_OTG_ON			1
+#define cmd_BMS_ResetCapacity	2
 
 // Sound
 #define cmd_sound_set_frequ 	1
@@ -203,9 +204,12 @@ typedef struct
 	unsigned int otg_current;			//[mV]
 	unsigned int max_charge_current;	//[mA]
 	signed int current;
-	signed int discharged_capacity;		//[mA]
+	signed int discharged_capacity;		//[mAh]
+	signed int old_capacity;			//[mAh] Old discharged capacity at previous shutdown
 	unsigned int temperature;			//[mK]
 	unsigned char com_err;
+	unsigned char len;
+	unsigned char crc;
 }BMS_T;
 #pragma pack(pop)
 
