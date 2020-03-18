@@ -8,7 +8,7 @@
  ******************************************************************************
  */
 
-#include "oVario_Framework.h"
+#include "oVario_Framework.h" //<--- define your hardware setup here
 #include "DOGXL240.h"
 #include "ipc.h"
 #include "sound.h"

@@ -121,10 +121,11 @@ void init_sdio(void)
 		//Set Blocklen to 512 bytes
 		//SD->response = sdio_send_cmd_short(CMD16,SDIO_BLOCKLEN);
 
-		//Set bus mode to 4 bit
+		//Select card
+		sdio_select_card();
 
 #ifdef SDIO_4WIRE
-		sdio_select_card();
+		//Set bus mode to 4 bit
 		if(SD->state & SD_CARD_SELECTED)
 		{
 			//send command for bus mode
