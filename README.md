@@ -13,6 +13,7 @@ Following Symbols have to be defined:
 In Properties -> C/C++ General -> Paths and Symbols -> Inludes
 Following Folders have to be defined:
   - /inc
+  - /igc
   - /CMSIS/core
   - /CMSIS/device
   - /StdPeriph_Driver/inc
