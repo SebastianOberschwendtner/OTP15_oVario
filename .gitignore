@@ -1,4 +1,4 @@
-Debug/
+/Debug/
 .DS_Store
 .metadata
 bin/
@@ -12,6 +12,8 @@ local.properties
 .loadpath
 .recommenders
 
+LinkerScript.ld
+
 # External tool builders
 .externalToolBuilders/
 
@@ -23,6 +25,7 @@ local.properties
 
 # CDT-specific (C/C++ Development Tooling)
 .cproject
+.project
 
 # CDT- autotools
 .autotools
@@ -56,3 +59,4 @@ local.properties
 .scala_dependencies
 .worksheet
 
+/Default/
