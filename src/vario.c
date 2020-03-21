@@ -18,12 +18,20 @@ float temp_climb;
 datafusion_T* p_ipc_v_df_data;
 T_command vario_command;
 
-uint8_t  volu 	= 0;
+//uint8_t  volu 	= 0;
 uint16_t freque = 0;
 uint8_t  peri 	= 0;
-uint8_t state_sinktone = 1;
+uint8_t state_sinktone = 2;
+uint8_t state_0climbtone = 1;
 
+//uint8_t vario_tone = 0;
 
+// ***** Function Definitions *****
+
+void vario_tone_climb(float climb);
+void vario_tone_0climb(float climb);
+void vario_tone_sink(float climb);
+void vario_tone_mute();
 
 // ***** Functions *****
 void vario_init(void)
@@ -31,7 +39,6 @@ void vario_init(void)
 	p_ipc_v_df_data = ipc_memory_get(did_DATAFUSION);
 	ipc_register_queue(200, did_VARIO);
 }
-
 
 
 void vario_task(void)
@@ -49,28 +56,31 @@ sound = 500;
 	 */
 
 	// Handle Queue Commands
-		T_command IPC_cmd;
-		while(ipc_get_queue_bytes(did_VARIO))
+	T_command IPC_cmd;
+	while(ipc_get_queue_bytes(did_VARIO))
+	{
+		ipc_queue_get(did_VARIO, 10, &IPC_cmd); 	// get new command
+		switch(IPC_cmd.cmd)					// switch for pad number
 		{
-			ipc_queue_get(did_VARIO, 10, &IPC_cmd); 	// get new command
-			switch(IPC_cmd.cmd)					// switch for pad number
-			{
-			case cmd_vario_set_sinktone:
-				state_sinktone = 1;
-				break;
+		case cmd_vario_set_sinktone:
+			state_sinktone = 1;
+			break;
 
-			case cmd_vario_clear_sinktone:
-				state_sinktone = 0;
-				break;
+		case cmd_vario_clear_sinktone:
+			state_sinktone = 0;
+			break;
 
-			case cmd_vario_toggle_sinktone:
-				state_sinktone ^= 1;
-				break;
+		case cmd_vario_toggle_sinktone:
+			state_sinktone++;
+			if(state_sinktone > 3) state_sinktone = 0;
 
-			default:
-				break;
-			}
+			//state_sinktone ^= 1;
+			break;
+
+		default:
+			break;
 		}
+	}
 
 	// Sound creation
 	temp_climb = p_ipc_v_df_data->climbrate_filt;
@@ -82,79 +92,130 @@ sound = 500;
 		temp_climb = -4;
 
 
-
-	if(temp_climb > 0.2)		// Climbing
+	if((temp_climb > 0.2) && (state_sinktone > 0))								// Climbing
 	{
-		// Set Unmute
-		vario_command.cmd 	= cmd_sound_set_unmute;
-		vario_command.data		= 0;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
-
-		// Set Beep
-		vario_command.cmd 	= cmd_sound_set_beep;
-		vario_command.data		= 0;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
-
-
-		// Set Frequency
-		freque = (uint16_t)((temp_climb)/5*1500 + 300);
-		volu = 50;
-
-		vario_command.cmd 	= cmd_sound_set_frequ;
-		vario_command.data		= (uint32_t)freque;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
-
-
-		// Set Period
-		if(temp_climb < 1)
-			temp_climb = 1;
-		peri = (uint8_t)(100 - (temp_climb/5*80));
-
-		vario_command.cmd 	= cmd_sound_set_period;
-		vario_command.data	= (uint32_t)peri;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
+		vario_tone_climb(temp_climb);
 	}
-	else if((temp_climb < -2) && state_sinktone) 		// Huge Sink  --> Turn on Thermals
+	else if((temp_climb <= 0.2) && (temp_climb > -1) && (state_sinktone > 2))	// 0C limb
 	{
-		// Set Unmute
-		vario_command.cmd 	= cmd_sound_set_unmute;
-		vario_command.data	= 0;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
-
-		// Set Continous
-		vario_command.cmd 	= cmd_sound_set_cont;
-		vario_command.data	= 0;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
-
-
-		// Set Frequency
-		freque = (uint16_t)((temp_climb + 2) * 50 + 350);
-		volu = 100;
-
-		vario_command.cmd 	= cmd_sound_set_frequ;
-		vario_command.data	= (uint32_t)freque;
-
-		ipc_queue_push(&vario_command, 10, did_SOUND);
-
+		vario_tone_0climb(temp_climb);
+	}
+	else if((temp_climb <= -2) &&  (state_sinktone > 1)) 		// Huge Sink  --> Turn on Thermals
+	{
+		vario_tone_sink(temp_climb);
 	}
 	else
 	{
-		vario_command.cmd 	= cmd_sound_set_mute;
-		vario_command.data	= 0;
-		ipc_queue_push(&vario_command, 10, did_SOUND);
+		vario_tone_mute();
 	}
-
-
-
-
-
 }
+
+void vario_tone_climb(float climb)
+{
+	// Set Unmute
+	vario_command.cmd 	= cmd_sound_set_unmute;
+	vario_command.data	= 0;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+	// Set Beep
+	vario_command.cmd 	= cmd_sound_set_beep;
+	vario_command.data	= 0;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+
+	// Set Frequency
+	freque = (uint16_t)((temp_climb + frequ_srate_base_climb) * frequ_rate_climb + frequ_base_climb);
+	//volu = 50;
+
+	vario_command.cmd 	= cmd_sound_set_frequ;
+	vario_command.data	= (uint32_t)freque;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+
+	// Set Period
+	if(temp_climb < 1)
+		temp_climb = 1;
+	peri = (uint8_t)(100 - (temp_climb / 5 * 80));
+
+	vario_command.cmd 	= cmd_sound_set_period;
+	vario_command.data	= (uint32_t)peri;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+}
+
+
+void vario_tone_0climb(float climb)
+{
+	// Set Unmute
+	vario_command.cmd 	= cmd_sound_set_unmute;
+	vario_command.data	= 0;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+	// Set Beep
+	vario_command.cmd 	= cmd_sound_set_beep_short;
+	vario_command.data	= 0;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+
+	// Set Frequency
+	freque = (uint16_t)((temp_climb + frequ_srate_base_0climb) * frequ_rate_0climb + frequ_base_0climb);
+	//volu = 50;
+
+	vario_command.cmd 	= cmd_sound_set_frequ;
+	vario_command.data	= (uint32_t)freque;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+
+	// Set Period
+	if(temp_climb < 1)
+		temp_climb = 1;
+	peri = (uint8_t)(100 - (temp_climb / 5 * 80));
+
+	vario_command.cmd 	= cmd_sound_set_period;
+	vario_command.data	= (uint32_t)peri;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+}
+
+void vario_tone_sink(float climb)
+{
+	// Set Unmute
+	vario_command.cmd 	= cmd_sound_set_unmute;
+	vario_command.data	= 0;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+	// Set Continous
+	vario_command.cmd 	= cmd_sound_set_cont;
+	vario_command.data	= 0;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+
+
+	// Set Frequency
+	freque = (uint16_t)((temp_climb + frequ_base_0climb) * frequ_rate_sink + frequ_base_sink);
+	//volu = 100;
+
+	vario_command.cmd 	= cmd_sound_set_frequ;
+	vario_command.data	= (uint32_t)freque;
+
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+}
+
+void vario_tone_mute()
+{
+	vario_command.cmd 	= cmd_sound_set_mute;
+	vario_command.data	= 0;
+	ipc_queue_push(&vario_command, 10, did_SOUND);
+}
+
+
 // Function to calculate an estimate for the distance between two points
 float vario_wgs84_distance(float lat1, float lon1, float lat2, float lon2)
 {

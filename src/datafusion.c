@@ -51,7 +51,7 @@ uint8_t timecnt = 0;
 uint8_t tcnt = 0;
 
 // ***** Functions *****
-
+float debug = 0;
 void datafusion_init(void)
 {
 	ipc_df_data 	= ipc_memory_get(did_MS5611);
@@ -61,6 +61,7 @@ void datafusion_init(void)
 
 	char log_baro[] = {"bar"};
 	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
+	debug = -1;
 }
 
 
@@ -99,6 +100,14 @@ void datafusion_task(void)
 	yi2 += yi1 * ts;
 	Time += ts;
 
+
+//
+//	debug += 0.01;
+//	if(debug > 5) debug = -1;
+//
+//	y = debug;
+
+
 	// Debug
 	df_data->climbrate_filt 	= y;
 	df_data->ui1 				= ui1;
@@ -117,6 +126,13 @@ void datafusion_task(void)
 		df_data->glide = 99;
 
 
+
+	// AV Climb
+
+	timeclimbav = timeclimbav * 0.99 + 0.01 * df_data->climbrate_filt;
+
+	df_data->climbrate_av = timeclimbav;
+
 	if(tcnt > 4)		// running @ 10Hz, happening every 0.5s
 	{
 		// climb history
@@ -126,7 +142,7 @@ void datafusion_task(void)
 		// height history
 		df_data->hist_h[df_data->histh_ptr] = df_data->height;
 
-		df_data->climbrate_av = (df_data->height - df_data->hist_h[(df_data->hist_ptr + 1) % 30])/15;
+		//df_data->climbrate_av = (df_data->height - df_data->hist_h[(df_data->hist_ptr + 1) % 30])/15;
 
 		df_data->histh_ptr = (df_data->histh_ptr + 1) % 30;
 

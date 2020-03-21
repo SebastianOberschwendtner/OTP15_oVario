@@ -23,6 +23,7 @@ typedef struct
 
 //*********** Variables **************
 uint8_t 		menu 	= Gui_Vario;
+//uint8_t			menu 	= Gui_BMS;
 uint8_t 		submenu = 0;
 InfoBox_T		InfoBox;
 datafusion_T* 	p_ipc_gui_df_data;
@@ -32,7 +33,9 @@ ms5611_T* 		p_ipc_gui_ms5611_data;
 SDIO_T*			p_ipc_gui_sd_data;
 T_command 		GUI_cmd;
 
+extern uint8_t state_sinktone;
 extern unsigned long error_var;
+extern uint32_t reset_reason;
 
 //*********** Functions **************
 void gui_init (void)
@@ -94,7 +97,7 @@ void gui_task (void)
 	fkt_infobox();
 
 	// draw screen
-	//lcd_send_buffer();
+	//	lcd_send_buffer();
 	lcd_dma_enable();
 }
 
@@ -179,6 +182,15 @@ void fkt_Vario (void)
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" kmh");
 
+
+	///////////////////////////
+	lcd_set_cursor(100, y);
+	lcd_float2buffer((float)state_sinktone,1,0);
+	lcd_string2buffer("     ");
+	lcd_num2buffer(reset_reason>>24, 4);
+	///////////////////////
+
+
 	y = y + 20;
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
@@ -226,7 +238,7 @@ void fkt_Vario (void)
 	// Draw wind speed
 
 
-#define x_we 80
+#define x_we 70
 #define y_we 108
 #define r_we 10
 
@@ -242,20 +254,23 @@ void fkt_Vario (void)
 	lcd_set_cursor(x_we - 3, y_we - 10);
 	lcd_string2buffer("N");
 	lcd_set_cursor(x_we + 12, y_we + 5);
-	lcd_string2buffer("O");
+	lcd_string2buffer("O ");
+	lcd_set_fontsize(2);
+	lcd_float2buffer(p_ipc_gui_df_data->Wind.W_mag * 3.6,2,0);
+	lcd_set_fontsize(1);
 	lcd_set_cursor(x_we - 3, y_we + 20);
 	lcd_string2buffer("S");
 	lcd_set_cursor(x_we - 18 , y_we + 5);
 	lcd_string2buffer("W");
 
 	lcd_set_cursor(45, y_we + 20);
-	lcd_float2buffer(p_ipc_gui_df_data->Wind.W_dir,3,0);
+	//lcd_float2buffer(p_ipc_gui_df_data->Wind.W_dir,3,0);
 
 	lcd_set_cursor(85, y_we + 20);
-	lcd_float2buffer(p_ipc_gui_df_data->Wind.W_mag,2,1);
+	lcd_float2buffer(p_ipc_gui_df_data->Wind.W_mag * 3.6,2,1);
 
 	lcd_set_cursor(45, y_we - 10);
-	lcd_float2buffer(p_ipc_gui_df_data->Wind.cnt,2,0);
+	//lcd_float2buffer(p_ipc_gui_df_data->Wind.cnt,2,0);
 
 
 
@@ -286,6 +301,10 @@ void fkt_Vario (void)
 				break;
 
 			case data_KEYPAD_pad_DOWN:
+				GUI_cmd.did 		= did_GUI;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;//cmd_vario_toggle_sinktone;
+				GUI_cmd.timestamp 	= TIM5->CNT;
+				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			case data_KEYPAD_pad_UP:
@@ -297,7 +316,7 @@ void fkt_Vario (void)
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
 				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;//cmd_vario_toggle_sinktone;
 				GUI_cmd.timestamp 	= TIM5->CNT;
 				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
@@ -687,10 +706,6 @@ void fkt_MS5611 (void)
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
 				break;
 
 			default:
@@ -800,10 +815,7 @@ void fkt_Datafusion	(void)
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+
 				break;
 
 			default:
@@ -858,10 +870,7 @@ void fkt_Menu (void)
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+
 				break;
 
 			default:
@@ -913,10 +922,7 @@ void fkt_Settings(void)
 				break;
 
 			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+
 				break;
 
 			default:
@@ -947,31 +953,31 @@ void fkt_runtime_errors(void)
 		{
 		case err_no_memory_left:
 			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_queue_overrun:
 			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_bms_fault:
 			InfoBox.message = data_info_bms_fault;		//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_coloumb_fault:
 			InfoBox.message = data_info_coloumb_fault;	//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_baro_fault:
 			InfoBox.message = data_info_baro_fault;		//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_sd_fault:
 			InfoBox.message = data_info_sd_fault;		//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		default:
 			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 500;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
 			break;
 		}
 		error_var = 0;
@@ -1164,8 +1170,21 @@ void draw_graph(uint8_t x, uint8_t y)
 /*
  * Draws the bootlogo of the vario.
  */
+
+
 void gui_bootlogo(void)
 {
+	lcd_clear_buffer();
+	lcd_box2buffer(220, 120, 3);
+	lcd_set_cursor(15, 30);
+	lcd_set_fontsize(0);
+	lcd_string2buffer("Reset reason:");
+	lcd_num2buffer(reset_reason>>24,4);
+	lcd_send_buffer();
+
+
+
+	/*
 	lcd_clear_buffer();
 	lcd_box2buffer(220, 120, 3);
 	lcd_set_cursor(15, 30);
@@ -1186,7 +1205,7 @@ void gui_bootlogo(void)
 	lcd_set_fontsize(0);
 	lcd_set_inverted(0);
 	lcd_string2buffer("V 1.00");
-	lcd_send_buffer();
+	lcd_send_buffer();*/
 };
 
 /*

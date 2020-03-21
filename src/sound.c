@@ -7,6 +7,7 @@
 // ***** Includes *****
 #include "sound.h"
 #include "Variables.h"
+#include "oVario_Framework.h"
 
 
 // ***** Variables *****
@@ -15,6 +16,8 @@ T_sound_state sound_state;
 uint32_t timet = 0;
 T_command sound_command;
 volatile uint32_t temp = 0;
+uint8_t beepcount = 0;
+
 
 // ***** Functions *****
 
@@ -115,6 +118,14 @@ void sound_init()
 // Volume [%]; 0-100%
 void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 {
+
+	if( 0!= 0)
+		set_led_green(ON);
+	else
+		set_led_green(OFF);
+
+
+
 	// 105 = 0.01ms; 	1000Hz
 	uint32_t reload = 100000/((uint32_t)frequency) * 105;//10500;
 	uint32_t compare = (reload / 2) * volume / 100;
@@ -122,8 +133,15 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 	TIM_SetAutoreload(TIM2, reload);
 	TIM_SetCompare1(TIM2, compare);
 
-	reload = period * 200;			// 20000 = 1Hz
-	TIM_SetAutoreload(TIM3, reload);
+	reload = period * 200;			// 20000 = 1Hz = 1s
+
+
+	if(sound_state.mode == sound_mode_beep_short)
+		TIM_SetAutoreload(TIM3, reload/4);
+	else
+	{
+		TIM_SetAutoreload(TIM3, reload);
+	}
 
 	if(TIM3->CNT > reload)
 		TIM3->CNT = 0;
@@ -171,6 +189,10 @@ void sound_task(void)
 				sound_state.mode = sound_mode_beep;
 				break;
 
+			case cmd_sound_set_beep_short:
+				sound_state.mode = sound_mode_beep_short;
+				break;
+
 			case cmd_sound_set_cont:
 				sound_state.mode = sound_mode_cont;
 				break;
@@ -184,7 +206,7 @@ void sound_task(void)
 			}
 		}
 	}
-	if(sound_state.mode != sound_mode_beep)
+	if((sound_state.mode != sound_mode_beep) && (sound_state.mode != sound_mode_beep_short))
 		sound_state.beep = 1;
 
 
@@ -194,8 +216,22 @@ void sound_task(void)
 void TIM3_IRQHandler (void)
 {
 	if(sound_state.mode == sound_mode_beep)
+	{
 		sound_state.beep ^= 1;
+	}
+	else if(sound_state.mode == sound_mode_beep_short)
+	{
+		if(beepcount < 7)
+		{
+			sound_state.beep = 0;
+		}
+		else
+		{
+			sound_state.beep = 1;
+			beepcount = 0;
+		}
+		beepcount++;
+	}
 
 	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
-

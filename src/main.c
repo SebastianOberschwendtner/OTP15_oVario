@@ -25,12 +25,16 @@
 #include "sdio.h"
 #include "logging.h"
 #include "igc.h"
+#include "stm32f4xx_rcc.h"
+
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
+uint32_t reset_reason = 0;
 
 int main(void)
 {
+	reset_reason = RCC->CSR;
 
 	init_clock();
 	init_systick_ms(SYSTICK);
@@ -55,7 +59,7 @@ int main(void)
 	vario_init();
 	gui_init();
 
-	init_igc();
+	//init_igc();
 
 
 	while(1)
@@ -70,7 +74,7 @@ int main(void)
 			gui_task();
 			gps_task();
 
-			BMS_set_charge_current(800);
+			BMS_set_charge_current(1000);
 			BMS_task();
 
 			l_count_tick++;
@@ -81,7 +85,7 @@ int main(void)
 			else if (l_count_tick == 10)
 			{
 				set_led_red(ON);
-				igc_task();
+				//igc_task();
 				l_count_tick = 0;
 			}
 		}

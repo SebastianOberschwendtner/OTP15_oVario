@@ -14,8 +14,9 @@
 #include "did.h"
 
 //*********** Defines **************
-#define sound_mode_cont	1
-#define sound_mode_beep	2
+#define sound_mode_cont			1
+#define sound_mode_beep			2
+#define sound_mode_beep_short	3
 
 
 //*********** Functions **************
