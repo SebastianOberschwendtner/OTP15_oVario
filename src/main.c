@@ -30,12 +30,9 @@
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
-uint32_t reset_reason = 0;
 
 int main(void)
 {
-	reset_reason = RCC->CSR;
-
 	init_clock();
 	init_systick_ms(SYSTICK);
 	init_led();
@@ -59,7 +56,7 @@ int main(void)
 	vario_init();
 	gui_init();
 
-	//init_igc();
+	init_igc();
 
 
 	while(1)
@@ -85,7 +82,7 @@ int main(void)
 			else if (l_count_tick == 10)
 			{
 				set_led_red(ON);
-				//igc_task();
+				igc_task();
 				l_count_tick = 0;
 			}
 		}

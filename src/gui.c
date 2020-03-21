@@ -35,7 +35,6 @@ T_command 		GUI_cmd;
 
 extern uint8_t state_sinktone;
 extern unsigned long error_var;
-extern uint32_t reset_reason;
 
 //*********** Functions **************
 void gui_init (void)
@@ -183,11 +182,9 @@ void fkt_Vario (void)
 	lcd_string2buffer(" kmh");
 
 
-	///////////////////////////
+	// Any indication what vario tone mode is active
 	lcd_set_cursor(100, y);
 	lcd_float2buffer((float)state_sinktone,1,0);
-	lcd_string2buffer("     ");
-	lcd_num2buffer(reset_reason>>24, 4);
 	///////////////////////
 
 
@@ -1174,17 +1171,7 @@ void draw_graph(uint8_t x, uint8_t y)
 
 void gui_bootlogo(void)
 {
-	lcd_clear_buffer();
-	lcd_box2buffer(220, 120, 3);
-	lcd_set_cursor(15, 30);
-	lcd_set_fontsize(0);
-	lcd_string2buffer("Reset reason:");
-	lcd_num2buffer(reset_reason>>24,4);
-	lcd_send_buffer();
 
-
-
-	/*
 	lcd_clear_buffer();
 	lcd_box2buffer(220, 120, 3);
 	lcd_set_cursor(15, 30);
@@ -1205,7 +1192,7 @@ void gui_bootlogo(void)
 	lcd_set_fontsize(0);
 	lcd_set_inverted(0);
 	lcd_string2buffer("V 1.00");
-	lcd_send_buffer();*/
+	lcd_send_buffer();
 };
 
 /*
