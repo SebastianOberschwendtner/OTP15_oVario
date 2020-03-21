@@ -13,7 +13,8 @@
 
 
 // ******* QUEUE MESSAGES *******
-// KEYPAD
+// KEYPAD, Do not change the number assignment since it
+// is used in the gui to index the array with corresponding key function
 #define data_KEYPAD_pad_LEFT	0
 #define data_KEYPAD_pad_DOWN	1
 #define data_KEYPAD_pad_UP		2
@@ -22,6 +23,7 @@
 // BMS
 #define cmd_BMS_OTG_OFF			0
 #define cmd_BMS_OTG_ON			1
+#define cmd_BMS_ResetCapacity	2
 
 // Sound
 #define cmd_sound_set_frequ 		1
@@ -42,6 +44,8 @@
 
 //IGC Logging
 #define cmd_igc_stop_logging		1
+#define cmd_igc_eject_card			2
+#define cmd_igc_start_logging		3
 
 //GUI
 #define cmd_gui_eval_keypad			1
@@ -60,6 +64,11 @@
 #define data_info_keypad_1			10
 #define data_info_keypad_2			11
 #define data_info_keypad_3			12
+#define data_info_msg_with_payload	13
+#define data_info_igc_start_error	14
+#define data_info_shutting_down		15
+#define data_info_stopping_log		16
+#define data_info_no_gps_fix		17
 
 
 // ******* TYPEDEF *******
@@ -196,9 +205,12 @@ typedef struct
 	unsigned int otg_current;			//[mV]
 	unsigned int max_charge_current;	//[mA]
 	signed int current;
-	signed int discharged_capacity;		//[mA]
-	unsigned int temperature;			//[degC]
+	signed int discharged_capacity;		//[mAh]
+	signed int old_capacity;			//[mAh] Old discharged capacity at previous shutdown
+	unsigned int temperature;			//[mK]
 	unsigned char com_err;
+	unsigned char len;
+	unsigned char crc;
 }BMS_T;
 #pragma pack(pop)
 

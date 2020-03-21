@@ -121,9 +121,11 @@ void init_sdio(void)
 		//Set Blocklen to 512 bytes
 		//SD->response = sdio_send_cmd_short(CMD16,SDIO_BLOCKLEN);
 
-		//Set bus mode to 4 bit
-
+		//Select card
 		sdio_select_card();
+
+#ifdef SDIO_4WIRE
+		//Set bus mode to 4 bit
 		if(SD->state & SD_CARD_SELECTED)
 		{
 			//send command for bus mode
@@ -134,6 +136,7 @@ void init_sdio(void)
 			if(!(SD->response & R1_ERROR))
 				SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
 		}
+#endif
 
 		wait_ms(1);
 		//Increase clock speed to 4 MHz
@@ -262,10 +265,14 @@ void sdio_select_card(void)
  */
 void sdio_set_inactive(void)
 {
-	//got to inactive state
-	sdio_send_cmd(CMD15,(SD->RCA<<16)); 	//Send command
-	//Delete flags for seleted card
-	SD->state &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
+	// Only eject card, when card is selected and detected
+	if(SD->state & SD_CARD_DETECTED)
+	{
+		//got to inactive state
+		sdio_send_cmd(CMD15,(SD->RCA<<16)); 	//Send command
+		//Delete flags for seleted card
+		SD->state &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
+	}
 }
 /*
  * Read block data from card at specific block address. Data is stored in buffer specified at function call.

@@ -14,17 +14,11 @@
 #include "error.h"
 #include "Variables.h"
 
-//*********** struct typedefs ********
-typedef struct
-{
-	uint8_t 	message;
-	uint16_t	lifetime;
-}InfoBox_T;
-
 //*********** Variables **************
 uint8_t 		menu 	= Gui_Vario;
 //uint8_t			menu 	= Gui_BMS;
 uint8_t 		submenu = 0;
+Key_T			Main_Keys;
 InfoBox_T		InfoBox;
 datafusion_T* 	p_ipc_gui_df_data;
 GPS_T* 			p_ipc_gui_gps_data;
@@ -39,13 +33,28 @@ extern unsigned long error_var;
 //*********** Functions **************
 void gui_init (void)
 {
+	// get ipc memory pointers
 	p_ipc_gui_df_data 		= ipc_memory_get(did_DATAFUSION);
 	p_ipc_gui_gps_data 		= ipc_memory_get(did_GPS);
 	p_ipc_gui_bms_data 		= ipc_memory_get(did_BMS);
 	p_ipc_gui_ms5611_data 	= ipc_memory_get(did_MS5611);
 	p_ipc_gui_sd_data		= ipc_memory_get(did_SDIO);
 
+	// register gui command queue
 	ipc_register_queue(200, did_GUI);
+
+	// intialize the key struct
+	Main_Keys.pressed = 99; 		//No keys pressed
+	Main_Keys.show_functions = 1; 	//Do initally show the function bar at the bottom
+
+	uint8_t count_temp = 0;
+	for(count_temp=0; count_temp<36;count_temp++)
+		Main_Keys.func_name[count_temp] = 0x20;		//Initialize the strings with blank spaces
+	//Set the string terminator for each string
+	Main_Keys.func_name[8]  = 0;
+	Main_Keys.func_name[17] = 0;
+	Main_Keys.func_name[26] = 0;
+	Main_Keys.func_name[35] = 0;
 }
 
 
@@ -53,7 +62,6 @@ void gui_init (void)
 void gui_task (void)
 {
 	lcd_clear_buffer();
-	if (menu >= num_states)	menu = 0;
 
 	gui_status_bar();
 
@@ -87,8 +95,21 @@ void gui_task (void)
 		fkt_Datafusion();
 		break;
 	default:
+		menu = Gui_Vario;
 		break;
 	}
+	// Assign the key functions for the current menu
+	fkt_assign_key_function();
+
+	// Get the ipc command for the gui
+	fkt_eval_ipc();
+
+	// Evaluate the pressed key and perform the desired action
+	fkt_eval_keys();
+
+	// display the key functions
+	fkt_display_key_functions();
+
 	// Check for runtime errors
 	fkt_runtime_errors();
 
@@ -138,26 +159,6 @@ void fkt_Initscreen (void)
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);
 
 	gui_gauge(p_ipc_gui_df_data->climbrate_filt, -2, 5);
-
-	// Keypad
-	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-		switch(GUI_cmd.data)					// switch for pad number
-		{
-		case data_KEYPAD_pad_LEFT:		// next screen
-			menu++;
-			break;
-		case data_KEYPAD_pad_DOWN:
-			break;
-		case data_KEYPAD_pad_UP:
-			break;
-		case data_KEYPAD_pad_RIGHT:
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 uint16_t tempo = 0;
@@ -280,60 +281,7 @@ void fkt_Vario (void)
 	lcd_string2buffer(" ms");
 
 	draw_graph(138, 57);
-
-	//Get commands
-	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-
-		//Switch for commad
-		switch(GUI_cmd.cmd)
-		{
-		//Keypad
-		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-
-			case data_KEYPAD_pad_DOWN:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;//cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
-				break;
-
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
-				break;
-
-			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;//cmd_vario_toggle_sinktone;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
-				break;
-
-			default:
-				break;
-			}
-			break;
-
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-			default:
-				break;
-		}
-	}
 }
-
 
 void fkt_BMS(void)
 {
@@ -372,7 +320,7 @@ void fkt_BMS(void)
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("I: ");
-	lcd_set_cursor(c1, y);
+	lcd_set_cursor(c1 - FONT_X, y);
 	lcd_signed_num2buffer(p_ipc_gui_bms_data->current,4);
 	lcd_string2buffer(" mA");
 
@@ -386,8 +334,8 @@ void fkt_BMS(void)
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("C Discharged:");
-	lcd_set_cursor(c1, y);
-	lcd_signed_num2buffer(p_ipc_gui_bms_data->discharged_capacity,4);
+	lcd_set_cursor(c1 - FONT_X, y);
+	lcd_num2buffer(p_ipc_gui_bms_data->discharged_capacity,4);
 	lcd_string2buffer(" mAh");
 
 	y +=ls;
@@ -428,55 +376,12 @@ void fkt_BMS(void)
 	y +=ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Temperature:");
-	lcd_set_cursor(c1, y);
-	lcd_num2buffer(p_ipc_gui_bms_data->temperature,4);
-	lcd_string2buffer(" C");
-
-	// check comamnds
-	while(ipc_get_queue_bytes(did_GUI) > 9) 							// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI, 10, &GUI_cmd); 	// get new command
-
-		//Switch for commad
-		switch(GUI_cmd.cmd)
-		{
-		//Keypad
-		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-
-			case data_KEYPAD_pad_DOWN:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-				break;
-
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-				break;
-
-			case data_KEYPAD_pad_RIGHT:
-				break;
-
-			default:
-				break;
-			}
-			break;
-
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-		}
-	}
+	lcd_set_cursor(c1 - FONT_X, y);
+	float temperature = (p_ipc_gui_bms_data->temperature/10)-273.15;
+	lcd_float2buffer(temperature, 2, 1);
+	lcd_char2buffer(' ');
+	lcd_char2buffer(248); // degree symbol
+	lcd_char2buffer('C');
 }
 
 void fkt_GPS(void)
@@ -584,50 +489,7 @@ void fkt_GPS(void)
 	lcd_string2buffer("MSG current DMA:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);*/
-
-	// Check comamnds
-	while(ipc_get_queue_bytes(did_GUI) > 9) 	// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-
-		//Switch for commad
-		switch(GUI_cmd.cmd)
-		{
-		//Keypad
-		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-			case data_KEYPAD_pad_DOWN:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-				break;
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
-				break;
-			case data_KEYPAD_pad_RIGHT:
-				break;
-			default:
-				break;
-			}
-			break;
-
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-		}
-	}
 }
-
 
 void fkt_MS5611 (void)
 {
@@ -675,50 +537,6 @@ void fkt_MS5611 (void)
 	lcd_string2buffer("Off2: ");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Off2),11,0);
-
-	//Get commands
-	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-
-		//Switch for commad
-		switch(GUI_cmd.cmd)
-		{
-		//Keypad
-		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-
-			case data_KEYPAD_pad_DOWN:
-				break;
-
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
-				break;
-
-			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-				break;
-
-			default:
-				break;
-			}
-			break;
-
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-			default:
-				break;
-		}
-	}
 }
 
 void fkt_Datafusion	(void)
@@ -765,7 +583,6 @@ void fkt_Datafusion	(void)
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer((float)p_ipc_gui_df_data->Wind.cnt,3,0);
 
-
 #define rwe 35
 	lcd_circle2buffer(rwe + 2, y + rwe + 2, rwe);
 	lcd_line2buffer(2,y + rwe + 2, rwe * 2 + 2, y + rwe + 2);
@@ -781,109 +598,13 @@ void fkt_Datafusion	(void)
 
 		lcd_pixel2buffer(tempxx, tempyy, 1);
 	}
-
-
-
-
-	//Get commands
-	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-
-		//Switch for commad
-		switch(GUI_cmd.cmd)
-		{
-		//Keypad
-		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-
-			case data_KEYPAD_pad_DOWN:
-				break;
-
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
-				break;
-
-			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-
-				break;
-
-			default:
-				break;
-			}
-			break;
-
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-			default:
-				break;
-		}
-	}
 }
-
-
-
 
 void fkt_Menu (void)
 {
 	lcd_set_cursor(0, 12);
 	lcd_set_fontsize(1);
 	lcd_float2buffer(2.0f,4,1);
-
-	//Get commands
-	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
-	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
-
-		//Switch for commad
-		switch(GUI_cmd.cmd)
-		{
-		//Keypad
-		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-
-			case data_KEYPAD_pad_DOWN:
-				break;
-
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
-				break;
-
-			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-
-				break;
-
-			default:
-				break;
-			}
-			break;
-
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-			default:
-				break;
-		}
-	}
 }
 
 void fkt_Settings(void)
@@ -891,53 +612,278 @@ void fkt_Settings(void)
 	lcd_set_cursor(0, 12);
 	lcd_set_fontsize(1);
 	lcd_float2buffer(3.0f,4,1);
+}
 
+/*
+ * Evaluate the ipc commands for the gui
+ */
+void fkt_eval_ipc(void)
+{
 	//Get commands
 	while(ipc_get_queue_bytes(did_GUI) > 9) 				// look for new command in keypad queue
 	{
-		ipc_queue_get(did_GUI,10,&GUI_cmd); 	// get new command
+		ipc_queue_get(did_GUI,10,&GUI_cmd); 				// get new command
 
 		//Switch for commad
 		switch(GUI_cmd.cmd)
 		{
-		//Keypad
+		//remember the latest pressed key
 		case cmd_gui_eval_keypad:
-			switch(GUI_cmd.data)					// switch for pad number
-			{
-			case data_KEYPAD_pad_LEFT:		// next screen
-				menu++;
-				break;
-
-			case data_KEYPAD_pad_DOWN:
-				break;
-
-			case data_KEYPAD_pad_UP:
-				GUI_cmd.did 		= did_GUI;
-				GUI_cmd.cmd 		= cmd_igc_stop_logging;
-				GUI_cmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
-				break;
-
-			case data_KEYPAD_pad_RIGHT:		// toggle sinktone
-
-				break;
-
-			default:
-				break;
-			}
+			Main_Keys.pressed = (uint8_t)GUI_cmd.data;
 			break;
 
-			//Infobox
-			case cmd_gui_set_std_message:
-				InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
-				InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
-				break;
-			default:
-				break;
+		//Set the Infobox message
+		case cmd_gui_set_std_message:
+			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
+			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
+			break;
+		default:
+			break;
 		}
+	}
+};
+
+/*
+ * Assign the function the keys based on the current menu page
+ */
+void fkt_assign_key_function(void)
+{
+	// Assign the key action for the current menu page
+	switch(menu){
+	case Gui_Initscreen:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= 0;
+		break;
+	case Gui_Vario:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_togglebottombar;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= gui_cmd_togglesinktone;
+		break;
+	case Gui_BMS:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_resetcapacity;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= gui_cmd_otgon;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= gui_cmd_otgoff;
+		break;
+	case Gui_GPS:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT]	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= gui_cmd_startigc;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= gui_cmd_stopigc;
+		break;
+	case Gui_MS5611:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= 0;
+		break;
+	case Gui_Datafusion:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= 0;
+		break;
+	case Gui_Menu:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= 0;
+		break;
+	case Gui_Settings:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= gui_cmd_startmenu;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= 0;
+		break;
+	default:
+		Main_Keys.function[data_KEYPAD_pad_LEFT] 	= gui_cmd_nextmenu;
+		Main_Keys.function[data_KEYPAD_pad_RIGHT] 	= 0;
+		Main_Keys.function[data_KEYPAD_pad_UP] 		= 0;
+		Main_Keys.function[data_KEYPAD_pad_DOWN] 	= 0;
+		break;
+	}
+	// Update the key function names in the string
+	sys_strcpy(Main_Keys.func_name+0, fkt_get_cmd_string(Main_Keys.function[data_KEYPAD_pad_LEFT]));
+	sys_strcpy(Main_Keys.func_name+9, fkt_get_cmd_string(Main_Keys.function[data_KEYPAD_pad_UP]));
+	sys_strcpy(Main_Keys.func_name+18,fkt_get_cmd_string(Main_Keys.function[data_KEYPAD_pad_DOWN]));
+	sys_strcpy(Main_Keys.func_name+27,fkt_get_cmd_string(Main_Keys.function[data_KEYPAD_pad_RIGHT]));
+};
+
+/*
+ * Evaluate the pressed keys and determine the action to perform basesd on the current menu page
+ */
+void fkt_eval_keys(void)
+{
+	// only set command when key was pressed
+	if(Main_Keys.pressed < 99)
+	{
+		// the pressed key variable number corresponds to the array index of the key function array
+		fkt_set_ipc_command(Main_Keys.function[Main_Keys.pressed]);
+		//reset the pressed key
+		Main_Keys.pressed = 99;
+	}
+};
+
+/*
+ * Send ipc command based on the desired action
+ */
+void fkt_set_ipc_command(uint8_t command_number)
+{
+	switch(command_number){
+	// switch to the next menu page
+	case gui_cmd_nextmenu:
+		menu++;
+		break;
+	// switch to the vario menu
+	case gui_cmd_startmenu:
+		menu = Gui_Vario;
+		break;
+	// stops the igc logging and unmounts the sd-card
+	case gui_cmd_stopigc:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_igc_stop_logging;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+		break;
+	// enables the otg usb port, only if not charging!
+	case gui_cmd_otgon:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		break;
+	// disables the otg usb port
+	case gui_cmd_otgoff:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		break;
+	// toggles the state of the sinktone, on/off
+	case gui_cmd_togglesinktone:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+		break;
+		// toggles the visibility of the bottom bar with the key functions
+	case gui_cmd_togglebottombar:
+		if(Main_Keys.show_functions)
+			Main_Keys.show_functions = 0;
+		else
+			Main_Keys.show_functions = 1;
+		break;
+		// Start another igc log
+	case gui_cmd_startigc:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_igc_start_logging;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+		break;
+		// reset the capacity count of the coulomb counter
+	case gui_cmd_resetcapacity:
+		GUI_cmd.did 		= did_GUI;
+		GUI_cmd.cmd 		= cmd_BMS_ResetCapacity;
+		GUI_cmd.timestamp 	= TIM5->CNT;
+		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		break;
+	default:
+		break;
 	}
 }
 
+/*
+ * Get the function name string for a command number
+ */
+char* fkt_get_cmd_string(uint8_t command_number)
+{
+	switch(command_number){
+	// switch to the next menu page
+	case gui_cmd_nextmenu:
+		return "Next    ";
+		break;
+	// switch to the vario menu
+	case gui_cmd_startmenu:
+		return "Vario   ";
+		break;
+	// stops the igc logging and unmounts the sd-card
+	case gui_cmd_stopigc:
+		return "Stop IGC";
+		break;
+	// enables the otg usb port, only if not charging!
+	case gui_cmd_otgon:
+		return "OTG ON  ";
+		break;
+	// disables the otg usb port
+	case gui_cmd_otgoff:
+		return "OTG OFF ";
+		break;
+	// toggles the state of the sinktone, on/off
+	case gui_cmd_togglesinktone:
+		return "SinkTone";
+		break;
+	// toggles the visibility of the bottom bar with the key functions
+	case gui_cmd_togglebottombar:
+		return "Hide Key";
+		break;
+	case gui_cmd_startigc:
+		return "StartIGC";
+		break;
+	// reset the capacity count of the coulomb counter
+	case gui_cmd_resetcapacity:
+		return "RST mAh";
+		break;
+	default:
+		return "        ";
+		break;
+	}
+}
+
+/*
+ * Display the current key functions at the bottom of the screen
+ */
+void fkt_display_key_functions(void)
+{
+	if(Main_Keys.show_functions)
+	{
+		//make blank space for functions bar
+		lcd_set_inverted(1);
+		lcd_block2buffer(0, 127, 10, 239);
+		lcd_set_inverted(0);
+		/*
+		 * Display seperation lines
+		 */
+		lcd_line2buffer(0, 118, 240, 118);
+		lcd_line2buffer(60, 118, 60, 128);
+		lcd_line2buffer(120, 118, 120, 128);
+		lcd_line2buffer(180, 118, 180, 128);
+
+		// Display funnctions
+		//Key left
+		lcd_set_cursor(2, 128);
+		lcd_char2buffer(0x11);
+		lcd_set_cursor(10, 128);
+		lcd_string2buffer(Main_Keys.func_name);
+		//Key up
+		lcd_set_cursor(62, 128);
+		lcd_char2buffer(0x1E);
+		lcd_set_cursor(70, 128);
+		lcd_string2buffer(Main_Keys.func_name+9);
+		//Key down
+		lcd_set_cursor(122, 128);
+		lcd_char2buffer(0x1F);
+		lcd_set_cursor(130, 128);
+		lcd_string2buffer(Main_Keys.func_name+18);
+		//Key right
+		lcd_set_cursor(182, 128);
+		lcd_char2buffer(0x10);
+		lcd_set_cursor(190, 128);
+		lcd_string2buffer(Main_Keys.func_name+27);
+	}
+}
 /*
  * Check for runtime errors and displayes the error as infobox
  */
@@ -949,32 +895,39 @@ void fkt_runtime_errors(void)
 		switch(error_var)
 		{
 		case err_no_memory_left:
-			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
+			InfoBox.msg_payload = err_no_memory_left;		//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_queue_overrun:
-			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
+			InfoBox.msg_payload = err_queue_overrun;		//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_bms_fault:
-			InfoBox.message = data_info_bms_fault;		//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_bms_fault;			//Message with BMS error
+			InfoBox.msg_payload = err_bms_fault;			//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_coloumb_fault:
-			InfoBox.message = data_info_coloumb_fault;	//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_coloumb_fault;		//Message with Battery Gauge error
+			InfoBox.msg_payload = err_coloumb_fault;		//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_baro_fault:
-			InfoBox.message = data_info_baro_fault;		//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_baro_fault;			//Message with Baro fault
+			InfoBox.msg_payload = err_baro_fault;			//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		case err_sd_fault:
-			InfoBox.message = data_info_sd_fault;		//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_sd_fault;			//Message with SD fault
+			InfoBox.msg_payload = err_sd_fault;				//Define message payload, in this case the error number
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		default:
-			InfoBox.message = data_info_error;			//Standard message
-			InfoBox.lifetime = 50;						//Lifetime is fixed to 50 seconds for now.
+			InfoBox.message = data_info_msg_with_payload;	//Standard message with payload
+			InfoBox.msg_payload = (uint8_t) error_var;						//Define message payload, in this case an error number which is not assigned yet
+			InfoBox.lifetime = 500;							//Lifetime is fixed to 50 seconds for now.
 			break;
 		}
 		error_var = 0;
@@ -1054,9 +1007,32 @@ void fkt_infobox(void)
 			lcd_set_fontsize(2);
 			lcd_string2buffer("Keypad 3");
 			break;
-
-
-
+		case data_info_msg_with_payload:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Error:");
+			lcd_num2buffer(InfoBox.msg_payload, 3);
+			break;
+		case data_info_igc_start_error:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("IGC Start Err");
+			break;
+		case data_info_shutting_down:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Shutting Down");
+			break;
+		case data_info_stopping_log:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("Stopping Log");
+			break;
+		case data_info_no_gps_fix:
+			lcd_set_cursor(40, 73);
+			lcd_set_fontsize(2);
+			lcd_string2buffer("No GPS Fix!");
+			break;
 		default:
 			break;
 		}
@@ -1191,7 +1167,7 @@ void gui_bootlogo(void)
 	lcd_set_cursor(84, 105);
 	lcd_set_fontsize(0);
 	lcd_set_inverted(0);
-	lcd_string2buffer("V 1.00");
+	lcd_string2buffer("V 2.00");
 	lcd_send_buffer();
 };
 
@@ -1270,14 +1246,14 @@ void gui_status_bar(void)
 	 */
 	lcd_set_cursor(196, 8);
 	//if not charging
-	if(p_ipc_gui_bms_data->charging_state & (1<<14))
+	if(p_ipc_gui_bms_data->charging_state & STATUS_FAST_CHARGE)
 	{
 		lcd_bat2buffer(ch_status_counter/10);
 		ch_status_counter++;
-		if(ch_status_counter >= 50)
+		if(ch_status_counter >= 40)
 			ch_status_counter = 0;
 	}
-	else
+	else if(p_ipc_gui_bms_data->charging_state & STATUS_BAT_PRESENT)
 	{
 		if(p_ipc_gui_bms_data->battery_voltage >= 4000)
 			lcd_bat2buffer(3);
@@ -1288,6 +1264,8 @@ void gui_status_bar(void)
 		else
 			lcd_bat2buffer(0);
 	}
+	else
+		lcd_bat2buffer(4);
 
 	/*
 	 * Display Clock

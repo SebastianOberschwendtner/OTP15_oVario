@@ -52,12 +52,38 @@ void igc_task(void)
 		ipc_queue_get(did_IGC,10,&IgcCmd); 	// get new command
 		switch(IgcCmd.cmd)					// switch for command
 		{
+		case cmd_igc_start_logging:			// start another log, when there is a valid gpsfix
+			// Check whether there is an igc file open
+			if(IgcInfo.open == IGC_FINISHED)
+			{
+				if(GpsData->fix)
+					IgcInfo.open = IGC_CLOSED;
+				else
+				{
+					//Send infobox
+					IgcCmd.did 			= did_IGC;
+					IgcCmd.cmd			= cmd_gui_set_std_message;
+					IgcCmd.data 		= data_info_no_gps_fix;
+					IgcCmd.timestamp 	= TIM5->CNT;
+					ipc_queue_push(&IgcCmd, 10, did_GUI);
+				}
+			}
+			break;
+
 		case cmd_igc_stop_logging:			// stop logging
 
 			//Check if logging is ongoing
 			if(IgcInfo.open == IGC_RECORDING)
 				IgcInfo.open = IGC_LANDING;
 			break;
+		case cmd_igc_eject_card:
+			//Check if logging is ongoing
+			if(IgcInfo.open == IGC_RECORDING)
+				IgcInfo.open = IGC_LANDING;
+			else //if not card can be ejected
+				sdio_set_inactive();
+			break;
+
 		default:
 			break;
 		}
@@ -95,7 +121,7 @@ void igc_task(void)
 				//Send infobox
 				IgcCmd.did 			= did_IGC;
 				IgcCmd.cmd			= cmd_gui_set_std_message;
-				IgcCmd.data 		= data_info_error;
+				IgcCmd.data 		= data_info_igc_start_error;
 				IgcCmd.timestamp 	= TIM5->CNT;
 				ipc_queue_push(&IgcCmd, 10, did_GUI);
 			}
@@ -573,6 +599,16 @@ void igc_close(void)
 	IgcInfo.open = IGC_FINISHED;
 };
 
+/*
+ * Return the current state of the IGC Logging.
+ * This is done, because only for the state it seems to to be necessary
+ * to register the 2.8kB of the whole IGC struct in the ipc memory.
+ * Maybe it is also good, that the state is read-only this way...
+ */
+unsigned char igc_get_state(void)
+{
+	return IgcInfo.open;
+}
 /*
  * Plot current line in display for debugging
  */

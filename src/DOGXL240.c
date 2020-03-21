@@ -33,7 +33,7 @@ lcd* plcd_DOGXL = 0;
 
 extern const unsigned char font12x16[256][32];
 extern const unsigned char font6x8[256][8];
-extern const unsigned char battery12x8[4][16];
+extern const unsigned char battery12x8[5][16];
 extern const unsigned char number16x20[11][40];
 
 /*

@@ -28,7 +28,7 @@ void exti_init(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
 	/* Configure PA0 pin in input mode */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -77,7 +77,7 @@ void EXTI0_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
-	temp.data 		= data_KEYPAD_pad_DOWN;
+	temp.data 		= data_KEYPAD_pad_LEFT;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line0);
@@ -96,7 +96,7 @@ void EXTI1_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
-	temp.data 		= data_KEYPAD_pad_RIGHT;
+	temp.data 		= data_KEYPAD_pad_DOWN;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line1);
@@ -114,7 +114,7 @@ void EXTI2_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
-	temp.data 		= data_KEYPAD_pad_LEFT;
+	temp.data 		= data_KEYPAD_pad_UP;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line2);
@@ -132,7 +132,7 @@ void EXTI3_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
-	temp.data 		= data_KEYPAD_pad_UP;
+	temp.data 		= data_KEYPAD_pad_RIGHT;
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line3);

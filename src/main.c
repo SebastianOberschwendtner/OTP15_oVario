@@ -8,7 +8,7 @@
  ******************************************************************************
  */
 
-#include "oVario_Framework.h"
+#include "oVario_Framework.h" //<--- define your hardware setup here
 #include "DOGXL240.h"
 #include "ipc.h"
 #include "sound.h"
@@ -35,7 +35,7 @@ int main(void)
 {
 	init_clock();
 	init_systick_ms(SYSTICK);
-	init_led();
+	init_gpio();
 
 	set_led_red(ON);
 	init_lcd();
@@ -58,20 +58,18 @@ int main(void)
 
 	init_igc();
 
-
 	while(1)
 	{
 		if(TICK_PASSED)
 		{
 			i2c_reset_error();
+			system_task();
 			sound_task();
 			ms5611_task();
 			datafusion_task();
 			vario_task();
 			gui_task();
 			gps_task();
-
-			BMS_set_charge_current(1000);
 			BMS_task();
 
 			l_count_tick++;

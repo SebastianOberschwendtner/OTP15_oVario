@@ -119,6 +119,37 @@ void i2c_send_char(unsigned char ch_address, unsigned char ch_data)
 };
 
 /*
+ * send char value to register
+ */
+
+void i2c_send_char_register(unsigned char ch_address, unsigned char ch_register, unsigned char ch_data)
+{
+	//Only if no error occured
+	if(!ch_i2c_error)
+	{
+		WAIT_FOR(I2C1->SR2 & I2C_SR2_BUSY,TIMEOUT);
+
+		I2C1->CR1 |= I2C_CR1_START;  					// Start generation
+		WAIT_FOR(!(I2C1->SR1 & I2C_SR1_SB),TIMEOUT);	// Wait for start condition
+
+		I2C1->DR = ch_address;							// Write Adress to register
+		WAIT_FOR(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL)),TIMEOUT); // Adress sent and Master Mode
+
+		//transmit register address
+		I2C1->DR = ch_register;							// Write Data to register
+		WAIT_FOR(!(I2C1->SR1 & I2C_SR1_TXE),TIMEOUT);	// Data register empty
+		WAIT_FOR(!(I2C1->SR2 & I2C_SR2_MSL),TIMEOUT);	// Interface in Master Mode
+
+		//transmit byte
+		I2C1->DR = ch_data;								// Write Data to register
+		WAIT_FOR(!(I2C1->SR1 & I2C_SR1_TXE),TIMEOUT);	// Data register empty
+		WAIT_FOR(!(I2C1->SR2 & I2C_SR2_MSL),TIMEOUT);	// Interface in Master Mode
+
+		I2C1->CR1 |= I2C_CR1_STOP;						// Stop generation
+	}
+};
+
+/*
  * send int
  */
 
@@ -386,4 +417,107 @@ unsigned long i2c_read_long(unsigned char ch_address, unsigned char ch_command)
 		l_temp |= I2C1->DR;
 	}
 	return l_temp;
-}
+};
+
+/*
+ * Read an array of specific size
+ */
+unsigned char i2c_read_array(unsigned char ch_address, unsigned char ch_command, unsigned char* p_array, unsigned char array_size)
+{
+	//Only if no error occured
+	if(!ch_i2c_error)
+	{
+		i2c_send_char(ch_address, ch_command);
+
+		I2C1->CR1 |= I2C_CR1_ACK | I2C_CR1_START;					// Start generation
+		RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_SB),TIMEOUT);			// Wait for start condition
+
+		I2C1->DR = ch_address+1;									// Read Adress to register
+		RETURN_WAIT_FOR(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL)),TIMEOUT); // Adress sent and Master Mode
+		for(unsigned char ch_count = 0; ch_count<array_size-1; ch_count++)
+		{
+			RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_RXNE),TIMEOUT);	//Wait for received data
+			*p_array++ = I2C1->DR;									//assign data to array and increase pointer to next entry
+		}
+		I2C1->CR1 &= ~I2C_CR1_ACK;									//After received data send NACK
+		I2C1->CR1 |= I2C_CR1_STOP;									//Send stop condition
+		RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_RXNE),TIMEOUT);		//Wait for received data
+		*p_array = I2C1->DR;
+		return 1;
+	}
+	return 0;
+};
+
+/*
+ * Write an array of specific size
+ */
+unsigned char i2c_send_array(unsigned char ch_address, unsigned char* p_array, unsigned char array_size)
+{
+	//Only if no error occured
+	if(!ch_i2c_error)
+	{
+		RETURN_WAIT_FOR(I2C1->SR2 & I2C_SR2_BUSY,TIMEOUT);
+
+		I2C1->CR1 |= I2C_CR1_START; 					// Start generation
+		RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_SB),TIMEOUT);	// Wait for start condition
+
+		I2C1->DR = ch_address;							// Write Adress to register
+		RETURN_WAIT_FOR(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL)),TIMEOUT); // Adress sent and Master Mode
+
+		//transmit bytes
+		for(unsigned char count = 0; count<array_size;count++)
+		{
+			I2C1->DR = *p_array++;									// Write Data to register and increase pointer to next entry
+			RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_TXE),TIMEOUT);	// Data register empty
+			RETURN_WAIT_FOR(!(I2C1->SR2 & I2C_SR2_MSL),TIMEOUT);	// Interface in Master Mode
+		}
+		I2C1->CR1 |= I2C_CR1_STOP;									// Stop generation
+		return 1;
+	}
+	return 0;
+};
+
+/*
+ * Write an array and tead an array of specific size
+ */
+unsigned char i2c_send_read_array(unsigned char ch_address, unsigned char* array_in, unsigned char size_in, unsigned char* array_out, unsigned char size_out)
+{
+
+	//Only if no error occured
+	if(!ch_i2c_error)
+	{
+		RETURN_WAIT_FOR(I2C1->SR2 & I2C_SR2_BUSY,TIMEOUT);
+
+		I2C1->CR1 |= I2C_CR1_START; 					// Start generation
+		RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_SB),TIMEOUT);	// Wait for start condition
+
+		I2C1->DR = ch_address;							// Write Adress to register
+		RETURN_WAIT_FOR(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL)),TIMEOUT); // Adress sent and Master Mode
+
+		//transmit bytes
+		for(unsigned char count = 0; count<size_in;count++)
+		{
+			I2C1->DR = *array_in++		;							// Write Data to register and increase pointer to next entry
+			RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_TXE),TIMEOUT);	// Data register empty
+			RETURN_WAIT_FOR(!(I2C1->SR2 & I2C_SR2_MSL),TIMEOUT);	// Interface in Master Mode
+		}
+		I2C1->CR1 |= I2C_CR1_STOP;									// Stop generation
+
+		//receive bytes
+		I2C1->CR1 |= I2C_CR1_ACK | I2C_CR1_START;					// Start generation
+		RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_SB),TIMEOUT);			// Wait for start condition
+		I2C1->DR = ch_address+1;									// Read Adress to register
+		RETURN_WAIT_FOR(!((I2C1->SR1 & I2C_SR1_ADDR) && (I2C1->SR2 & I2C_SR2_MSL)),TIMEOUT); // Adress sent and Master Mode
+		for(unsigned char ch_count = 0; ch_count<size_out-1; ch_count++)
+		{
+			RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_RXNE),TIMEOUT);	//Wait for received data
+			*array_out++ = I2C1->DR;								//assign data to array and increase pointer to next entry
+		}
+		I2C1->CR1 &= ~I2C_CR1_ACK;									//After received data send NACK
+		I2C1->CR1 |= I2C_CR1_STOP;									//Send stop condition
+		RETURN_WAIT_FOR(!(I2C1->SR1 & I2C_SR1_RXNE),TIMEOUT);		//Wait for received data
+		*array_out = I2C1->DR;
+		return 1;
+	}
+	return 0;
+};
