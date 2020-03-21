@@ -3,9 +3,10 @@
   * @file      startup_stm32.s dedicated to STM32F405RGTx device
   * @author    Ac6
   * @version   V1.0.0
-  * @date      2018-03-14
+  * @date      2020-03-21
   ******************************************************************************
   */
+
 
 .syntax unified
 .cpu cortex-m4
@@ -242,7 +243,7 @@ g_pfnVectors:
 
 	.weak	UsageFault_Handler
 	.thumb_set UsageFault_Handler,Default_Handler
-	
+
 	.weak	SVC_Handler
 	.thumb_set SVC_Handler,Default_Handler
 
