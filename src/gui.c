@@ -612,7 +612,7 @@ void fkt_eval_ipc(void)
 	{
 		ipc_queue_get(did_GUI,10,&GUI_cmd); 				// get new command
 
-		//Switch for commad
+		//Switch for command
 		switch(GUI_cmd.cmd)
 		{
 		//remember the latest pressed key

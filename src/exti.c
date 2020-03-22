@@ -77,7 +77,11 @@ void EXTI0_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
+#ifdef JAKOB
+	temp.data 		= data_KEYPAD_pad_DOWN;
+#else
 	temp.data 		= data_KEYPAD_pad_LEFT;
+#endif
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line0);
@@ -96,10 +100,15 @@ void EXTI1_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
+#ifdef JAKOB
+	temp.data 		= data_KEYPAD_pad_RIGHT;
+#else
 	temp.data 		= data_KEYPAD_pad_DOWN;
+#endif
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line1);
+
 
 //	//Send infobox
 //	ExtiCmd.did 		= did_KEYPAD;
@@ -114,10 +123,15 @@ void EXTI2_IRQHandler (void)
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
+#ifdef JAKOB
+	temp.data 		= data_KEYPAD_pad_LEFT;
+#else
 	temp.data 		= data_KEYPAD_pad_UP;
+#endif
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line2);
+
 
 //	//Send infobox
 //	ExtiCmd.did 		= did_KEYPAD;
@@ -129,13 +143,20 @@ void EXTI2_IRQHandler (void)
 
 void EXTI3_IRQHandler (void)
 {
+
+
 	T_command temp;
 	temp.did  		= did_KEYPAD;
 	temp.cmd		= cmd_gui_eval_keypad;
+#ifdef JAKOB
+	temp.data 		= data_KEYPAD_pad_UP;
+#else
 	temp.data 		= data_KEYPAD_pad_RIGHT;
+#endif
 	temp.timestamp 	= TIM5->CNT;
 	ipc_queue_push(&temp, 10, did_GUI);
 	EXTI_ClearITPendingBit(EXTI_Line3);
+
 
 //	//Send infobox
 //	ExtiCmd.did 		= did_KEYPAD;
