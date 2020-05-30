@@ -42,11 +42,25 @@
 #define TICK2MS(x)		(x*8000)/F_CPU
 #define TICK2US(x)		(x*8000000)/F_CPU
 
+
+////////////////// 168 MHz Clockspeed
 //PLL variables
 #define PLL_M			25
 #define PLL_N			336
 #define PLL_P			0	//Equals P=2, see datasheet of stm32
 #define PLL_Q			7
+
+
+////////////////// 1 MHz Clockspeed
+/*
+#define PLL_M			50
+#define PLL_N			4
+#define PLL_P			0	//Equals P=2, see datasheet of stm32
+#define PLL_Q			7
+*/
+
+
+
 
 //Port numbers of GPIOs
 #define	GPIO_A			0

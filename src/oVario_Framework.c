@@ -33,6 +33,7 @@ void init_clock(void)
 	 * PLLQ = 7		48MHz
 	 */
 	RCC->PLLCFGR = (1<<29) | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q<<24) | (PLL_P<<16) | (PLL_N<<6) | (PLL_M<<0);
+
 	//Clocks aktivieren
 	RCC->CR |= RCC_CR_PLLON;
 	while(!(RCC->CR & RCC_CR_PLLRDY));
@@ -47,6 +48,12 @@ void init_clock(void)
 	 * RTC:	   		 1 MHz 25  (RTCPRE)
 	 */
 	RCC->CFGR |= RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV4 | (25<<16);
+
+
+
+
+	RCC_ClocksTypeDef RCC_Clocks;
+	RCC_GetClocksFreq(&RCC_Clocks);
 
 	//Activate FPU
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);

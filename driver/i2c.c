@@ -63,6 +63,11 @@ void init_i2c(void)
 
 
 	//Init I2C1
+
+	RCC_ClocksTypeDef RCC_Clocks;
+	RCC_GetClocksFreq(&RCC_Clocks);
+
+
 	I2C1->CR2 	= 42;	//Define APB1 clock speed (42 MHz)
 	I2C1->CCR 	= I2C_CCR_FS | (42000000UL/(3*I2C_CLOCK));
 	I2C1->TRISE = 14;

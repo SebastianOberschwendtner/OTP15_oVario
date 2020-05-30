@@ -37,32 +37,25 @@ int main(void)
 {
 
 	init_clock();
-	init_systick_ms(SYSTICK);
 	init_led();
 
+
+
+
+
+
 	set_led_red(ON);
-	//init_lcd();
-	//gui_bootlogo();
-	//exti_init();
 	sound_init();
 	timer_init();
 	init_i2c();
 	UB_ADC1_SINGLE_Init();
 
 	MS5611_init();
-	//init_sdio();
 
 	wait_systick(10);
-	//init_BMS();
-
-	//gps_init();
 	datafusion_init();
 	vario_init();
-	//	gui_init();
 
-	//init_igc();
-
-	//	log_create();
 
 	if(error_var == 0)
 		set_led_red(OFF);
@@ -83,7 +76,6 @@ int main(void)
 			datafusion_task();
 			vario_task();
 			adc_task();
-			//gui_task();
 
 
 
