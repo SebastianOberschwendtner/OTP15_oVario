@@ -42,7 +42,11 @@
 #define TICK2US(x)		(x*8000000)/F_CPU
 
 //PLL variables
+#ifdef HSI_ENABLE
+#define PLL_M			16
+#else
 #define PLL_M			25
+#endif
 #define PLL_N			336
 #define PLL_P			0	//Equals P=2, see datasheet of stm32
 #define PLL_Q			7

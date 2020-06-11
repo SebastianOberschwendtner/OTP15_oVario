@@ -32,7 +32,20 @@ void init_clock(void)
 	 * PLLP = 2		168MHz
 	 * PLLQ = 7		48MHz
 	 */
+
+
+
+#ifdef HSI_ENABLE
+	RCC->CR |= RCC_CR_HSION;
+
+	while(!(RCC->CR & RCC_CR_HSIRDY));
+
+	RCC->PLLCFGR = (1<<29) | RCC_PLLCFGR_PLLSRC_HSI | (PLL_Q<<24) | (PLL_P<<16) | (PLL_N<<6) | (PLL_M<<0);
+#else
+
 	RCC->PLLCFGR = (1<<29) | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q<<24) | (PLL_P<<16) | (PLL_N<<6) | (PLL_M<<0);
+#endif
+
 	//Clocks aktivieren
 	RCC->CR |= RCC_CR_PLLON;
 	while(!(RCC->CR & RCC_CR_PLLRDY));

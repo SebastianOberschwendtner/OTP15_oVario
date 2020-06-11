@@ -187,7 +187,7 @@ void fkt_Vario (void)
 	lcd_set_cursor(100, y);
 	lcd_float2buffer((float)state_sinktone,1,0);
 	lcd_string2buffer("     ");
-	lcd_num2buffer(reset_reason>>24, 4);
+	lcd_num2buffer(reset_reason>>25, 4);
 	///////////////////////
 
 
@@ -1179,7 +1179,7 @@ void gui_bootlogo(void)
 	lcd_set_cursor(15, 30);
 	lcd_set_fontsize(0);
 	lcd_string2buffer("Reset reason:");
-	lcd_num2buffer(reset_reason>>24,4);
+	lcd_num2buffer(reset_reason>>25,4);
 	lcd_send_buffer();
 
 

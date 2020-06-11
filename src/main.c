@@ -26,19 +26,46 @@
 #include "logging.h"
 #include "igc.h"
 #include "stm32f4xx_rcc.h"
+#include "stm32f4xx_flash.h"
 
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;
 uint32_t reset_reason = 0;
 
+RCC_ClocksTypeDef RCC_Clocks;
+uint8_t retVal = 0;
+
 int main(void)
 {
-	reset_reason = RCC->CSR;
+
 
 	init_clock();
 	init_systick_ms(SYSTICK);
 	init_led();
+	RCC_GetClocksFreq(&RCC_Clocks);
+
+	//FLASH_OP_BOR
+	//FLASH_OB_BORConfig
+
+
+	//while(!(FLASH_OB_GetBOR() == OB_BOR_LEVEL3));
+
+	FLASH_OB_Unlock();
+	FLASH_OB_BORConfig(OB_BOR_LEVEL2);
+	FLASH_OB_Launch();
+	FLASH_OB_Lock();
+
+
+
+	retVal = FLASH_OB_GetBOR();
+
+
+	reset_reason = RCC->CSR;
+
+	RCC->CSR |= RCC_CSR_RMVF;
+
+	//reset_reason = RCC->CSR;
 
 	set_led_red(ON);
 	init_lcd();

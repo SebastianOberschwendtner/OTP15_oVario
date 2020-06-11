@@ -925,6 +925,7 @@ FLASH_Status FLASH_ProgramByte(uint32_t Address, uint8_t Data)
       (+) void FLASH_OB_RDPConfig(uint8_t OB_RDP)
       (+) void FLASH_OB_UserConfig(uint8_t OB_IWDG, uint8_t OB_STOP, uint8_t OB_STDBY)
       (+) void FLASH_OB_BORConfig(uint8_t OB_BOR)
+
       (+) FLASH_Status FLASH_ProgramOTP(uint32_t Address, uint32_t Data)
       (+) FLASH_Status FLASH_OB_Launch(void)
       (+) uint32_t FLASH_OB_GetUser(void)
