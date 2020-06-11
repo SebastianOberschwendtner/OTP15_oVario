@@ -37,7 +37,8 @@ enum states
 	Gui_BMS 		= 4,
 	Gui_GPS 		= 5,
 	Gui_MS5611 		= 6,
-	Gui_Datafusion  = 7
+	Gui_Datafusion  = 7,
+	Gui_MPU			= 8
 };
 #define num_states 8
 
@@ -66,6 +67,7 @@ void fkt_GPS					(void);
 void fkt_Menu 					(void);
 void fkt_Settings				(void);
 void fkt_MS5611 				(void);
+void fkt_MPU 					(void);
 void fkt_Datafusion				(void);
 void fkt_eval_ipc				(void);
 void fkt_assign_key_function	(void);

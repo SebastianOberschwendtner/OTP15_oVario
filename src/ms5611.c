@@ -27,7 +27,6 @@ ms5611_T* msdata;
 extern unsigned long error_var;
 
 
-
 // ***** Functions *****
 
 void MS5611_init()

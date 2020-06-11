@@ -23,6 +23,7 @@ datafusion_T* 	p_ipc_gui_df_data;
 GPS_T* 			p_ipc_gui_gps_data;
 BMS_T* 			p_ipc_gui_bms_data;
 ms5611_T* 		p_ipc_gui_ms5611_data;
+IMU_data_T*		p_ipc_gui_MPU_data;
 SDIO_T*			p_ipc_gui_sd_data;
 T_command 		GUI_cmd;
 
@@ -37,6 +38,8 @@ void gui_init (void)
 	p_ipc_gui_bms_data 		= ipc_memory_get(did_BMS);
 	p_ipc_gui_ms5611_data 	= ipc_memory_get(did_MS5611);
 	p_ipc_gui_sd_data		= ipc_memory_get(did_SDIO);
+	p_ipc_gui_MPU_data		= ipc_memory_get(did_IMU);
+
 
 	// register gui command queue
 	ipc_register_queue(200, did_GUI);
@@ -92,6 +95,10 @@ void gui_task (void)
 	case Gui_Datafusion:
 		fkt_Datafusion();
 		break;
+	case Gui_MPU:
+		fkt_MPU();
+		break;
+
 	default:
 		menu = Gui_Vario;
 		break;
@@ -176,15 +183,16 @@ void fkt_Vario (void)
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_gps_data->speed_kmh,2,1);
-	//lcd_float2buffer(p_ipc_gui_df_data->Wind.W_mag,2,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" kmh");
+	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt_acc,2,2);
+	lcd_string2buffer(" m/s");
 
 	y = y + 20;
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
-	//	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
-	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
+	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
+//	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" m");
 
@@ -527,6 +535,54 @@ void fkt_MS5611 (void)
 	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Off2),11,0);
 }
 
+
+
+void fkt_MPU (void)
+{
+
+	uint8_t y 	= 9;
+#define	ls	10		// Line step width
+#define	c1	100		// y Value of Value Column
+
+	// Set Fontsize
+	lcd_set_fontsize(1);
+
+	// Write Data to Screen
+	y +=ls - 1;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCx: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_MPU_data->accx,1,3);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCy: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_MPU_data->accy),1,3);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCz: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_MPU_data->accz),1,3);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCyFilt: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_df_data->accyFilt),1,3);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCyZero: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_df_data->accyZero),1,3);
+
+
+}
+
+
+
 void fkt_Datafusion	(void)
 {
 
@@ -620,7 +676,7 @@ void fkt_eval_ipc(void)
 			Main_Keys.pressed = (uint8_t)GUI_cmd.data;
 			break;
 
-		//Set the Infobox message
+			//Set the Infobox message
 		case cmd_gui_set_std_message:
 			InfoBox.message = (unsigned char)GUI_cmd.data;	//Standard message
 			InfoBox.lifetime = 50;							//Lifetime is fixed to 5 seconds for now.
@@ -725,32 +781,32 @@ void fkt_set_ipc_command(uint8_t command_number)
 	case gui_cmd_nextmenu:
 		menu++;
 		break;
-	// switch to the vario menu
+		// switch to the vario menu
 	case gui_cmd_startmenu:
 		menu = Gui_Vario;
 		break;
-	// stops the igc logging and unmounts the sd-card
+		// stops the igc logging and unmounts the sd-card
 	case gui_cmd_stopigc:
 		GUI_cmd.did 		= did_GUI;
 		GUI_cmd.cmd 		= cmd_igc_stop_logging;
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 		break;
-	// enables the otg usb port, only if not charging!
+		// enables the otg usb port, only if not charging!
 	case gui_cmd_otgon:
 		GUI_cmd.did 		= did_GUI;
 		GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 		break;
-	// disables the otg usb port
+		// disables the otg usb port
 	case gui_cmd_otgoff:
 		GUI_cmd.did 		= did_GUI;
 		GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 		break;
-	// toggles the state of the sinktone, on/off
+		// toggles the state of the sinktone, on/off
 	case gui_cmd_togglesinktone:
 		GUI_cmd.did 		= did_GUI;
 		GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
@@ -793,34 +849,34 @@ char* fkt_get_cmd_string(uint8_t command_number)
 	case gui_cmd_nextmenu:
 		return "Next    ";
 		break;
-	// switch to the vario menu
+		// switch to the vario menu
 	case gui_cmd_startmenu:
 		return "Vario   ";
 		break;
-	// stops the igc logging and unmounts the sd-card
+		// stops the igc logging and unmounts the sd-card
 	case gui_cmd_stopigc:
 		return "Stop IGC";
 		break;
-	// enables the otg usb port, only if not charging!
+		// enables the otg usb port, only if not charging!
 	case gui_cmd_otgon:
 		return "OTG ON  ";
 		break;
-	// disables the otg usb port
+		// disables the otg usb port
 	case gui_cmd_otgoff:
 		return "OTG OFF ";
 		break;
-	// toggles the state of the sinktone, on/off
+		// toggles the state of the sinktone, on/off
 	case gui_cmd_togglesinktone:
 		return "SinkTone";
 		break;
-	// toggles the visibility of the bottom bar with the key functions
+		// toggles the visibility of the bottom bar with the key functions
 	case gui_cmd_togglebottombar:
 		return "Hide Key";
 		break;
 	case gui_cmd_startigc:
 		return "StartIGC";
 		break;
-	// reset the capacity count of the coulomb counter
+		// reset the capacity count of the coulomb counter
 	case gui_cmd_resetcapacity:
 		return "RST mAh";
 		break;
@@ -1185,6 +1241,9 @@ void gui_status_bar(void)
 		break;
 	case Gui_Datafusion:
 		lcd_string2buffer("Datafusion");
+		break;
+	case Gui_MPU:
+		lcd_string2buffer("MPU");
 		break;
 	default:
 		lcd_string2buffer("home");

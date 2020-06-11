@@ -15,9 +15,10 @@
 #include "logging.h"
 
 // ***** Variables *****
-ms5611_T* ipc_df_data;
-datafusion_T* df_data;
-GPS_T* ipc_df_gps_data;
+ms5611_T* 		ipc_df_data;
+datafusion_T* 	df_data;
+GPS_T* 			ipc_df_gps_data;
+IMU_data_T* 	ipc_df_imu_data;
 
 
 
@@ -49,6 +50,8 @@ float timeclimbav = 0;
 uint8_t flagfirst = 1;
 uint8_t timecnt = 0;
 uint8_t tcnt = 0;
+float acc_yFilt = 0;
+float acc_yZero = 1;
 
 // ***** Functions *****
 
@@ -57,7 +60,7 @@ void datafusion_init(void)
 	ipc_df_data 	= ipc_memory_get(did_MS5611);
 	df_data			= ipc_memory_register(sizeof(datafusion_T),did_DATAFUSION);
 	ipc_df_gps_data = ipc_memory_get(did_GPS);
-
+	ipc_df_imu_data = ipc_memory_get(did_IMU);
 
 	char log_baro[] = {"bar"};
 	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
@@ -100,13 +103,21 @@ void datafusion_task(void)
 	Time += ts;
 
 	// Debug
+
+	acc_yZero = acc_yZero * 0.9 + 0.1 * ipc_df_imu_data->accy;
+
+	acc_yFilt = acc_yFilt * 0.3 + 0.7 * (ipc_df_imu_data->accy - acc_yZero);
+
 	df_data->climbrate_filt 	= y;
+	df_data->climbrate_filt_acc = y * 0.85 + acc_yFilt * 9.81 * 0.15;
 	df_data->ui1 				= ui1;
 	df_data->yi1 				= yi1;
 	df_data->yi2 				= yi2;
 	df_data->Time 				= Time;
 	df_data->sub				= sub;
 	df_data->pressure 			= p;
+	df_data->accyZero 			= acc_yZero;
+	df_data->accyFilt 			= acc_yFilt;
 
 
 	if(y < 0)
@@ -120,7 +131,7 @@ void datafusion_task(void)
 	if(tcnt > 4)		// running @ 10Hz, happening every 0.5s
 	{
 		// climb history
-		df_data->hist_clib[df_data->hist_ptr] = df_data->climbrate_filt;
+		df_data->hist_clib[df_data->hist_ptr] = df_data->climbrate_filt_acc;
 		df_data->hist_ptr = (df_data->hist_ptr + 1) % 50;
 
 		// height history
