@@ -16,6 +16,10 @@ uint32_t timet = 0;
 T_command sound_command;
 volatile uint32_t temp = 0;
 
+uint8_t statemachine_sound = sound_mute;
+
+
+
 // ***** Functions *****
 
 void sound_init()
@@ -47,10 +51,6 @@ void sound_init()
 	// Clock enable
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-	//RCC_ClocksTypeDef RCC_Clocks;
-
-	//RCC_GetClocksFreq(&RCC_Clocks);
-
 	// Timer for Buzzer Output PWM
 	TIM_TimeBaseStructure.TIM_Period 			= 10500;//20995;
 	TIM_TimeBaseStructure.TIM_Prescaler 		= 7;
@@ -78,26 +78,6 @@ void sound_init()
 	TIM_CtrlPWMOutputs(TIM2, ENABLE);
 	TIM_SetCompare1(TIM2, 0);
 
-	// Timer for Beep Init
-	// Clock enable
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-	TIM_TimeBaseStructure.TIM_Period 			= 20000;	// 20000 = 1Hz
-	TIM_TimeBaseStructure.TIM_Prescaler 		= 2099;
-	TIM_TimeBaseStructure.TIM_ClockDivision 	= 0;
-	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
-	TIM_TimeBaseStructure.TIM_CounterMode 		= TIM_CounterMode_Up;
-	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
-	TIM_Cmd(TIM3, ENABLE);
-	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
-
-	// NVIC Init
-	NVIC_InitTypeDef   NVIC_InitStructure;
-	NVIC_InitStructure.NVIC_IRQChannel 						= TIM3_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority 	= 0;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority 			= 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd 					= ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
 
 	// Predefine state
 	sound_state.volume 		= 100;
@@ -113,7 +93,7 @@ void sound_init()
 // Set frequency and volume
 // Frequency [Hz]
 // Volume [%]; 0-100%
-void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
+void sound_set_frequ_vol(uint16_t frequency, uint8_t volume)
 {
 	// 105 = 0.01ms; 	1000Hz
 	uint32_t reload = 100000/((uint32_t)frequency) * 105;//10500;
@@ -121,15 +101,14 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 
 	TIM_SetAutoreload(TIM2, reload);
 	TIM_SetCompare1(TIM2, compare);
-
-	reload = period * 200;			// 20000 = 1Hz
-	TIM_SetAutoreload(TIM3, reload);
-
-	if(TIM3->CNT > reload)
-		TIM3->CNT = 0;
 }
 
-void sound_task(void)
+
+
+uint8_t sound_tim_cnt = 0;
+uint8_t fastbeep = 1;
+
+void sound_task(void) // gets called 10Hz / 100ms
 {
 	while(ipc_get_queue_bytes(did_SOUND) > 9)
 	{
@@ -161,9 +140,10 @@ void sound_task(void)
 
 			case cmd_sound_set_mute:
 				sound_state.mute = 1;
+				sound_state.mode = sound_mode_mute;
 				break;
 
-			case cmd_sound_set_unmute:
+			case cmd_sound_set_unmute: // not used anmyore
 				sound_state.mute = 0;
 				break;
 
@@ -187,15 +167,46 @@ void sound_task(void)
 	if(sound_state.mode != sound_mode_beep)
 		sound_state.beep = 1;
 
+	// Sound Statemachine
 
-	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * (sound_state.mute^1) * sound_state.beep, sound_state.period);
+	switch(sound_state.mode)
+	{
+	// ***** SHUT THE FUCK UP *****
+	case sound_mode_mute:
+		fastbeep = 1;
+		break;
+
+		// ***** BEEP *****
+	case sound_mode_beep:
+		sound_tim_cnt++;
+
+		if(fastbeep)				// BEEP on first loop after mute
+		{
+			fastbeep = 0;
+			sound_state.beep = 1;
+			sound_tim_cnt = 0;
+		}
+
+		if(sound_tim_cnt >= sound_state.period/10) // toggle sound
+		{
+			if(sound_state.mode == sound_mode_beep)
+				sound_state.beep ^= 1;
+			sound_tim_cnt = 0;
+		}
+
+		break;
+		// ***** MAKE ANNOYING SOUND *****
+	case sound_mode_cont:
+		fastbeep 			= 1,
+		sound_state.mute 	= 0;
+		sound_state.beep 	= 1;
+
+		break;
+	default:
+		fastbeep = 1;
+		statemachine_sound = sound_mute;
+		break;
+	}
+
+	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * (sound_state.mute^1) * sound_state.beep);
 }
-
-void TIM3_IRQHandler (void)
-{
-	if(sound_state.mode == sound_mode_beep)
-		sound_state.beep ^= 1;
-
-	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
-}
-

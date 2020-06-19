@@ -15,8 +15,8 @@
 #include "Variables.h"
 
 //*********** Variables **************
-//uint8_t 		menu 	= Gui_Vario;
-uint8_t 		menu 	= Gui_DEBUG;
+uint8_t 		menu 	= Gui_Vario;
+//uint8_t 		menu 	= Gui_DEBUG;
 uint8_t 		submenu = 0;
 Key_T			Main_Keys;
 InfoBox_T		InfoBox;

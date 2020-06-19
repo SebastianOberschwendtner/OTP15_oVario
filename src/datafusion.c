@@ -95,7 +95,7 @@ void datafusion_init(void)
 	char log_baro[] = {"bar"};
 	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
 }
-
+float fake_climb = -3;
 
 void datafusion_task(void)
 {
@@ -132,7 +132,7 @@ void datafusion_task(void)
 	yi2 += yi1 * ts;
 	Time += ts;
 
-
+/*
 	// Complementary Filter
 
 	float temp, ax, ay, az, res;
@@ -177,10 +177,13 @@ void datafusion_task(void)
 	climb_filt = y + a_y;
 
 
-//	acc_yZero = acc_yZero * 0.9 + 0.1 * ipc_df_imu_data->accy;
-//
-//	acc_yFilt = acc_yFilt * 0.3 + 0.7 * (ipc_df_imu_data->accy - acc_yZero);
+*/
 
+	//fake_climb = fake_climb + 0.05;
+	//if(fake_climb > 6) fake_climb = -3;
+
+	//climb_filt = fake_climb;
+	//y = climb_filt;
 	df_data->climbrate_filt 	= y;
 	df_data->climbrate_filt_acc = climb_filt;//y * 0.85 + acc_yFilt * 9.81 * 0.15;
 	df_data->ui1 				= ui1;
@@ -204,7 +207,7 @@ void datafusion_task(void)
 	if(tcnt > 4)		// running @ 10Hz, happening every 0.5s
 	{
 		// climb history
-		df_data->hist_clib[df_data->hist_ptr] = df_data->climbrate_filt_acc;
+		df_data->hist_clib[df_data->hist_ptr] = df_data->climbrate_filt;
 		df_data->hist_ptr = (df_data->hist_ptr + 1) % 50;
 
 		// height history

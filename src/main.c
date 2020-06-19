@@ -46,7 +46,7 @@ int main(void)
 	init_i2c();
 
 	MS5611_init();
-	mpu_init();
+	//mpu_init();
 	init_sdio();
 
 	wait_systick(10);
@@ -67,7 +67,7 @@ int main(void)
 			system_task();
 			sound_task();
 			ms5611_task();
-			mpu_task();
+			//mpu_task();
 			datafusion_task();
 			vario_task();
 			gui_task();
