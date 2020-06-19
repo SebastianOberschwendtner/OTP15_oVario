@@ -143,6 +143,9 @@ typedef struct{
 	datafusion_T_Wind Wind;
 	float 		accyZero;
 	float 		accyFilt;
+	uint8_t 	sinktone;
+	float 		debug1;
+	float 		debug2;
 }datafusion_T;
 #pragma pack(pop)
 
@@ -190,6 +193,7 @@ typedef struct{
 	uint8_t month;
 	uint8_t day;
 	float 	hAcc;	//[m]
+	float	NavRec;
 }GPS_T;
 #pragma pack(pop)
 
@@ -317,6 +321,9 @@ typedef struct{
 	float accx;
 	float accy;
 	float accz;
+	float accx_raw;
+	float accy_raw;
+	float accz_raw;
 }IMU_data_T;
 #pragma pack(pop)
 

@@ -64,7 +64,9 @@ sound = 500;
 				break;
 
 			case cmd_vario_toggle_sinktone:
-				state_sinktone ^= 1;
+				state_sinktone += 1;
+				if(state_sinktone > 2) state_sinktone = 0;
+				p_ipc_v_df_data->sinktone = state_sinktone;
 				break;
 
 			default:
@@ -74,6 +76,7 @@ sound = 500;
 
 	// Sound creation
 	temp_climb = p_ipc_v_df_data->climbrate_filt;
+//	temp_climb = p_ipc_v_df_data->climbrate_filt_acc;
 
 	if(temp_climb > 5)
 		temp_climb = 5;
@@ -83,7 +86,7 @@ sound = 500;
 
 
 
-	if(temp_climb > 0.2)		// Climbing
+	if(temp_climb > 0.2 && state_sinktone < 2)		// Climbing
 	{
 		// Set Unmute
 		vario_command.cmd 	= cmd_sound_set_unmute;
@@ -118,7 +121,7 @@ sound = 500;
 
 		ipc_queue_push(&vario_command, 10, did_SOUND);
 	}
-	else if((temp_climb < -2) && state_sinktone) 		// Huge Sink  --> Turn on Thermals
+	else if((temp_climb < -2) && state_sinktone == 1) 		// Huge Sink  --> Turn on Thermals
 	{
 		// Set Unmute
 		vario_command.cmd 	= cmd_sound_set_unmute;

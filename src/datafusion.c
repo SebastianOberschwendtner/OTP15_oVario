@@ -43,6 +43,12 @@ float yi1 = 0;
 float yi2 = 0;
 float sub = 0;
 
+float u_pre = 0;
+float y_h 	= 0;
+float y_int = 0;
+float y_int_mem = 0;
+float T_comp = 0.25;
+
 float timeclimbarray[climbavtime * 2] = {0};
 float timeclimbh[2];
 float timeclimbav = 0;
@@ -52,6 +58,30 @@ uint8_t timecnt = 0;
 uint8_t tcnt = 0;
 float acc_yFilt = 0;
 float acc_yZero = 1;
+
+// Complementary Filter
+
+float a_uint = 0;
+float a_u_sum = 0;
+float a_y_sum = 0;
+float a_mem_yint = 0;
+float a_mem_uaint = 0;
+float a_mem_ausum = 0;
+float a_u = 0;
+float a_y = 0;
+
+float h_y_sum = 0;
+float h_u_sum = 0;
+float h_mem_y = 0;
+float h_mem_ysum = 0;
+float h_u = 0;
+float h_y = 0;
+float climb_filt = 0;
+
+
+
+
+#
 
 // ***** Functions *****
 
@@ -102,14 +132,57 @@ void datafusion_task(void)
 	yi2 += yi1 * ts;
 	Time += ts;
 
-	// Debug
 
-	acc_yZero = acc_yZero * 0.9 + 0.1 * ipc_df_imu_data->accy;
+	// Complementary Filter
 
-	acc_yFilt = acc_yFilt * 0.3 + 0.7 * (ipc_df_imu_data->accy - acc_yZero);
+	float temp, ax, ay, az, res;
+
+	ax = ipc_df_imu_data->accx_raw;
+	ay = ipc_df_imu_data->accy_raw;
+	az = ipc_df_imu_data->accz_raw;
+
+	temp = ax * ax + ay * ay + az * az;
+
+	arm_sqrt_f32(temp, &res);
+
+	acc_yZero = acc_yZero * 0.9 + 0.1 * res;
+
+	acc_yFilt = acc_yFilt * 0.3 + 0.7 * (res - acc_yZero);
+
+	a_u = (res - acc_yZero) * 9.81;
+	h_u = df_data->height;
+
+
+	// Acc Part
+	a_uint 	= a_u * ts;
+	a_y_sum = a_mem_ausum * ts + a_mem_yint - a_mem_uaint;
+	a_u_sum = a_uint - a_y_sum * T_comp;
+	a_y 	= a_u_sum*2;
+
+	a_mem_yint 	= a_y_sum;
+	a_mem_uaint = a_uint;
+	a_mem_ausum = a_u_sum;
+
+	// Height Part
+	h_y_sum = h_mem_y * ts + h_mem_ysum;
+	h_u_sum = h_u - h_y_sum;
+	h_y 	= h_u_sum * T_comp;
+
+	h_mem_y 	= h_y;
+	h_mem_ysum 	= h_y_sum;
+
+	// Total
+	df_data->debug1 = h_y;
+	df_data->debug2 = a_y;
+	climb_filt = y + a_y;
+
+
+//	acc_yZero = acc_yZero * 0.9 + 0.1 * ipc_df_imu_data->accy;
+//
+//	acc_yFilt = acc_yFilt * 0.3 + 0.7 * (ipc_df_imu_data->accy - acc_yZero);
 
 	df_data->climbrate_filt 	= y;
-	df_data->climbrate_filt_acc = y * 0.85 + acc_yFilt * 9.81 * 0.15;
+	df_data->climbrate_filt_acc = climb_filt;//y * 0.85 + acc_yFilt * 9.81 * 0.15;
 	df_data->ui1 				= ui1;
 	df_data->yi1 				= yi1;
 	df_data->yi2 				= yi2;
@@ -161,12 +234,12 @@ float 		hdg = 0; 				// heading of actual data point
 
 void wind_estimator ()
 {
-//	for (uint8_t cnta = 0; cnta < 60; cnta++)
-//	{
-//		psi[cnta] = (float)5 * cnta;
-//		vgps[cnta] = 10;
-//	}
-//	data_cnt = 60;
+	//	for (uint8_t cnta = 0; cnta < 60; cnta++)
+	//	{
+	//		psi[cnta] = (float)5 * cnta;
+	//		vgps[cnta] = 10;
+	//	}
+	//	data_cnt = 60;
 
 	wind_collect_samples();
 	wind_grad();

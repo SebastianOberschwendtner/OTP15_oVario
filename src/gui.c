@@ -15,7 +15,8 @@
 #include "Variables.h"
 
 //*********** Variables **************
-uint8_t 		menu 	= Gui_Vario;
+//uint8_t 		menu 	= Gui_Vario;
+uint8_t 		menu 	= Gui_DEBUG;
 uint8_t 		submenu = 0;
 Key_T			Main_Keys;
 InfoBox_T		InfoBox;
@@ -26,6 +27,10 @@ ms5611_T* 		p_ipc_gui_ms5611_data;
 IMU_data_T*		p_ipc_gui_MPU_data;
 SDIO_T*			p_ipc_gui_sd_data;
 T_command 		GUI_cmd;
+
+
+data_graph_T debug1;
+data_graph_T debug2;
 
 extern unsigned long error_var;
 
@@ -56,6 +61,20 @@ void gui_init (void)
 	Main_Keys.func_name[17] = 0;
 	Main_Keys.func_name[26] = 0;
 	Main_Keys.func_name[35] = 0;
+
+
+	debug1.max 	= 0.5;
+	debug1.min 	= -0.5;
+	debug1.x 		= 10;
+	debug1.y 		= 10;
+	debug1.size_y 	= 50;
+
+	debug2.max 	= 0.5;
+	debug2.min 	= -0.5;
+	debug2.x 		= 10;
+	debug2.y 		= 70;
+	debug2.size_y 	= 50;
+
 }
 
 
@@ -98,7 +117,9 @@ void gui_task (void)
 	case Gui_MPU:
 		fkt_MPU();
 		break;
-
+	case Gui_DEBUG:
+		fkt_debug();
+		break;
 	default:
 		menu = Gui_Vario;
 		break;
@@ -187,12 +208,13 @@ void fkt_Vario (void)
 	lcd_string2buffer(" kmh");
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt_acc,2,2);
 	lcd_string2buffer(" m/s");
+	lcd_signed_num2buffer(p_ipc_gui_df_data->sinktone,1);
 
 	y = y + 20;
 	lcd_set_cursor(0, y);
 	lcd_set_fontsize(2);
 	lcd_float2buffer(p_ipc_gui_df_data->height,4,1);
-//	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
+	//	lcd_float2buffer(p_ipc_gui_gps_data->msl,4,1);
 	lcd_set_fontsize(1);
 	lcd_string2buffer(" m");
 
@@ -474,11 +496,17 @@ void fkt_GPS(void)
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->Rd_Idx,6,0);
 
+	//	y +=ls;
+	//	lcd_set_cursor(0, y);
+	//	lcd_string2buffer("MSG Rd_cnt:");
+	//	lcd_set_cursor(c1, y);
+	//	lcd_float2buffer(p_ipc_gui_gps_data->Rd_cnt,6,0);
+
 	y +=ls;
 	lcd_set_cursor(0, y);
-	lcd_string2buffer("MSG Rd_cnt:");
+	lcd_string2buffer("Nav Received:");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->Rd_cnt,6,0);
+	lcd_float2buffer(p_ipc_gui_gps_data->NavRec,6,0);
 
 	/*y +=ls;
 	lcd_set_cursor(0, y);
@@ -548,6 +576,25 @@ void fkt_MPU (void)
 	lcd_set_fontsize(1);
 
 	// Write Data to Screen
+	y +=ls - 1;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCx raw: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_MPU_data->accx_raw,1,3);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCy raw: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_MPU_data->accy_raw),1,3);
+
+	y +=ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("ACCz raw: ");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer(((float)p_ipc_gui_MPU_data->accz_raw),1,3);
+
+
 	y +=ls - 1;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("ACCx: ");
@@ -1183,6 +1230,45 @@ void draw_graph(uint8_t x, uint8_t y)
 	lcd_float2buffer((float)min,1,0);
 	lcd_string2buffer("ms");
 };
+
+
+
+void fkt_debug(void)
+{
+
+	debug1.data_current = p_ipc_gui_df_data->climbrate_filt_acc;
+	draw_graph_debug(&debug1);
+
+	debug2.data_current = p_ipc_gui_df_data->climbrate_filt;//p_ipc_gui_df_data->climbrate_filt_acc;
+	draw_graph_debug(&debug2);
+	//draw_graph_debug(&debug2);
+
+}
+
+
+
+void draw_graph_debug(data_graph_T *dat)
+{
+	dat->data[dat->data_cnt] = dat->data_current;
+	dat->data_cnt++;
+	if(dat->data_cnt > 49) dat->data_cnt = 0;
+
+	uint8_t x,y;
+
+	for(uint8_t i = 0; i < 49; i++)
+	{
+		x = i;
+		float data = dat->data[(i + dat->data_cnt) % 49];
+		if(data > dat->max) data = dat->max;
+		if(data < dat->min) data = dat->min;
+
+
+		y = dat->size_y - (uint8_t)((float)dat->size_y * (data - dat->min)/(dat->max - dat->min));
+		lcd_pixel2buffer(dat->x + x, dat->y + y,1);
+	}
+}
+
+
 
 /*
  * Draws the bootlogo of the vario.

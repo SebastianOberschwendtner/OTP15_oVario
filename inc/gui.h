@@ -28,6 +28,21 @@ typedef struct
 	char func_name[36]; //8 characters + 1 stop character per key
 }Key_T;
 
+typedef struct
+{
+	uint8_t x;
+	uint8_t y;
+	uint8_t size_y;
+	float min;
+	float max;
+	float data[50];
+	float data_current;
+	uint8_t data_cnt;
+}data_graph_T;
+
+
+
+
 enum states
 {
 	Gui_Initscreen 	= 0,
@@ -38,7 +53,8 @@ enum states
 	Gui_GPS 		= 5,
 	Gui_MS5611 		= 6,
 	Gui_Datafusion  = 7,
-	Gui_MPU			= 8
+	Gui_MPU			= 8,
+	Gui_DEBUG		= 9
 };
 #define num_states 8
 
@@ -79,9 +95,12 @@ void fkt_runtime_errors			(void);
 void fkt_infobox				(void);
 void gui_bootlogo				(void);
 void gui_status_bar				(void);
+void fkt_debug					(void);
+
 
 
 void gui_gauge      (float value, float min, float max);
 void draw_graph		(uint8_t x, uint8_t y);
+void draw_graph_debug(data_graph_T *dat);
 
 #endif /* GUI_H_ */

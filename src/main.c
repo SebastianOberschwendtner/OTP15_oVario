@@ -82,7 +82,7 @@ int main(void)
 			else if (l_count_tick == 10)
 			{
 				set_led_red(ON);
-				igc_task();
+				//igc_task();
 				l_count_tick = 0;
 			}
 		}

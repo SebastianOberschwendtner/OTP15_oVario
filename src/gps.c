@@ -223,6 +223,7 @@ void gps_init ()
 	p_GPS_data->alt_max = 0;
 	p_GPS_data->alt_min = 9999;
 	p_GPS_data->v_max 	= 0;
+	p_GPS_data->NavRec 	= 0;
 
 
 	// Config GPS
@@ -245,6 +246,7 @@ uint8_t deccnt = 0;
 
 uint16_t currentDMA = 0;
 uint16_t lastDMA = 0;
+
 
 
 uint8_t buff[50];
@@ -290,6 +292,7 @@ void gps_task ()
 					{
 					case nav:
 						gps_handle_nav();
+						p_GPS_data->NavRec++;
 						break;
 					default:
 						;
