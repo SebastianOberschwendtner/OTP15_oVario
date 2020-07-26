@@ -27,8 +27,8 @@
 #define I2C_CLOCK		100000UL
 
 //Options for hardware setup
-//#define SDIO_4WIRE //Use 4 wire mode of SDIO0
-//#define SOFTSWITCH //When the softswitch is installed
+#define SDIO_4WIRE //Use 4 wire mode of SDIO0
+#define SOFTSWITCH //When the softswitch is installed
 
 //BMS parameters
 #define MAX_BATTERY_VOLTAGE	4200 //[mV]

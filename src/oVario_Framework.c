@@ -503,9 +503,9 @@ void sys_watchdog(unsigned char action)
 	{
 	case ON:
 		IWDG->KR  = 0x5555;	//Enable write to PR
-		IWDG->PR  = 1;		// Set prescaler to 8
+		IWDG->PR  = 2;		// Set prescaler to 16
 		IWDG->KR  = 0x5555;	//Enable write to RL
-		IWDG->RLR = 0x3FF;	// Set relaod value to 2047 -> gives a timeout of approx. 512ms
+		IWDG->RLR = 0xFFF;	// Set relaod value -> gives a timeout of approx. 2048ms
 		IWDG->KR  = 0xCCCC;	//Unleash the watchdog
 		break;
 	case OFF:
