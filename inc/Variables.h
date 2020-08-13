@@ -126,6 +126,7 @@ typedef struct{
 	float 		hoehe;
 	float 		climbrate;
 	float 		climbrate_filt;
+	float 		climbrate_filt_acc;
 	float 		height;
 	int32_t 	pressure;
 	float		Time;
@@ -140,6 +141,8 @@ typedef struct{
 	float 		hist_h[30];
 	uint8_t 	histh_ptr;
 	datafusion_T_Wind Wind;
+	float 		accyZero;
+	float 		accyFilt;
 }datafusion_T;
 #pragma pack(pop)
 
@@ -298,4 +301,26 @@ typedef struct
 	unsigned long long message_length;
 }MD5_T;
 #pragma pack(pop)
+
+
+#pragma pack(push, 1)
+typedef struct{
+	float x;
+	float y;
+	float z;
+}axis_T;
+
+typedef struct{
+	float p;
+	float q;
+	float r;
+	float accx;
+	float accy;
+	float accz;
+}IMU_data_T;
+#pragma pack(pop)
+
+
+
+
 #endif /* VARIABLES_H_ */

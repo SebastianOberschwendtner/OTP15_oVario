@@ -22,6 +22,7 @@
 #include "Variables.h"
 #include "gps.h"
 #include "BMS.h"
+#include "mpu.h"
 #include "sdio.h"
 #include "logging.h"
 #include "igc.h"
@@ -45,6 +46,7 @@ int main(void)
 	init_i2c();
 
 	MS5611_init();
+	mpu_init();
 	init_sdio();
 
 	wait_systick(10);
@@ -55,7 +57,7 @@ int main(void)
 	vario_init();
 	gui_init();
 
-	init_igc();
+	//init_igc();
 
 	while(1)
 	{
@@ -65,6 +67,7 @@ int main(void)
 			system_task();
 			sound_task();
 			ms5611_task();
+			mpu_task();
 			datafusion_task();
 			vario_task();
 			gui_task();
