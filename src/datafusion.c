@@ -7,12 +7,7 @@
 
 // ***** Includes ******
 #include "datafusion.h"
-#include "Variables.h"
-#include "ipc.h"
-#include "oVario_Framework.h"
-#include "math.h"
-#include "arm_math.h"
-#include "logging.h"
+
 
 // ***** Variables *****
 ms5611_T* ipc_df_data;

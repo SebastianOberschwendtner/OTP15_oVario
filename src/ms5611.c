@@ -9,7 +9,6 @@
 #define MS5611_C_
 
 #include "MS5611.h"
-#include "Variables.h"
 
 // ***** Variables *****
 uint32_t C0,C1,C2,C3,C4,C5,C6,CRC_MS,D1,D2;

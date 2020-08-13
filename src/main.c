@@ -9,24 +9,6 @@
  */
 
 #include "oVario_Framework.h" //<--- define your hardware setup here
-#include "DOGXL240.h"
-#include "ipc.h"
-#include "sound.h"
-#include "exti.h"
-#include "timer.h"
-#include "i2c.h"
-#include "ms5611.h"
-#include "datafusion.h"
-#include "vario.h"
-#include "gui.h"
-#include "Variables.h"
-#include "gps.h"
-#include "BMS.h"
-#include "sdio.h"
-#include "logging.h"
-#include "igc.h"
-#include "stm32f4xx_rcc.h"
-
 
 uint32_t error_var = 0;
 unsigned long l_count_tick = 0;

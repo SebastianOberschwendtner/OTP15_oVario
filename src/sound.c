@@ -6,8 +6,6 @@
  */
 // ***** Includes *****
 #include "sound.h"
-#include "Variables.h"
-#include "oVario_Framework.h"
 
 
 // ***** Variables *****

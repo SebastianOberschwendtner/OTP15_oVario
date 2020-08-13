@@ -8,11 +8,6 @@
 
 //*********** Includes **************
 #include "gui.h"
-#include "oVario_Framework.h"
-#include "DOGXL240.h"
-#include "ipc.h"
-#include "error.h"
-#include "Variables.h"
 
 //*********** Variables **************
 uint8_t 		menu 	= Gui_Vario;
@@ -1167,7 +1162,7 @@ void gui_bootlogo(void)
 	lcd_set_cursor(84, 105);
 	lcd_set_fontsize(0);
 	lcd_set_inverted(0);
-	lcd_string2buffer("V 2.00");
+	lcd_string2buffer("V 3.00");
 	lcd_send_buffer();
 };
 

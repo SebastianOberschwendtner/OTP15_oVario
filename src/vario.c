@@ -7,9 +7,6 @@
 
 // ***** Includes *****
 #include "vario.h"
-#include "sound.h"
-#include "Variables.h"
-#include "arm_math.h"
 
 //Git ist scheiße!
 

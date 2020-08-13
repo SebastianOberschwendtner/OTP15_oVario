@@ -6,7 +6,6 @@
  */
 
 #include "oVario_Framework.h"
-#include "Variables.h"
 
 SDIO_T* p_ipc_sys_sd_data;
 BMS_T* 	p_ipc_sys_bms_data;

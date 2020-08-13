@@ -7,12 +7,6 @@
 
 #include "gps.h"
 
-#include "stm32f4xx.h"
-#include "ipc.h"
-#include "did.h"
-#include "oVario_Framework.h"
-#include "Variables.h"
-#include "logging.h"
 
 // Typedefs
 #pragma pack(push, 1)

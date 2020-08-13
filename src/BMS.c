@@ -6,8 +6,6 @@
  */
 
 #include "BMS.h"
-#include "Variables.h"
-#include "ipc.h"
 
 BMS_T* pBMS;
 unsigned char bat_health = 100;

@@ -1,0 +1,55 @@
+{
+    "configurations": [
+        {
+            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/include",
+                "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/src",
+                "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/cores/stm32",
+                "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/variants/stm32f4",
+                "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/spl/variants/stm32f4/inc",
+                "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/spl/variants/stm32f4/src",
+                "C:/Users/Sebastian/.platformio/packages/tool-unity",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/include",
+                    "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/src",
+                    "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/cores/stm32",
+                    "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/variants/stm32f4",
+                    "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/spl/variants/stm32f4/inc",
+                    "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/spl/variants/stm32f4/src",
+                    "C:/Users/Sebastian/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=40304",
+                "STM32F4",
+                "STM32F407xx",
+                "STM32F40_41xxx",
+                "ARDUINO_STM32DiscoveryF407",
+                "BOARD_discovery_f4",
+                "ARM_MATH_CM4",
+                "F_CPU=168021840L",
+                "DISCO_F407VG",
+                "USE_STDPERIPH_DRIVER",
+                "__PLATFORMIO_BUILD_DEBUG__",
+                ""
+            ],
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "C:/Users/Sebastian/.platformio/packages/toolchain-gccarmnoneeabi@1.70201.0/bin/arm-none-eabi-gcc.exe",
+            "compilerArgs": [
+                "-mthumb",
+                "-mcpu=cortex-m4",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}

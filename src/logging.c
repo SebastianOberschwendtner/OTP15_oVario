@@ -5,9 +5,6 @@
  *      Author: Sebastian
  */
 #include "logging.h"
-#include "sdio.h"
-#include "Variables.h"
-#include "ipc.h"
 
 //ipc structs
 SDIO_T* sd;
