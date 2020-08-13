@@ -36,7 +36,7 @@
                 "ARDUINO_STM32DiscoveryF407",
                 "BOARD_discovery_f4",
                 "ARM_MATH_CM4",
-                "F_CPU=168021840L",
+                "F_CPU=168021840UL",
                 "DISCO_F407VG",
                 "USE_STDPERIPH_DRIVER",
                 "__PLATFORMIO_BUILD_DEBUG__",
