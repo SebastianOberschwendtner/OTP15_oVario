@@ -12,6 +12,9 @@ local.properties
 .loadpath
 .recommenders
 
+# VSCode platformio project file
+.pio
+
 LinkerScript.ld
 
 # External tool builders
