@@ -49,7 +49,6 @@ void system_task(void)
 		// goto run state
 		sys_state = RUN;
 		break;
-
 	// Normal Run state
 	case RUN:
 		// Pet the watchdog

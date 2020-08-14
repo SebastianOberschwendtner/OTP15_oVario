@@ -40,6 +40,7 @@
 #include "logging.h"
 #include "error.h"
 #include "md5.h"
+#include "scheduler.h"
 
 #include "arm_math.h"
 #include "math.h"
@@ -50,10 +51,17 @@
  */
 //CPU Speed
 // #define	F_CPU			168021840UL //Measured with osci
+// ==> is now defined in platformio.ini!
+
 //Define SysTick time in ms
 #define SYSTICK			100
 //I2C clock speed
 #define I2C_CLOCK		100000UL
+
+//Define Tasks for scheduler
+#define TASK_CORE       TASK0
+#define TASK_AUX        TASK1
+#define TASK_1Hz        TASK2
 
 //Options for hardware setup
 #define SDIO_4WIRE //Use 4 wire mode of SDIO0

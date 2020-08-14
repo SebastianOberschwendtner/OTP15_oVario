@@ -8,6 +8,7 @@
             "includePath": [
                 "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/include",
                 "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/src",
+                "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/lib/scheduler",
                 "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/cores/stm32",
                 "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/variants/stm32f4",
                 "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/spl/variants/stm32f4/inc",
@@ -20,6 +21,7 @@
                 "path": [
                     "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/include",
                     "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/src",
+                    "c:/Users/Sebastian/Coding/Eclipse_Aktuell/OTP15_oVario/lib/scheduler",
                     "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/cores/stm32",
                     "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/cmsis/variants/stm32f4",
                     "C:/Users/Sebastian/.platformio/packages/framework-spl/stm32/spl/variants/stm32f4/inc",

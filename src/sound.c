@@ -116,14 +116,6 @@ void sound_init()
 // Volume [%]; 0-100%
 void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 {
-
-	if( 0!= 0)
-		set_led_green(ON);
-	else
-		set_led_green(OFF);
-
-
-
 	// 105 = 0.01ms; 	1000Hz
 	uint32_t reload = 100000/((uint32_t)frequency) * 105;//10500;
 	uint32_t compare = (reload / 2) * volume / 100;

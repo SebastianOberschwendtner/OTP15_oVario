@@ -11,7 +11,6 @@
 #include "oVario_Framework.h" //<--- define your hardware setup here
 
 uint32_t error_var = 0;
-unsigned long l_count_tick = 0;
 
 int main(void)
 {
@@ -40,30 +39,45 @@ int main(void)
 
 	init_igc();
 
+	//initiate the scheduler
+	init_scheduler();
+	schedule(TASK_CORE,	1); 			//run core task every systick
+	schedule(TASK_AUX,	1);			//run aux task every systick for now
+	//TODO Change the rate of the aux task
+	schedule(TASK_1Hz,  1000/SYSTICK);	//run every 1s
+
 	while(1)
 	{
+		
 		if(TICK_PASSED)
 		{
-			i2c_reset_error();
-			system_task();
-			sound_task();
-			ms5611_task();
-			datafusion_task();
-			vario_task();
-			gui_task();
-			gps_task();
-			BMS_task();
+			//***** Run scheduler *****
+			run_scheduler();
 
-			l_count_tick++;
-			if(l_count_tick == 5)
-			{
-				set_led_red(OFF);
+			//***** TASK_CORE ******
+			if(run(TASK_CORE,TICK_PASSED))
+			{				
+				ms5611_task();
+				datafusion_task();
+				vario_task();
 			}
-			else if (l_count_tick == 10)
+
+			//***** TASK_AUX ******
+			if(run(TASK_AUX,TICK_PASSED))
 			{
-				set_led_red(ON);
+				i2c_reset_error();
+				system_task();
+				sound_task();
+				gui_task();
+				gps_task();
+				BMS_task();
+			}
+
+			//***** TASK_1Hz ******
+			if (run(TASK_1Hz,TICK_PASSED))
+			{
+				set_led_red(TOGGLE);
 				igc_task();
-				l_count_tick = 0;
 			}
 		}
 	}
