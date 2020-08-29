@@ -224,8 +224,8 @@ void gps_init ()
 
 	char log_hdg[] = {"HDG"};
 	char log_spd[] = {"SPD"};
-	log_include(&p_GPS_data->heading_deg, 4 ,1, &log_hdg[0]);
-	log_include(&p_GPS_data->speed_kmh, 4 ,1, &log_spd[0]);
+	// log_include(&p_GPS_data->heading_deg, 4 ,1, &log_hdg[0]);
+	// log_include(&p_GPS_data->speed_kmh, 4 ,1, &log_spd[0]);
 }
 
 uint8_t cnt 		= 0;

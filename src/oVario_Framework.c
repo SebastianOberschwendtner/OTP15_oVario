@@ -49,6 +49,7 @@ void system_task(void)
 		// goto run state
 		sys_state = RUN;
 		break;
+
 	// Normal Run state
 	case RUN:
 		// Pet the watchdog
@@ -70,10 +71,10 @@ void system_task(void)
 		if(!SHUTDOWN_SENSE)	// Check whether the power switch is still in the off position
 		{
 				// When no log is going on, but a sd-card is inserted, eject the card
-				SysCmd.did 		= did_SYS;
-				SysCmd.cmd 		= cmd_igc_eject_card;
-				SysCmd.timestamp 	= TIM5->CNT;
-				ipc_queue_push((void*)&SysCmd, 10, did_IGC);
+				// SysCmd.did 		= did_SYS;
+				// SysCmd.cmd 		= cmd_igc_eject_card;
+				// SysCmd.timestamp 	= TIM5->CNT;
+				// ipc_queue_push((void*)&SysCmd, 10, did_IGC);
 
 				sys_state = FILECLOSING;
 		}
@@ -87,7 +88,7 @@ void system_task(void)
 		sys_watchdog(PET);
 
 		// Check whether there is no sd card active
-		if(!(p_ipc_sys_sd_data->state & SD_CARD_DETECTED))
+		// if(!(p_ipc_sys_sd_data->status & SD_CARD_DETECTED))
 			sys_state = SAVESOC;
 		break;
 

@@ -219,8 +219,8 @@ typedef struct
 #pragma pack(push, 1)
 typedef struct
 {
+	unsigned char status;
 	unsigned long response;
-	unsigned long state;
 	unsigned int RCA;
 	unsigned long LBAFATBegin;
 	unsigned long FATSz;
@@ -299,4 +299,7 @@ typedef struct
 	unsigned long long message_length;
 }MD5_T;
 #pragma pack(pop)
+
+
+
 #endif /* VARIABLES_H_ */

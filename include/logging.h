@@ -24,12 +24,12 @@
 #define LOG_SENS_NAME_LENGTH	3   //Value is not changed in Variables.h => change manually
 
 //*********** Functions **************
-void log_include(void* pointer, unsigned char length, unsigned char intervall, char* sensor_name);
-void log_create(void);
-void log_exe(void);
-void log_exe_txt(void);
-void log_write_char(unsigned char ch_byte);
-void log_finish(void);
-void log_float(char* add, unsigned char ch_predecimal, unsigned char ch_dedecimal);
+// void log_include(void* pointer, unsigned char length, unsigned char intervall, char* sensor_name);
+// void log_create(void);
+// void log_exe(void);
+// void log_exe_txt(void);
+// void log_write_char(unsigned char ch_byte);
+// void log_finish(void);
+// void log_float(char* add, unsigned char ch_predecimal, unsigned char ch_dedecimal);
 
 #endif /* LOGGING_H_ */

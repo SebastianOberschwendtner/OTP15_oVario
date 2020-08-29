@@ -1228,7 +1228,7 @@ void gui_status_bar(void)
 	lcd_set_cursor(142, 8);
 	lcd_char2buffer(0xFA); //SD-Card symbol
 	// If card is detected
-	if(p_ipc_gui_sd_data->state & 1)
+	if(p_ipc_gui_sd_data->status & 1)
 	{
 		for(unsigned char count = 0; count < 8; count++)
 			lcd_char2buffer(p_ipc_gui_sd_data->CardName[count]);

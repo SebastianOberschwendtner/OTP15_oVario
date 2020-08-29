@@ -34,22 +34,5 @@
 #define IGC_ERROR			255
 
 //*********** Functions **************
-void igc_task(void);
-unsigned char igc_IsValidCharacter(unsigned char character);
-unsigned char igc_IncludeInGrecord(char* in);
-void init_igc(void);
-void igc_create(void);
-void igc_CommitCharacter(unsigned char character);
-void igc_CommitLine(char* line);
-void igc_WriteLine(void);
-void igc_NewRecord(unsigned char type);
-void igc_AppendString(char* string);
-void igc_AppendNumber(unsigned long number, unsigned char digits);
-void igc_FRecord(void);
-void igc_BRecord(void);
-void igc_sign(void);
-void igc_close(void);
-unsigned char igc_get_state(void);
-//void igc_PlotLine(void);
 
 #endif /* IGC_H_ */

@@ -14,10 +14,18 @@ uint32_t error_var = 0;
 
 int main(void)
 {
+	// Initialize core
 	init_clock();
 	init_systick_ms(SYSTICK);
 	init_gpio();
 
+	//Register all ipc memory
+	sdio_register_ipc();
+
+	//Get all ipc memory
+	//TODO Add get function here...
+	
+	//intialize peripherals
 	set_led_red(ON);
 	init_lcd();
 	gui_bootlogo();
@@ -27,7 +35,7 @@ int main(void)
 	init_i2c();
 
 	MS5611_init();
-	init_sdio();
+	
 
 	wait_systick(10);
 	init_BMS();
@@ -37,14 +45,16 @@ int main(void)
 	vario_init();
 	gui_init();
 
-	init_igc();
+	
+	// init_igc();
 
-	//initiate the scheduler
+	//initialize the scheduler
 	init_scheduler();
 	schedule(TASK_CORE,	1); 			//run core task every systick
-	schedule(TASK_AUX,	1);			//run aux task every systick for now
+	schedule(TASK_AUX,	1);				//run aux task every systick for now
 	//TODO Change the rate of the aux task
 	schedule(TASK_1Hz,  1000/SYSTICK);	//run every 1s
+	set_led_red(OFF);
 
 	while(1)
 	{
@@ -54,20 +64,23 @@ int main(void)
 			//***** Run scheduler *****
 			run_scheduler();
 
+			//***** TASK_AUX ******
+			if(run(TASK_AUX,TICK_PASSED))
+			{
+				// set_led_red(ON);
+				sdio_task();
+				// set_led_red(OFF);
+			}
+
 			//***** TASK_CORE ******
 			if(run(TASK_CORE,TICK_PASSED))
 			{				
 				ms5611_task();
 				datafusion_task();
 				vario_task();
-			}
-
-			//***** TASK_AUX ******
-			if(run(TASK_AUX,TICK_PASSED))
-			{
 				i2c_reset_error();
 				system_task();
-				sound_task();
+				// sound_task();
 				gui_task();
 				gps_task();
 				BMS_task();
@@ -76,8 +89,8 @@ int main(void)
 			//***** TASK_1Hz ******
 			if (run(TASK_1Hz,TICK_PASSED))
 			{
-				set_led_red(TOGGLE);
-				igc_task();
+				// set_led_red(TOGGLE);
+				// igc_task();
 			}
 		}
 	}
