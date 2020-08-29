@@ -32,7 +32,7 @@ typedef struct
     unsigned long   stack                   [STACK_SIZE];
     unsigned char   allocated_arg;
     unsigned char   allocated_stack;
-    unsigned char   wait_counter;
+    unsigned long   wait_counter;
     unsigned long   local_counter;
 } TASK_T;
 #pragma pack(pop)
@@ -56,6 +56,7 @@ unsigned long   arbiter_get_reference       (TASK_T* task, unsigned long arg);
 unsigned long   arbiter_get_return_value    (TASK_T* task);
 void            arbiter_set_command         (TASK_T* task, unsigned char next_state);
 void            arbiter_set_sequence        (TASK_T* task, unsigned char next_sequence);
+void            arbiter_reset_sequence      (TASK_T* task);
 unsigned char   arbiter_get_command         (TASK_T* task);
 unsigned char   arbiter_get_sequence        (TASK_T* task);
 unsigned long*  arbiter_malloc              (TASK_T* task, unsigned char memsize);

@@ -44,21 +44,23 @@ int main(void)
 	datafusion_init();
 	vario_init();
 	gui_init();
+	igc_register_ipc();
 
 	
 	// init_igc();
 
 	//initialize the scheduler
 	init_scheduler();
-	schedule(TASK_CORE,	1); 			//run core task every systick
-	schedule(TASK_AUX,	1);				//run aux task every systick for now
+	schedule(TASK_CORE,	100/SYSTICK); 		//run core task every 100ms
+	schedule(TASK_AUX,	1);					//run aux task every systick for now
 	//TODO Change the rate of the aux task
-	schedule(TASK_1Hz,  1000/SYSTICK);	//run every 1s
+	schedule(TASK_1Hz,  1);	//run every 1s
 	set_led_red(OFF);
 
 	while(1)
 	{
 		
+
 		if(TICK_PASSED)
 		{
 			//***** Run scheduler *****
@@ -90,7 +92,7 @@ int main(void)
 			if (run(TASK_1Hz,TICK_PASSED))
 			{
 				// set_led_red(TOGGLE);
-				// igc_task();
+				igc_task();
 			}
 		}
 	}

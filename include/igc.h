@@ -27,12 +27,55 @@
 #define IGC_DIGEST_CHARPERLINE	16
 
 //States for igc file
-#define IGC_CLOSED			0
-#define IGC_RECORDING		1
-#define IGC_LANDING			2
-#define IGC_FINISHED		3
-#define IGC_ERROR			255
+#define IGC_LOG_CLOSED          1
+#define IGC_LOG_OPEN            2
+#define IGC_LOGGING             3
+#define IGC_LOG_BUSY            4
+#define IGC_ERROR			    255
+
+//Commands of the igc task
+#define IGC_CMD_CREATE_LOG      1
+#define IGC_CMD_CREATE_HEADER   2
+#define IGC_CMD_WRITE_LOG       3
+#define IGC_CMD_FINISH_LOG      4
+
+//Sequences for igc commands
+//Command CREATE_LOG
+#define IGC_SEQUENCE_CREATE_FILENAME    1
+//Command CREATE_HEADER
+#define IGC_SEQUENCE_LINE_1             2
+#define IGC_SEQUENCE_LINE_2             3
+#define IGC_SEQUENCE_LINE_3             4
+#define IGC_SEQUENCE_LINE_4             5
+#define IGC_SEQUENCE_LINE_5             6
+#define IGC_SEQUENCE_LINE_6             7
+#define IGC_SEQUENCE_LINE_7             8
+#define IGC_SEQUENCE_LINE_8             9
+#define IGC_SEQUENCE_LINE_9             10
+#define IGC_SEQUENCE_LINE_10            11
+#define IGC_SEQUENCE_LINE_11            12
+#define IGC_SEQUENCE_LINE_12            13
+#define IGC_SEQUENCE_LINE_13            14
 
 //*********** Functions **************
+void                igc_task                    (void);
+void                igc_check_command           (void);
+void                igc_idle                    (void);
+unsigned char       igc_IsValidCharacter        (unsigned char character);
+unsigned char       igc_IncludeInGrecord        (char* in);
+void                igc_register_ipc            (void);
+void                igc_create_log              (void);
+void                igc_create_header           (void);
+void                igc_CommitCharacter         (unsigned char character);
+void                igc_CommitLine              (char* line);
+void                igc_WriteLine               (void);
+void                igc_NewRecord               (unsigned char type);
+void                igc_AppendString            (char* string);
+void                igc_AppendNumber            (unsigned long number, unsigned char digits);
+void                igc_FRecord                 (void);
+void                igc_BRecord                 (void);
+void                igc_sign                    (void);
+void                igc_close                   (void);
+unsigned char       igc_get_state               (void);
 
 #endif /* IGC_H_ */

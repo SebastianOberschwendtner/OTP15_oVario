@@ -6,13 +6,13 @@
  */
 #include "sdio.h"
 
-SYS_T* sys;
-TASK_T task_sdio;
-SDIO_T* SD;
-FILE_T* dir; 			//Is the global filehandler for directories
-FILE_T* file; 			//Filehandler for the currently openend file
-unsigned long* args;	//Pointer to handle arguments for function calls by value
-
+SYS_T *sys;			 //System struct with system information -> Date and Time is relevant
+TASK_T task_sdio;	 //Struct for the task status and memory of the sdio task
+SDIO_T *SD;			 //Struct for status information of the SD-card
+FILE_T *dir;		 //Is the global filehandler for directories
+FILE_T *file;		 //Filehandler for the currently openend file
+unsigned long *args; //Pointer to handle arguments for function calls which are call-by-value
+T_command cmd_sdio;	 //Command struct for commands from other tasks via ipc
 
 /*
  * sdio system task
@@ -23,8 +23,8 @@ void sdio_task(void)
 	switch (arbiter_get_command(&task_sdio))
 	{
 	case CMD_IDLE:
-		// sdio_idle();
-			break;
+		sdio_idle();
+		break;
 
 	case SDIO_CMD_INIT:
 		sdio_init();
@@ -33,7 +33,7 @@ void sdio_task(void)
 	case SDIO_CMD_INIT_FILESYSTEM:
 		sdio_init_filesystem();
 		break;
-	
+
 	case SDIO_CMD_READ_ROOT:
 		sdio_read_root();
 		break;
@@ -61,7 +61,6 @@ void sdio_task(void)
 	case SDIO_CMD_GET_EMPTY_ID:
 		sdio_get_empty_id();
 		break;
-	
 
 	case SDIO_CMD_SET_EMPTY_ID:
 		sdio_set_empty_id();
@@ -145,12 +144,47 @@ void sdio_task(void)
 
 	case SDIO_CMD_NO_CARD:
 		break;
-	
+
 	default:
 		break;
 	}
 	// Check for errors
 	sdio_check_error();
+};
+
+/*
+ * The idle state of the sd-card. The task checks the ipc-queue for commands and executes them.
+ * The status flags inside the SD-struct are set according to the command.
+ * 
+ * This command can/should not be called by the arbiter.
+ */
+void sdio_idle(void)
+{
+	//When the task enters this state, the previous active command is finished
+	SD->status |= SD_CMD_FINISHED;
+
+	//the idle task assumes that all commands are finished, so reset all sequence states
+	arbiter_reset_sequence(&task_sdio);
+
+	//Check for new commands in queue
+	if (ipc_get_queue_bytes(did_SDIO) >= 10)
+	{
+		//New commands are in the queue -> task is busy and command is not finished
+		SD->status |= SD_IS_BUSY;
+		SD->status &= ~SD_CMD_FINISHED;
+
+		//Check the command in the queue and execute it
+		if (ipc_queue_get(did_SDIO, 10, &cmd_sdio))
+		{
+			//Call-by-reference -> cmd.data has to have the address to the argument value.
+			arbiter_callbyreference(&task_sdio, cmd_sdio.cmd, (void*)cmd_sdio.data);
+		}
+	}
+	else
+	{
+		//No new commands, task is not busy
+		SD->status &= ~SD_IS_BUSY;
+	}
 };
 
 /*
@@ -167,7 +201,7 @@ void sdio_init(void)
 	// when the state wants to wait, decrease the counter. Otherwise perform the task
 	if (task_sdio.wait_counter)
 		task_sdio.wait_counter--;
-	else 
+	else
 	{
 		//read the current position in the state sequence
 		switch (arbiter_get_sequence(&task_sdio))
@@ -175,57 +209,57 @@ void sdio_init(void)
 		case SEQUENCE_ENTRY:
 			// initialize the peripherals: Clock, SDIO, DMA, Register Memory
 			sdio_init_peripheral();
-			// wait for 1 tasktick
-			task_sdio.wait_counter = 1;
+			// wait for a few taskticks
+			task_sdio.wait_counter = 100/SYSTICK;
 			// set next sequence step
-			arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_RESET_CARD);
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_RESET_CARD);
 			break;
 
 		case SDIO_SEQUENCE_RESET_CARD:
 			//Sent command to reset Card
-			if(sdio_send_cmd(CMD0,0))
+			if (sdio_send_cmd(CMD0, 0))
 			{
-				//When command is sent, wait 2 taskticks and goto next sequence
-				task_sdio.wait_counter = 2;
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SET_SUPPLY);
+				//When command is sent, wait a few taskticks and goto next sequence
+				task_sdio.wait_counter = 100/SYSTICK;
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_SUPPLY);
 			}
 			break;
 
 		case SDIO_SEQUENCE_SET_SUPPLY:
 			//Send command to set supply voltage range
-			if(sdio_send_cmd_R7(CMD8,CMD8_VOLTAGE_0 | CHECK_PATTERN))
+			if (sdio_send_cmd_R7(CMD8, CMD8_VOLTAGE_0 | CHECK_PATTERN))
 			{
 				//When command is sent, check response
-				if((SD->response & 0b11111111) == CHECK_PATTERN)
+				if ((SD->response & 0b11111111) == CHECK_PATTERN)
 				{
 					//Card is responding
 					SD->status |= SD_CARD_DETECTED;
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_INIT_CARD_1);
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_INIT_CARD_1);
 				}
 				else
-					arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED); //No Card was detected...
+					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //No Card was detected...
 			}
 			break;
 
 		case SDIO_SEQUENCE_INIT_CARD_1:
 			//Send command to goto subcommand
-			if(sdio_send_cmd_R1(CMD55,0))
+			if (sdio_send_cmd_R1(CMD55, 0))
 			{
 				//When command is sent, check whether subcommand was accepted
-				if(SD->response & R1_APP_CMD)
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_INIT_CARD_2);
+				if (SD->response & R1_APP_CMD)
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_INIT_CARD_2);
 				else
-					arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED); //Command was not accepted
+					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Command was not accepted
 			}
 			break;
 
 		case SDIO_SEQUENCE_INIT_CARD_2:
 			//Send command to set initialize sd-card
-			if(sdio_send_cmd_R3(ACMD41,ACMD41_HCS | ACMD41_XPC | OCR_3_0V))
+			if (sdio_send_cmd_R3(ACMD41, ACMD41_HCS | ACMD41_XPC | OCR_3_0V))
 			{
 				//When command is sent, check whether sd-card is busy (Card is NOT busy when bit is HIGH!)
 				if (!(SD->response & ACMD41_BUSY))
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_INIT_CARD_1);
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_INIT_CARD_1);
 				else
 				{
 					// sd-card is not busy -> initialization is finished
@@ -233,73 +267,73 @@ void sdio_init(void)
 					if (SD->response & ACMD41_CCS)
 						SD->status |= SD_SDHC;
 					// next sequence
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_GET_RCA_1);
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_RCA_1);
 				}
 			}
 			break;
 
 		case SDIO_SEQUENCE_GET_RCA_1:
 			//Sent command to begin RCA transfer
-			if(sdio_send_cmd_R2(CMD2,0))
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_GET_RCA_2); //Next sequence, when command is sent
+			if (sdio_send_cmd_R2(CMD2, 0))
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_RCA_2); //Next sequence, when command is sent
 			break;
 
 		case SDIO_SEQUENCE_GET_RCA_2:
 			//Sent command to Read RCA
-			if(sdio_send_cmd_R6(CMD3,0))
+			if (sdio_send_cmd_R6(CMD3, 0))
 			{
 				//When command is sent, read RCA and goto next sequence
 				SD->RCA = (unsigned int)(SD->response >> 16);
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SELECT_CARD);
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SELECT_CARD);
 			}
 			break;
 
 		case SDIO_SEQUENCE_SELECT_CARD:
 			//Send command to select card
-			if(sdio_send_cmd_R1(CMD7,(SD->RCA << 16)))
+			if (sdio_send_cmd_R1(CMD7, (SD->RCA << 16)))
 			{
 				//When command is sent, check response for error
-				if(!(SD->response & R1_ERROR))
+				if (!(SD->response & R1_ERROR))
 				{
 					// No error -> card is selected
 					SD->status |= SD_CARD_SELECTED;
 #ifdef SDIO_4WIRE
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SET_4WIRE_1); //When 4-Wire mode should be enabled
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_4WIRE_1); //When 4-Wire mode should be enabled
 #else
-					arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED); // No 4-Wire mode -> Initialization is finished
+					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); // No 4-Wire mode -> Initialization is finished
 #endif
 				}
 				else
-					arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED); //No Card was selected...
+					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //No Card was selected...
 			}
 			break;
 
 		case SDIO_SEQUENCE_SET_4WIRE_1:
 			//Send command to goto subcommand
-			if(sdio_send_cmd_R1(CMD55,(SD->RCA << 16)))
+			if (sdio_send_cmd_R1(CMD55, (SD->RCA << 16)))
 			{
 				//When command is sent, check whether subcommand was accepted
-				if(SD->response & R1_APP_CMD)
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SET_4WIRE_2);
+				if (SD->response & R1_APP_CMD)
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_4WIRE_2);
 				else
-					arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED); //Command was not accepted
+					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Command was not accepted
 			}
 			break;
 
 		case SDIO_SEQUENCE_SET_4WIRE_2:
 			//Send command to set 4-wire mode
-			if(sdio_send_cmd_R1(ACMD6,0b10))
+			if (sdio_send_cmd_R1(ACMD6, 0b10))
 			{
 				//When command is sent, check for error
 				if (!(SD->response & R1_ERROR))
 				{
 					// 4-wire mode was accepted
-					task_sdio.wait_counter = 2;
+					task_sdio.wait_counter = 100/SYSTICK;
 					// Set 4-wire mode in sdio peripheral
 					SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
 				}
 				// Card intialization is finished
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
+				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 			}
 			break;
 
@@ -308,13 +342,13 @@ void sdio_init(void)
 			if (SD->status & (SD_CARD_DETECTED | SD_CARD_SELECTED))
 			{
 				// card was properly detected and selected
-				sdio_set_clock(4000000); // set sdio clock to 4MHz
-				arbiter_set_command(&task_sdio,SDIO_CMD_INIT_FILESYSTEM); // goto next state
+				sdio_set_clock(4000000);								   // set sdio clock to 4MHz
+				arbiter_set_command(&task_sdio, SDIO_CMD_INIT_FILESYSTEM); // goto next state
 			}
 			else
 			{
 				// Card was not properly selected -> goto state NO_CARD
-				arbiter_set_command(&task_sdio,SDIO_CMD_NO_CARD);
+				arbiter_set_command(&task_sdio, SDIO_CMD_NO_CARD);
 			}
 			break;
 
@@ -345,28 +379,28 @@ void sdio_init_filesystem(void)
 	{
 	case SEQUENCE_ENTRY:
 		// Read first block of sd-card
-		if(sdio_read_block(dir->buffer,0))
+		if (sdio_read_block(dir->buffer, 0))
 		{
 			if (sdio_read_int(dir->buffer, MBR_MAGIC_NUMBER_pos) == 0xAA55) //Check filesystem for corruption
 			{
 				//Check which parition table is used
-				if(sdio_read_byte(dir->buffer, MBR_PART1_TYPE_pos) == 0xEE)
+				if (sdio_read_byte(dir->buffer, MBR_PART1_TYPE_pos) == 0xEE)
 				{
 					//EFI table is used
-					l_temp = sdio_read_long(dir->buffer, MBR_PART1_LBA_BEGIN_pos);	//Read EFI Begin Address
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_EFI_1);						//Next sequence
+					l_temp = sdio_read_long(dir->buffer, MBR_PART1_LBA_BEGIN_pos); //Read EFI Begin Address
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_EFI_1);	   //Next sequence
 				}
 				else
 				{
 					//MBR is used (Not completely true, but this driver does only support EFI and MBR...)
-					l_temp = sdio_read_long(dir->buffer, MBR_PART1_LBA_BEGIN_pos);  //Read MBR Begin Address
-					arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_BPB);							//Next Sequence
+					l_temp = sdio_read_long(dir->buffer, MBR_PART1_LBA_BEGIN_pos); //Read MBR Begin Address
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_BPB);	   //Next Sequence
 				}
 			}
 			else
 			{
-				SD->err = SDIO_ERROR_CORRUPT_FILESYSTEM; //Set Error
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);	 //File system is corrupt#
+				SD->err = SDIO_ERROR_CORRUPT_FILESYSTEM;			 //Set Error
+				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //File system is corrupt#
 			}
 		}
 		break;
@@ -375,8 +409,8 @@ void sdio_init_filesystem(void)
 		//Read EFI file system
 		if (sdio_read_block(dir->buffer, l_temp))
 		{
-			l_temp = sdio_read_long(dir->buffer, EFI_TABLE_LBA_BEGIN_pos);	//Get begin of file system
-			arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_EFI_2);						//Next sequence
+			l_temp = sdio_read_long(dir->buffer, EFI_TABLE_LBA_BEGIN_pos); //Get begin of file system
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_EFI_2);	   //Next sequence
 		}
 		break;
 
@@ -385,7 +419,7 @@ void sdio_init_filesystem(void)
 		if (sdio_read_block(dir->buffer, l_temp))
 		{
 			l_temp = sdio_read_long(dir->buffer, EFI_PART_LBA_BEGIN_pos); //Get begin of file system
-			arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_BPB);						  //Next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_BPB);	  //Next sequence
 		}
 		break;
 
@@ -450,16 +484,16 @@ void sdio_init_filesystem(void)
 				SD->err = SDIO_ERROR_WRONG_FILESYSTEM;
 
 			//Goto to sequence FINISHED
-			arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 		}
 		break;
 
 	case SEQUENCE_FINISHED:
 		// Check whether an error occurred
 		if (SD->err)
-			arbiter_set_command(&task_sdio,SDIO_CMD_NO_CARD); 	//Error: Goto state NO_CARD
+			arbiter_set_command(&task_sdio, SDIO_CMD_NO_CARD); //Error: Goto state NO_CARD
 		else
-			arbiter_set_command(&task_sdio,SDIO_CMD_READ_ROOT); //No Error: Goto state READ_ROOT
+			arbiter_set_command(&task_sdio, SDIO_CMD_READ_ROOT); //No Error: Goto state READ_ROOT
 		break;
 
 	default:
@@ -512,9 +546,9 @@ void sdio_read_root(void)
 
 	case SEQUENCE_FINISHED:
 		//get the arguments for the command sdio_get_file()
-		args = arbiter_allocate_arguments(&task_sdio,2);
-		args[0] = 0;	//fileid
-		args[1] = (unsigned long)dir;	//filehandler
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = 0;				  //fileid
+		args[1] = (unsigned long)dir; //filehandler
 
 		//Call command
 		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
@@ -540,12 +574,12 @@ void sdio_register_ipc(void)
 {
 	//Register and intialize struct for SDIO task
 	SD = ipc_memory_register(sizeof(SDIO_T), did_SDIO);
-	SD->status = 0;
-	SD->CardName[7] = 0; //End of String
+	SD->status = SD_IS_BUSY; //Set card as busy
+	SD->CardName[7] = 0;	 //End of String
 
 	//Initialize task struct
 	arbiter_clear_task(&task_sdio);
-	arbiter_set_command(&task_sdio,SDIO_CMD_INIT);
+	arbiter_set_command(&task_sdio, SDIO_CMD_INIT);
 
 	//Register and intialize the filehandler for the directory
 	dir = ipc_memory_register(sizeof(FILE_T), did_DIRFILE);
@@ -557,6 +591,9 @@ void sdio_register_ipc(void)
 
 	// get the struct with the system data
 	sys = ipc_memory_get(did_SYS);
+
+	//Register command queue, 5 commands fit into queue
+	ipc_register_queue(50, did_SDIO);
 };
 
 /*
@@ -653,7 +690,7 @@ void sdio_check_error(void)
 
 	// Change command when an error occurrred
 	if (SD->err)
-		arbiter_set_command(&task_sdio,SDIO_CMD_NO_CARD);
+		arbiter_set_command(&task_sdio, SDIO_CMD_NO_CARD);
 };
 
 /*
@@ -769,14 +806,14 @@ unsigned char sdio_send_cmd_R3(unsigned char ch_cmd, unsigned long l_arg)
 unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
 {
 	// Command transfer in progress?
-	if(!(SDIO->STA & SDIO_STA_CMDACT))
+	if (!(SDIO->STA & SDIO_STA_CMDACT))
 	{
 		// Finished Sending Command? (R6 response required)
 		if (!(SDIO->STA & SDIO_STA_CMDREND))
 		{
 			//No Active Command, so new command can be sent
 			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);			
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
 		}
 		else
 		{
@@ -785,7 +822,7 @@ unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
 			// Save response
 			SD->response = SDIO->RESP1;
 			return 1;
-		}	
+		}
 	}
 	return 0;
 };
@@ -796,14 +833,14 @@ unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
 unsigned char sdio_send_cmd_R7(unsigned char ch_cmd, unsigned long l_arg)
 {
 	// Command transfer in progress?
-	if(!(SDIO->STA & SDIO_STA_CMDACT))
+	if (!(SDIO->STA & SDIO_STA_CMDACT))
 	{
 		// Finished Sending Command? (R7 response required)
 		if (!(SDIO->STA & SDIO_STA_CMDREND))
 		{
 			//No Active Command, so new command can be sent
 			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);			
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
 		}
 		else
 		{
@@ -812,7 +849,7 @@ unsigned char sdio_send_cmd_R7(unsigned char ch_cmd, unsigned long l_arg)
 			// Save response
 			SD->response = SDIO->RESP1;
 			return 1;
-		}	
+		}
 	}
 	return 0;
 };
@@ -824,10 +861,10 @@ unsigned char sdio_send_cmd_R7(unsigned char ch_cmd, unsigned long l_arg)
 unsigned char sdio_set_inactive(void)
 {
 	// Only eject card, when card is selected and detected
-	if(SD->status & (SD_CARD_DETECTED | SD_CARD_SELECTED))
+	if (SD->status & (SD_CARD_DETECTED | SD_CARD_SELECTED))
 	{
 		//send command to go to inactive state
-		if(sdio_send_cmd(CMD15,(SD->RCA<<16)))
+		if (sdio_send_cmd(CMD15, (SD->RCA << 16)))
 		{
 			//Delete flags for selected card when command is sent
 			SD->status &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
@@ -843,26 +880,26 @@ unsigned char sdio_set_inactive(void)
  * Read block data from card at specific block address. Data is stored in buffer specified at function call.
  * The addressing uses block number and adapts to SDSC and SDHC cards. Returns 1 when block transfer is finished.
  */
-unsigned char sdio_read_block(unsigned long* databuffer, unsigned long l_block_address)
+unsigned char sdio_read_block(unsigned long *databuffer, unsigned long l_block_address)
 {
 	//Data Transfer in Progress?
-	if(!(SDIO->STA & SDIO_STA_RXACT))
+	if (!(SDIO->STA & SDIO_STA_RXACT))
 	{
 		//Data Transfer finished?
-		if(SDIO->STA & SDIO_STA_DBCKEND)
+		if (SDIO->STA & SDIO_STA_DBCKEND)
 		{
 			//Block data was read
 			if (!(DMA2_Stream6->CR & DMA_SxCR_EN)) // Wait until DMA Stream is finished
 			{
-				DMA2->HIFCR |= DMA_HIFCR_CTCIF6; //Clear DMA Transfer Finished flag
-				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;  //Clear SDIO block transfer finished flag
+				DMA2->HIFCR |= DMA_HIFCR_CTCIF6;					//Clear DMA Transfer Finished flag
+				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC; //Clear SDIO block transfer finished flag
 				return 1;
 			}
 		}
 		else
 		{
 			//No block transfer in progress
-			if(!(DMA2_Stream6->CR & DMA_SxCR_EN))
+			if (!(DMA2_Stream6->CR & DMA_SxCR_EN))
 				sdio_dma_start_receive(databuffer); //When Stream is not yet enabled, enable it
 
 			//Get address of block data
@@ -872,8 +909,7 @@ unsigned char sdio_read_block(unsigned long* databuffer, unsigned long l_block_a
 			/* Send command to start block transfer and start data transfer when command was sent.
 			 * The return value is not used, because in block transfer interrupts are used to manage the
 			 * command transfer. */
-			sdio_send_cmd_R1(CMD17,l_block_address);
-
+			sdio_send_cmd_R1(CMD17, l_block_address);
 		}
 	}
 	return 0;
@@ -890,8 +926,8 @@ void SDIO_IRQHandler(void)
 	SDIO->MASK = 0;
 
 	//Check in which direction the data should be sent
-	if(DMA2_Stream6->CR & DMA_SxCR_DIR_0)
-		SDIO->DCTRL = (0b1001<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data transmit
+	if (DMA2_Stream6->CR & DMA_SxCR_DIR_0)
+		SDIO->DCTRL = (0b1001 << 4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data transmit
 	else
 		SDIO->DCTRL = (0b1001 << 4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data receive
 };
@@ -901,26 +937,26 @@ void SDIO_IRQHandler(void)
  * The addressing uses block number and adapts to SDSC and SDHC cards.
  * Returns 1 when communication is finished.
  */
-unsigned char sdio_write_block(unsigned long* databuffer, unsigned long l_block_address)
+unsigned char sdio_write_block(unsigned long *databuffer, unsigned long l_block_address)
 {
 	//Data Transfer in Progress?
-	if(!(SDIO->STA & SDIO_STA_RXACT))
+	if (!(SDIO->STA & SDIO_STA_RXACT))
 	{
 		//Data Transfer finished?
-		if(SDIO->STA & SDIO_STA_DBCKEND)
+		if (SDIO->STA & SDIO_STA_DBCKEND)
 		{
 			//Block data was read
 			if (!(DMA2_Stream6->CR & DMA_SxCR_EN)) // Wait until DMA Stream is finished
 			{
-				DMA2->HIFCR |= DMA_HIFCR_CTCIF6; //Clear DMA Transfer Finished flag
-				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC;  //Clear SDIO block transfer finished flag
+				DMA2->HIFCR |= DMA_HIFCR_CTCIF6;					//Clear DMA Transfer Finished flag
+				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC; //Clear SDIO block transfer finished flag
 				return 1;
 			}
 		}
 		else
 		{
 			//No block transfer in progress
-			if(!(DMA2_Stream6->CR & DMA_SxCR_EN))
+			if (!(DMA2_Stream6->CR & DMA_SxCR_EN))
 				sdio_dma_start_transmit(databuffer); //When Stream is not yet enabled, enable it
 
 			//Get address of block data
@@ -930,8 +966,7 @@ unsigned char sdio_write_block(unsigned long* databuffer, unsigned long l_block_
 			/* Send command to start block transfer and start data transfer when command was sent.
 			 * The return value is not used, because in block transfer interrupts are used to manage the
 			 * command transfer. */
-			sdio_send_cmd_R1(CMD24,l_block_address);
-
+			sdio_send_cmd_R1(CMD24, l_block_address);
 		}
 	}
 	return 0;
@@ -957,7 +992,7 @@ void sdio_dma_start_receive(unsigned long *databuffer)
  * Enable the DMA for data transmit. Data is read from buffer specified at function call.
  * DMA must not be enabled when calling this function!
  */
-void sdio_dma_start_transmit(unsigned long* databuffer)
+void sdio_dma_start_transmit(unsigned long *databuffer)
 {
 	//Enable interrupt for SDIO -> CMDREND
 	SDIO->MASK = SDIO_MASK_CMDRENDIE;
@@ -1007,8 +1042,8 @@ unsigned char sdio_read_cluster(FILE_T *filehandler, unsigned long l_cluster)
 void sdio_clear_cluster(void)
 {
 	//Get arguments of command
-	unsigned long* l_cluster 	= arbiter_get_argument(&task_sdio); //Argument[0]
-	unsigned long* l_databuffer = (unsigned long*)arbiter_get_reference(&task_sdio,1); //Argument[1]
+	unsigned long *l_cluster = arbiter_get_argument(&task_sdio);						 //Argument[0]
+	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
 	//Initialize command variables
 	unsigned long current_block = 0;
 
@@ -1031,17 +1066,17 @@ void sdio_clear_cluster(void)
 		current_block = (*l_cluster) + (SD->SecPerClus - task_sdio.local_counter);
 
 		//Delete one sector
-		if(sdio_write_block(l_databuffer, current_block))
+		if (sdio_write_block(l_databuffer, current_block))
 		{
 			//When sector was deleted goto next sector
 			task_sdio.local_counter--;
 
 			//When all sectors of the cluster are deleted, exit the function
-			if(task_sdio.local_counter == 0)
-				arbiter_return(&task_sdio,0);
+			if (task_sdio.local_counter == 0)
+				arbiter_return(&task_sdio, 0);
 		}
 		break;
-	
+
 	default:
 		break;
 	}
@@ -1060,124 +1095,124 @@ void sdio_clear_cluster(void)
 void sdio_set_cluster(void)
 {
 	//Get input arguments
-	unsigned long* l_cluster    = arbiter_get_argument(&task_sdio); //Argument[0]
-	unsigned long* l_state      = l_cluster + 1;					//Argument[1]
-	unsigned long* l_databuffer = (unsigned long*)arbiter_get_reference(&task_sdio,2); //Argument[1]
+	unsigned long *l_cluster = arbiter_get_argument(&task_sdio);						 //Argument[0]
+	unsigned long *l_state = l_cluster + 1;												 //Argument[1]
+	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 2); //Argument[1]
 
 	//Allocate memory for command
-	unsigned long* l_lba        = arbiter_malloc(&task_sdio,1);
+	unsigned long *l_lba = arbiter_malloc(&task_sdio, 1);
 
-	switch(arbiter_get_sequence(&task_sdio))
+	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Get the LBA address of the cluster in the 1st FAT
-			*l_lba = sdio_get_fat_sec(*l_cluster, 1);
+	case SEQUENCE_ENTRY:
+		//Get the LBA address of the cluster in the 1st FAT
+		*l_lba = sdio_get_fat_sec(*l_cluster, 1);
 
-			//Read the sector with the entry of the current cluster in the 1st FAT
-			if(sdio_read_block(l_databuffer, *l_lba))
-			{
-				//Determine the FAT entry
-				sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster),*l_state);
+		//Read the sector with the entry of the current cluster in the 1st FAT
+		if (sdio_read_block(l_databuffer, *l_lba))
+		{
+			//Determine the FAT entry
+			sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster), *l_state);
 
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SET_FAT_1);
-			}
-			break;
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FAT_1);
+		}
+		break;
 
-		case SDIO_SEQUENCE_SET_FAT_1:
-			//Write 1st FAT to sd-card
-			if (sdio_write_block(l_databuffer, *l_lba))
-			{
-				//Get the LBA address of the cluster in the 2nd FAT
-				*l_lba = sdio_get_fat_sec(*l_cluster,2);
+	case SDIO_SEQUENCE_SET_FAT_1:
+		//Write 1st FAT to sd-card
+		if (sdio_write_block(l_databuffer, *l_lba))
+		{
+			//Get the LBA address of the cluster in the 2nd FAT
+			*l_lba = sdio_get_fat_sec(*l_cluster, 2);
 
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SET_FAT_2);
-			}
-			break;
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FAT_2);
+		}
+		break;
 
-		case SDIO_SEQUENCE_SET_FAT_2:
-			//Read the sector with the entry of the current cluster in the 2nd FAT
-			if (sdio_read_block(l_databuffer,*l_lba))
-			{
-				//Determine the FAT entry
-				sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster),*l_state);
-				//Goto sequence FINISHED
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-			}
-			break;
+	case SDIO_SEQUENCE_SET_FAT_2:
+		//Read the sector with the entry of the current cluster in the 2nd FAT
+		if (sdio_read_block(l_databuffer, *l_lba))
+		{
+			//Determine the FAT entry
+			sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster), *l_state);
+			//Goto sequence FINISHED
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
 
-		case SEQUENCE_FINISHED:
-			//Write 2nd FAT to sd-card
-			if (sdio_read_block(l_databuffer,*l_lba))
-			{
-				//Exit command
-				arbiter_return(&task_sdio,0);
-			}
-			break;
-		
-		default:
-			break;
+	case SEQUENCE_FINISHED:
+		//Write 2nd FAT to sd-card
+		if (sdio_read_block(l_databuffer, *l_lba))
+		{
+			//Exit command
+			arbiter_return(&task_sdio, 0);
+		}
+		break;
+
+	default:
+		break;
 	}
 };
 
 /*
  * Read a byte from buffer with the corresponding location in the sd-card memory
  */
-unsigned char sdio_read_byte(unsigned long* databuffer, unsigned int i_address)
+unsigned char sdio_read_byte(unsigned long *databuffer, unsigned int i_address)
 {
-	unsigned char ch_address = (unsigned char)((i_address/4));					//Get address of buffer
-	unsigned char ch_byte = (unsigned char)(i_address%4);						//Get number of byte in buffer
+	unsigned char ch_address = (unsigned char)((i_address / 4)); //Get address of buffer
+	unsigned char ch_byte = (unsigned char)(i_address % 4);		 //Get number of byte in buffer
 
-	return (unsigned char)( (databuffer[ch_address] >> (ch_byte*8)) & 0xFF);	//Write in buffer
+	return (unsigned char)((databuffer[ch_address] >> (ch_byte * 8)) & 0xFF); //Write in buffer
 };
 
 /*
  * write a byte to buffer with the corresponding location in the sd-card memory
  */
-void sdio_write_byte(unsigned long* databuffer, unsigned int i_address, unsigned char ch_data)
+void sdio_write_byte(unsigned long *databuffer, unsigned int i_address, unsigned char ch_data)
 {
-	unsigned char ch_address = (unsigned char)((i_address/4));				//Get adress of buffer
-	unsigned char ch_byte = (unsigned char)(i_address%4);					//Get number of byte in buffer
+	unsigned char ch_address = (unsigned char)((i_address / 4)); //Get adress of buffer
+	unsigned char ch_byte = (unsigned char)(i_address % 4);		 //Get number of byte in buffer
 
-	databuffer[ch_address] &= ~( ((unsigned long) 0xFF) << (ch_byte*8) );	//Delete old byte
-	databuffer[ch_address] |= ( ((unsigned long) ch_data) << (ch_byte*8) );	//Write new byte
+	databuffer[ch_address] &= ~(((unsigned long)0xFF) << (ch_byte * 8));   //Delete old byte
+	databuffer[ch_address] |= (((unsigned long)ch_data) << (ch_byte * 8)); //Write new byte
 };
 
 /*
  * Read a int from buffer with the corresponding location in the sd-card memory
  */
-unsigned int sdio_read_int(unsigned long* databuffer, unsigned int i_address)
+unsigned int sdio_read_int(unsigned long *databuffer, unsigned int i_address)
 {
 	unsigned int i_data = 0;
-	i_data = (sdio_read_byte(databuffer, i_address)<<0);
-	i_data |= (sdio_read_byte(databuffer, i_address+1)<<8);
+	i_data = (sdio_read_byte(databuffer, i_address) << 0);
+	i_data |= (sdio_read_byte(databuffer, i_address + 1) << 8);
 	return i_data;
 };
 
 /*
  * Write a int to buffer with the corresponding location in the sd-card memory
  */
-void sdio_write_int(unsigned long* databuffer, unsigned int i_address, unsigned int i_data)
+void sdio_write_int(unsigned long *databuffer, unsigned int i_address, unsigned int i_data)
 {
-	sdio_write_byte(databuffer, i_address,(unsigned char)(i_data&0xFF));
-	sdio_write_byte(databuffer, i_address+1,(unsigned char)((i_data>>8)&0xFF));
+	sdio_write_byte(databuffer, i_address, (unsigned char)(i_data & 0xFF));
+	sdio_write_byte(databuffer, i_address + 1, (unsigned char)((i_data >> 8) & 0xFF));
 };
 
 /*
  * Read a word from buffer with the corresponding location in the sd-card memory
  */
-unsigned long sdio_read_long(unsigned long* databuffer, unsigned int i_address)
+unsigned long sdio_read_long(unsigned long *databuffer, unsigned int i_address)
 {
 	unsigned long l_data = 0;
 	/*
 	for(unsigned char ch_count = 0; ch_count<4; ch_count++)
 		l_data |= (sdio_read_byte(i_adress+ch_count)<<(8*ch_count));
 	 */
-	l_data = (sdio_read_byte(databuffer, i_address)<<0);
-	l_data |= (sdio_read_byte(databuffer, i_address+1)<<8);
-	l_data |= (sdio_read_byte(databuffer, i_address+2)<<16);
-	l_data |= (sdio_read_byte(databuffer, i_address+3)<<24);
+	l_data = (sdio_read_byte(databuffer, i_address) << 0);
+	l_data |= (sdio_read_byte(databuffer, i_address + 1) << 8);
+	l_data |= (sdio_read_byte(databuffer, i_address + 2) << 16);
+	l_data |= (sdio_read_byte(databuffer, i_address + 3) << 24);
 
 	return l_data;
 };
@@ -1185,12 +1220,12 @@ unsigned long sdio_read_long(unsigned long* databuffer, unsigned int i_address)
 /*
  * Write a word to buffer with the corresponding location in the sd-card memory
  */
-void sdio_write_long(unsigned long* databuffer, unsigned int i_address, unsigned long l_data)
+void sdio_write_long(unsigned long *databuffer, unsigned int i_address, unsigned long l_data)
 {
-	sdio_write_byte(databuffer, i_address,(unsigned char)(l_data&0xFF));
-	sdio_write_byte(databuffer, i_address+1,(unsigned char)((l_data>>8)&0xFF));
-	sdio_write_byte(databuffer, i_address+2,(unsigned char)((l_data>>16)&0xFF));
-	sdio_write_byte(databuffer, i_address+3,(unsigned char)((l_data>>24)&0xFF));
+	sdio_write_byte(databuffer, i_address, (unsigned char)(l_data & 0xFF));
+	sdio_write_byte(databuffer, i_address + 1, (unsigned char)((l_data >> 8) & 0xFF));
+	sdio_write_byte(databuffer, i_address + 2, (unsigned char)((l_data >> 16) & 0xFF));
+	sdio_write_byte(databuffer, i_address + 3, (unsigned char)((l_data >> 24) & 0xFF));
 };
 
 /*
@@ -1205,66 +1240,66 @@ void sdio_write_long(unsigned long* databuffer, unsigned int i_address, unsigned
 void sdio_get_file(void)
 {
 	// Get the argument for the command
-	unsigned long* file_id = arbiter_get_argument(&task_sdio); //Argument[0]
-	FILE_T* filehandler = (FILE_T*)arbiter_get_reference(&task_sdio,1); //Argument[1]
+	unsigned long *file_id = arbiter_get_argument(&task_sdio);			  //Argument[0]
+	FILE_T *filehandler = (FILE_T *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
 
-	switch(arbiter_get_sequence(&task_sdio))
+	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Read start cluster of directory
-			if (sdio_read_cluster(dir, dir->StartCluster))
-			{
-				//Set local counter
-				task_sdio.local_counter = (*file_id / (SDIO_BLOCKLEN / 32));
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
-			}
-			break;
+	case SEQUENCE_ENTRY:
+		//Read start cluster of directory
+		if (sdio_read_cluster(dir, dir->StartCluster))
+		{
+			//Set local counter
+			task_sdio.local_counter = (*file_id / (SDIO_BLOCKLEN / 32));
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
 
-		case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
-			//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
-			if (task_sdio.local_counter)
+	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
+		//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
+		if (task_sdio.local_counter)
+		{
+			//Read the next sector of the cluster as often as local_count says
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
 			{
-				//Read the next sector of the cluster as often as local_count says
-				if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
-				{
-					//Decrement call counter
-					task_sdio.local_counter--;
-					//See whether next sector was found
-					if (arbiter_get_return_value(&task_sdio) == 0)
-						SD->err = SDIO_ERROR_NO_SUCH_FILEID;
-				}
+				//Decrement call counter
+				task_sdio.local_counter--;
+				//See whether next sector was found
+				if (arbiter_get_return_value(&task_sdio) == 0)
+					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
 			}
-			else
-			{
-				//The current sector contains the fileid
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-			}
-			break;
+		}
+		else
+		{
+			//The current sector contains the fileid
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
 
-		case SEQUENCE_FINISHED:
-			//Read the entry of the file
-			/*
+	case SEQUENCE_FINISHED:
+		//Read the entry of the file
+		/*
 		 	 * The fileid is a consecutive number over all sectors of the directory. To get the specific entry within one sector,
 		 	 * the remainder of the entries per sector has to be used to access the information in the sd-buffer.
 		 	 */
-			filehandler->id = *file_id;
-			unsigned long l_fileid = *file_id % (SDIO_BLOCKLEN / 32);
-			sdio_get_name(filehandler);																				  //Name
-			filehandler->DirAttr = sdio_read_byte(dir->buffer, l_fileid * 32 + DIR_ATTR_pos);						  //Attribute Byte
-			filehandler->DirCluster = dir->CurrentCluster;															  //Cluster in which entry can be found
-			filehandler->StartCluster = (unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusLO_pos); //Cluster in which the file starts (FAT16)
-			if (!(SD->status & SD_IS_FAT16))
-				filehandler->StartCluster |= (((unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusHI_pos)) << 16); //Cluster in which the file starts (FAT32)
-			filehandler->size = sdio_read_long(dir->buffer, l_fileid * 32 + DIR_FILESIZE_pos);
+		filehandler->id = *file_id;
+		unsigned long l_fileid = *file_id % (SDIO_BLOCKLEN / 32);
+		sdio_get_name(filehandler);																				  //Name
+		filehandler->DirAttr = sdio_read_byte(dir->buffer, l_fileid * 32 + DIR_ATTR_pos);						  //Attribute Byte
+		filehandler->DirCluster = dir->CurrentCluster;															  //Cluster in which entry can be found
+		filehandler->StartCluster = (unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusLO_pos); //Cluster in which the file starts (FAT16)
+		if (!(SD->status & SD_IS_FAT16))
+			filehandler->StartCluster |= (((unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusHI_pos)) << 16); //Cluster in which the file starts (FAT32)
+		filehandler->size = sdio_read_long(dir->buffer, l_fileid * 32 + DIR_FILESIZE_pos);
 
-			//exit the command
-			arbiter_return(&task_sdio,0);
-			break;
+		//exit the command
+		arbiter_return(&task_sdio, 0);
+		break;
 
-		default:
-			break;
-		}
+	default:
+		break;
+	}
 };
 
 /*
@@ -1279,7 +1314,7 @@ void sdio_get_file(void)
 void sdio_read_next_sector_of_cluster(void)
 {
 	//Get arguments
-	FILE_T* filehandler = (FILE_T*)arbiter_get_argument(&task_sdio); //Argument[0]
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio); //Argument[0]
 
 	//intialize temp memory
 	unsigned long l_FATEntry = 0;
@@ -1313,22 +1348,22 @@ void sdio_read_next_sector_of_cluster(void)
 
 		//Get the entry of the FAT table
 		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_NEXT_CLUSTER))
-		{			
+		{
 			l_FATEntry = arbiter_get_return_value(&task_sdio);
 
 			if (SD->status & SD_IS_FAT16) //If FAT16
 			{
 				if (l_FATEntry == 0xFFFF) //End of file
-					arbiter_return(&task_sdio,0);
+					arbiter_return(&task_sdio, 0);
 				else if (l_FATEntry >= 0xFFF8) //Bad Sector
 				{
 					SD->err = SDIO_ERROR_BAD_SECTOR;
-					arbiter_return(&task_sdio,0);
+					arbiter_return(&task_sdio, 0);
 				}
 				else if (l_FATEntry == 0x0000) //Cluster empty
 				{
 					SD->err = SDIO_ERROR_FAT_CORRUPTED;
-					arbiter_return(&task_sdio,0);
+					arbiter_return(&task_sdio, 0);
 				}
 				else //Read the next cluster
 				{
@@ -1338,16 +1373,16 @@ void sdio_read_next_sector_of_cluster(void)
 			else //If FAT32
 			{
 				if (l_FATEntry == 0xFFFFFFFF) //End of file
-					arbiter_return(&task_sdio,0);
+					arbiter_return(&task_sdio, 0);
 				else if (l_FATEntry >= 0xFFFFFFF8) //Bad Sector
 				{
 					SD->err = SDIO_ERROR_BAD_SECTOR;
-					arbiter_return(&task_sdio,0);
+					arbiter_return(&task_sdio, 0);
 				}
 				else if (l_FATEntry == 0x00000000) //Cluster Empty
 				{
 					SD->err = SDIO_ERROR_FAT_CORRUPTED;
-					arbiter_return(&task_sdio,0);
+					arbiter_return(&task_sdio, 0);
 				}
 				else //Read the next cluster
 				{
@@ -1361,7 +1396,7 @@ void sdio_read_next_sector_of_cluster(void)
 		//Read the next cluster address and read the first sector
 		l_FATEntry = arbiter_get_return_value(&task_sdio);
 		if (sdio_read_cluster(filehandler, l_FATEntry))
-			arbiter_return(&task_sdio,1);
+			arbiter_return(&task_sdio, 1);
 		break;
 
 	default:
@@ -1382,8 +1417,8 @@ void sdio_read_next_sector_of_cluster(void)
 void sdio_get_next_cluster(void)
 {
 	//Get the pointer to the argument data for the command
-	unsigned long* l_currentcluster = arbiter_get_argument(&task_sdio); //Argument[0]
-	unsigned long* l_databuffer     = (unsigned long*)arbiter_get_reference(&task_sdio,1); //Argument[1]
+	unsigned long *l_currentcluster = arbiter_get_argument(&task_sdio);					 //Argument[0]
+	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
 
 	//Perform the command sequences
 	switch (arbiter_get_sequence(&task_sdio))
@@ -1410,10 +1445,10 @@ void sdio_get_next_cluster(void)
  * Write the current sector of the current cluster to sd-card.
  * Returns 1 when the communication is finished
  */
-unsigned char sdio_write_current_sector(FILE_T* filehandler)
+unsigned char sdio_write_current_sector(FILE_T *filehandler)
 {
 	//Write sector to LBA sector address. The current sector is decremented by 1, because the sector count starts counting at 1.
-	return sdio_write_block(filehandler->buffer, sdio_get_lba(filehandler->CurrentCluster)+(filehandler->CurrentSector-1));
+	return sdio_write_block(filehandler->buffer, sdio_get_lba(filehandler->CurrentCluster) + (filehandler->CurrentSector - 1));
 };
 
 /*
@@ -1449,9 +1484,9 @@ unsigned long sdio_get_fat_pos(unsigned long l_cluster)
 /*
  * Read the FAT entry of the loaded Sector and return the content
  */
-unsigned long sdio_read_fat_pos(unsigned long* databuffer,unsigned long l_pos)
+unsigned long sdio_read_fat_pos(unsigned long *databuffer, unsigned long l_pos)
 {
-	if(SD->status & SD_IS_FAT16)
+	if (SD->status & SD_IS_FAT16)
 		return (unsigned long)sdio_read_int(databuffer, l_pos);
 	else
 		return sdio_read_long(databuffer, l_pos);
@@ -1460,33 +1495,33 @@ unsigned long sdio_read_fat_pos(unsigned long* databuffer,unsigned long l_pos)
 /*
  * Read the name of a file or directory. The sector of the file id has to be loaded.
  */
-void sdio_get_name(FILE_T* filehandler)
+void sdio_get_name(FILE_T *filehandler)
 {
-	unsigned long l_id = filehandler->id % (SDIO_BLOCKLEN/32);		//one sector can contain 16 files or directories
+	unsigned long l_id = filehandler->id % (SDIO_BLOCKLEN / 32); //one sector can contain 16 files or directories
 	//Read the name string
-	for(unsigned char ch_count = 0; ch_count<11; ch_count++)
-		filehandler->name[ch_count] = sdio_read_byte(dir->buffer, l_id*32 + ch_count);
+	for (unsigned char ch_count = 0; ch_count < 11; ch_count++)
+		filehandler->name[ch_count] = sdio_read_byte(dir->buffer, l_id * 32 + ch_count);
 };
 
 /*
  * Write the FAT entry of the loaded Sector
  */
-void sdio_write_fat_pos(unsigned long* databuffer, unsigned long l_pos, unsigned long l_data)
+void sdio_write_fat_pos(unsigned long *databuffer, unsigned long l_pos, unsigned long l_data)
 {
-	if(SD->status & SD_IS_FAT16)
-		sdio_write_int(databuffer, (unsigned int)l_pos,(unsigned int)l_data);
+	if (SD->status & SD_IS_FAT16)
+		sdio_write_int(databuffer, (unsigned int)l_pos, (unsigned int)l_data);
 	else
-		sdio_write_long(databuffer, (unsigned int)l_pos,l_data);
+		sdio_write_long(databuffer, (unsigned int)l_pos, l_data);
 };
 
 /*
  * Compare two strings. The first string sets the compare length.
  */
-unsigned char sdio_strcmp(char* pch_string1, char* pch_string2)
+unsigned char sdio_strcmp(char *pch_string1, char *pch_string2)
 {
-	while(*pch_string1 != 0)
+	while (*pch_string1 != 0)
 	{
-		if(*pch_string1++ != *pch_string2++)
+		if (*pch_string1++ != *pch_string2++)
 			return 0;
 	}
 	return 1;
@@ -1495,11 +1530,11 @@ unsigned char sdio_strcmp(char* pch_string1, char* pch_string2)
 /*
  * check the file type of the current file
  */
-unsigned char sdio_check_filetype(FILE_T* filehandler, char* pch_type)
+unsigned char sdio_check_filetype(FILE_T *filehandler, char *pch_type)
 {
-	for(unsigned char ch_count = 0; ch_count<3; ch_count++)
+	for (unsigned char ch_count = 0; ch_count < 3; ch_count++)
 	{
-		if(filehandler->name[8+ch_count] != *pch_type++)
+		if (filehandler->name[8 + ch_count] != *pch_type++)
 			return 0;
 	}
 	return 1;
@@ -1519,7 +1554,7 @@ unsigned int sdio_get_date(void)
 unsigned int sdio_get_time(void)
 {
 	//In FAT the time is only stored with a resolution of 2 seconds. Bit shifting the current time by 1 (dividing by 2) converts to this format.
-	return (unsigned int)(sys->time>>1);
+	return (unsigned int)(sys->time >> 1);
 };
 
 /*
@@ -1535,8 +1570,8 @@ unsigned int sdio_get_time(void)
 void sdio_get_empty_id(void)
 {
 	//Allocate memory
-	unsigned long* l_empty_id = arbiter_malloc(&task_sdio, 2);
-	unsigned long* l_entry = l_empty_id + 1;
+	unsigned long *l_empty_id = arbiter_malloc(&task_sdio, 2);
+	unsigned long *l_entry = l_empty_id + 1;
 
 	//Perform command actions
 	switch (arbiter_get_sequence(&task_sdio))
@@ -1545,29 +1580,28 @@ void sdio_get_empty_id(void)
 		//Read current cluster
 		if (sdio_read_cluster(dir, dir->CurrentCluster))
 		{
-			arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
 		}
 		break;
-	
+
 	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
 		//Read the sector in which the current file id lays
-		if(((*l_empty_id%(SDIO_BLOCKLEN/32)) == 0) && *l_empty_id)
+		if (((*l_empty_id % (SDIO_BLOCKLEN / 32)) == 0) && *l_empty_id)
 		{
 			// Read next sector when id is in the next secor
-			if (arbiter_callbyreference(&task_sdio,SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER,dir))
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
 			{
 				//When next sector is read, check whether the id was found
-				if(!arbiter_get_return_value(&task_sdio))
+				if (!arbiter_get_return_value(&task_sdio))
 					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
-				
+
 				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
+				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 			}
 		}
 		else
 			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Goto next sequence when the right sector was read
 		break;
-		
 
 	case SEQUENCE_FINISHED:
 		//Read the first byte of the filename
@@ -1580,7 +1614,7 @@ void sdio_get_empty_id(void)
 		{
 			//If current entry is not empty, try next entry
 			*l_empty_id = *l_empty_id + 1;
-			arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
 		}
 		break;
 
@@ -1601,58 +1635,58 @@ void sdio_get_empty_id(void)
 void sdio_set_empty_id(void)
 {
 	//Allocate memory
-	unsigned long* l_count = arbiter_malloc(&task_sdio,1);
+	unsigned long *l_count = arbiter_malloc(&task_sdio, 1);
 
 	//Get argument
-	unsigned long* l_id = arbiter_get_argument(&task_sdio);
+	unsigned long *l_id = arbiter_get_argument(&task_sdio);
 
 	//Perform command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Read the current cluster
-			if (sdio_read_cluster(dir,dir->CurrentCluster))
+	case SEQUENCE_ENTRY:
+		//Read the current cluster
+		if (sdio_read_cluster(dir, dir->CurrentCluster))
+		{
+			//Reset counter variable
+			*l_count = 0;
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
+		//Read the sector in which the current file id lays
+		if (*l_count < (*l_id / (SDIO_BLOCKLEN / 32)))
+		{
+			// Read next sector when id is in the next secor
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
 			{
-				//Reset counter variable
-				*l_count = 0;
+				//Count when sector was read
+				*l_count += 1;
 
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+				//When next sector is read, check whether the id was found
+				if (!arbiter_get_return_value(&task_sdio))
+					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
 			}
-			break;
+		}
+		else
+		{
+			//Set the current id as empty entry
+			sdio_write_byte(dir->buffer, (*l_id % (SDIO_BLOCKLEN / 32)) * 32, 0xE5);
+			//Goto next sequence when the right sector was read
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
 
-		case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
-			//Read the sector in which the current file id lays
-			if (*l_count < (*l_id / (SDIO_BLOCKLEN / 32)))
-			{
-				// Read next sector when id is in the next secor
-				if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
-				{
-					//Count when sector was read
-					*l_count += 1;
+	case SEQUENCE_FINISHED:
+		//Write the sector to sd-card and exit the command
+		if (sdio_write_current_sector(dir))
+			arbiter_return(&task_sdio, 0);
+		break;
 
-					//When next sector is read, check whether the id was found
-					if (!arbiter_get_return_value(&task_sdio))
-						SD->err = SDIO_ERROR_NO_SUCH_FILEID;
-				}
-			}
-			else
-			{
-				//Set the current id as empty entry
-				sdio_write_byte(dir->buffer, (*l_id % (SDIO_BLOCKLEN / 32)) * 32, 0xE5);
-				//Goto next sequence when the right sector was read
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-			}
-			break;
-
-		case SEQUENCE_FINISHED:
-			//Write the sector to sd-card and exit the command
-			if (sdio_write_current_sector(dir))
-				arbiter_return(&task_sdio,0);
-			break;
-
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -1667,50 +1701,50 @@ void sdio_set_empty_id(void)
 void sdio_get_empty_cluster(void)
 {
 	//Get arguments
-	FILE_T* filehandler =(FILE_T*)arbiter_get_argument(&task_sdio); //Argument[0];
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio); //Argument[0];
 
 	//Allocate memory
-	unsigned long* l_empty_cluster = arbiter_malloc(&task_sdio, 2);
-	unsigned long* l_limit = l_empty_cluster + 1;
+	unsigned long *l_empty_cluster = arbiter_malloc(&task_sdio, 2);
+	unsigned long *l_limit = l_empty_cluster + 1;
 
 	//Perform command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			// Initialize memory
-			*l_empty_cluster = 2;
+	case SEQUENCE_ENTRY:
+		// Initialize memory
+		*l_empty_cluster = 2;
 
-			//Determine the limit of clusters occupied by one FAT according to FAT-type
-			if (SD->status & SD_IS_FAT16) //FAT16
-				*l_limit = SD->FATSz * (SDIO_BLOCKLEN / 16);
-			else //FAT32
-				*l_limit = SD->FATSz * (SDIO_BLOCKLEN / 32);
+		//Determine the limit of clusters occupied by one FAT according to FAT-type
+		if (SD->status & SD_IS_FAT16) //FAT16
+			*l_limit = SD->FATSz * (SDIO_BLOCKLEN / 16);
+		else //FAT32
+			*l_limit = SD->FATSz * (SDIO_BLOCKLEN / 32);
 
-			//Goto next sequence
-			arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-			break;
+		//Goto next sequence
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		break;
 
-		case SEQUENCE_FINISHED:
-			//End of FAT reached?
-			if (*l_empty_cluster <= *l_limit)
+	case SEQUENCE_FINISHED:
+		//End of FAT reached?
+		if (*l_empty_cluster <= *l_limit)
+		{
+			//End is not reached
+			//Read the block with the cluster entry
+			if (sdio_read_block(filehandler->buffer, sdio_get_fat_sec(*l_empty_cluster, 1)))
 			{
-				//End is not reached
-				//Read the block with the cluster entry
-				if (sdio_read_block(filehandler->buffer, sdio_get_fat_sec(*l_empty_cluster,1)))
-				{
-					//Determine the cluster state, if the function returns 0 the cluster is empty
-					if(!sdio_read_fat_pos(filehandler->buffer, sdio_get_fat_pos(*l_empty_cluster)))
-						arbiter_return(&task_sdio,*l_empty_cluster);
-					else
-						*l_empty_cluster += 1; //If cluster is occupied try next cluster
-				}
+				//Determine the cluster state, if the function returns 0 the cluster is empty
+				if (!sdio_read_fat_pos(filehandler->buffer, sdio_get_fat_pos(*l_empty_cluster)))
+					arbiter_return(&task_sdio, *l_empty_cluster);
+				else
+					*l_empty_cluster += 1; //If cluster is occupied try next cluster
 			}
-			else
-				SD->err = SDIO_ERROR_NO_EMPTY_CLUSTER; //End is reached
-			break;
+		}
+		else
+			SD->err = SDIO_ERROR_NO_EMPTY_CLUSTER; //End is reached
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -1729,69 +1763,69 @@ void sdio_get_empty_cluster(void)
 void sdio_get_fileid(void)
 {
 	//allocate memory
-	unsigned long* l_fileid = arbiter_malloc(&task_sdio,1);
+	unsigned long *l_fileid = arbiter_malloc(&task_sdio, 1);
 
 	//Get arguments: Filehandler
-	FILE_T* filehandler = (FILE_T*)arbiter_get_reference(&task_sdio,0); //Argument[0];
+	FILE_T *filehandler = (FILE_T *)arbiter_get_reference(&task_sdio, 0); //Argument[0];
 	//Get arguments: Pointer to filename + extension
-	char* ch_namestring = (char*)arbiter_get_reference(&task_sdio,1); //Argument[1]
+	char *ch_namestring = (char *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Read the start cluster of the file
-			if (sdio_read_cluster(dir, dir->StartCluster))
-			{
-				//Initialize memory
-				*l_fileid = 0;
+	case SEQUENCE_ENTRY:
+		//Read the start cluster of the file
+		if (sdio_read_cluster(dir, dir->StartCluster))
+		{
+			//Initialize memory
+			*l_fileid = 0;
 
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
+		//Set the file id of the read file
+		filehandler->id = *l_fileid;
+		//Read the sector in which the current file id lays
+		if (((*l_fileid % (SDIO_BLOCKLEN / 32)) == 0) && *l_fileid)
+		{
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
+			{
+				//When next sector was read, check whether a next sector exits
+				if (!arbiter_get_return_value(&task_sdio))
+					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
 				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER); 
+				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 			}
-			break;
+		}
+		else
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		break;
 
-		case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
-			//Set the file id of the read file
-			filehandler->id = *l_fileid;
-			//Read the sector in which the current file id lays
-			if (((*l_fileid % (SDIO_BLOCKLEN / 32)) == 0) && *l_fileid)
-			{
-				if (arbiter_callbyreference(&task_sdio,SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER,dir))
-				{
-					//When next sector was read, check whether a next sector exits
-					if(!arbiter_get_return_value(&task_sdio))
-						SD->err = SDIO_ERROR_NO_SUCH_FILEID;
-					//Goto next sequence
-					arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-				}
-			}
-			else
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-			break;
+	case SEQUENCE_FINISHED:
+		//Read filename
+		sdio_get_name(filehandler);
 
-		case SEQUENCE_FINISHED:
-			//Read filename
-			sdio_get_name(filehandler);
+		//Compare the entry name to the input string and break if the names match
+		if (sdio_strcmp(ch_namestring, filehandler->name))
+		{
+			//File was found return the file id
+			arbiter_return(&task_sdio, *l_fileid);
+		}
+		else
+		{
+			//If the names do not match try the next entry
+			*l_fileid += 1;
 
-			//Compare the entry name to the input string and break if the names match
-			if (sdio_strcmp(ch_namestring, filehandler->name))
-			{
-				//File was found return the file id
-				arbiter_return(&task_sdio, *l_fileid);
-			}
-			else
-			{
-				//If the names do not match try the next entry
-				*l_fileid += 1;
+			//Start procedure again
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
 
-				//Start procedure again
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
-			}
-			break;
-
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -1811,70 +1845,70 @@ void sdio_get_fileid(void)
 void sdio_fsearch(void)
 {
 	//allocate memory
-	unsigned long* l_fileid = arbiter_malloc(&task_sdio,1);
+	unsigned long *l_fileid = arbiter_malloc(&task_sdio, 1);
 
 	//Get arguments: Filehandler
-	FILE_T* filehandler = (FILE_T*)arbiter_get_reference(&task_sdio,0); //Argument[0]
+	FILE_T *filehandler = (FILE_T *)arbiter_get_reference(&task_sdio, 0); //Argument[0]
 	//Get arguments: Pointer to filename + extension
-	char* ch_namestring = (char*)arbiter_get_reference(&task_sdio,1); //Argument[1]
+	char *ch_namestring = (char *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Read the start cluster of the file
-			if (sdio_read_cluster(dir, dir->StartCluster))
+	case SEQUENCE_ENTRY:
+		//Read the start cluster of the file
+		if (sdio_read_cluster(dir, dir->StartCluster))
+		{
+			//Initialize memory
+			*l_fileid = 0;
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
+		//Set current fileid
+		filehandler->id = *l_fileid;
+
+		//Read the sector in which the current file id lays
+		if (((*l_fileid % (SDIO_BLOCKLEN / 32)) == 0) && *l_fileid)
+		{
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
 			{
-				//Initialize memory
-				*l_fileid = 0;
-
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER); 
+				//When next sector was read, check whether a next sector exits
+				if (arbiter_get_return_value(&task_sdio))
+					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Goto next sequence
+				else
+					arbiter_return(&task_sdio, 0); //File does not exist}
 			}
-			break;
+		}
+		else
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 
-		case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
-			//Set current fileid
-			filehandler->id = *l_fileid;
+		break;
 
-			//Read the sector in which the current file id lays
-			if (((*l_fileid % (SDIO_BLOCKLEN / 32)) == 0) && *l_fileid)
-			{
-				if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
-				{
-					//When next sector was read, check whether a next sector exits
-					if (arbiter_get_return_value(&task_sdio))
-						arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Goto next sequence
-					else
-						arbiter_return(&task_sdio, 0); //File does not exist}
-				}
-			}
-			else
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+	case SEQUENCE_FINISHED:
+		//Read filename
+		sdio_get_name(filehandler);
 
-			break;
+		//Compare the entry name to the input string and break if the names match
+		if (sdio_strcmp(ch_namestring, filehandler->name))
+		{
+			//exit command
+			arbiter_return(&task_sdio, 1);
+		}
+		else
+		{
+			//If the names do not match try the next entry
+			*l_fileid += 1;
 
-		case SEQUENCE_FINISHED:
-			//Read filename
-			sdio_get_name(filehandler);
+			//Start procedure again
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
 
-			//Compare the entry name to the input string and break if the names match
-			if (sdio_strcmp(ch_namestring, filehandler->name))
-			{
-				//File was found return the file id
-				arbiter_return(&task_sdio, 1);
-			}
-			else
-			{
-				//If the names do not match try the next entry
-				*l_fileid += 1;
-
-				//Start procedure again
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
-			}
-
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -1891,75 +1925,75 @@ void sdio_fsearch(void)
 void sdio_cd(void)
 {
 	//Get the argument of the command
-	char* ch_dirname = (char*)arbiter_get_argument(&task_sdio);
+	char *ch_dirname = (char *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory for the name string 3 x 4 Bytes = 12 Bytes
-	char* ch_filename = (char*) arbiter_malloc(&task_sdio,3);
+	char *ch_filename = (char *)arbiter_malloc(&task_sdio, 3);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//initialize the name string
-			for (unsigned char i = 0; i < 11; i++)
-				ch_filename[i] = 0x20; //Space
-			ch_filename[11] = 0; //String terminator
+	case SEQUENCE_ENTRY:
+		//initialize the name string
+		for (unsigned char i = 0; i < 11; i++)
+			ch_filename[i] = 0x20; //Space
+		ch_filename[11] = 0;	   //String terminator
 
-			//Assemble the filename, the dirname can have up to 8 characters
-			for (unsigned char i = 0; i < 8; i++)
-			{
-				//When dir string is not finished
-				if(ch_dirname[i])
-					ch_filename[i] = ch_dirname[i];
-				else
-					break; //Stop when dir string is finished
-			}
+		//Assemble the filename, the dirname can have up to 8 characters
+		for (unsigned char i = 0; i < 8; i++)
+		{
+			//When dir string is not finished
+			if (ch_dirname[i])
+				ch_filename[i] = ch_dirname[i];
+			else
+				break; //Stop when dir string is finished
+		}
 
+		//Goto next sequence
+		arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILEID);
+		break;
+
+	case SDIO_SEQUENCE_GET_FILEID:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = (unsigned long)dir,
+		args[1] = (unsigned long)ch_filename;
+
+		//Get the file id of the desired directory
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILEID))
+		{
+			//Set the new fileid
+			dir->id = arbiter_get_return_value(&task_sdio);
 			//Goto next sequence
-			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILEID);			
-			break;
+			arbiter_set_sequence(&task_sdio, SDIO_CMD_GET_FILE);
+		}
+		break;
 
-		case SDIO_SEQUENCE_GET_FILEID:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = (unsigned long)dir,
-			args[1] = (unsigned long)ch_filename;
+	case SDIO_SEQUENCE_GET_FILE:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = dir->id;
+		args[1] = (unsigned long)dir;
 
-			//Get the file id of the desired directory
-			if (arbiter_callbyvalue(&task_sdio,SDIO_CMD_GET_FILEID))
-			{
-				//Set the new fileid
-				dir->id = arbiter_get_return_value(&task_sdio);
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_CMD_GET_FILE);
-			}
-			break;
+		//Read the directory
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
+		{
+			//Check whether entry is a directory, before accessing the start cluster
+			if (!(dir->DirAttr & DIR_ATTR_DIR))
+				SD->err = SDIO_ERROR_NOT_A_DIR;
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
 
-		case SDIO_SEQUENCE_GET_FILE:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = dir->id;
-			args[1] = (unsigned long)dir;
+	case SEQUENCE_FINISHED:
+		//Read the start cluster
+		if (sdio_read_cluster(dir, dir->StartCluster))
+			arbiter_return(&task_sdio, 1); //Return and signal that the directory is opened
+		break;
 
-			//Read the directory
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
-			{
-				//Check whether entry is a directory, before accessing the start cluster
-				if (!(dir->DirAttr & DIR_ATTR_DIR))
-					SD->err = SDIO_ERROR_NOT_A_DIR;
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-			}
-			break;
-
-		case SEQUENCE_FINISHED:
-			//Read the start cluster
-			if (sdio_read_cluster(dir, dir->StartCluster))
-				arbiter_return(&task_sdio,1); //Return and signal that the directory is opened
-			break;
-		
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -1976,54 +2010,54 @@ void sdio_cd(void)
 void sdio_fopen(void)
 {
 	//Get arguments
-	char* ch_filename = (char*)arbiter_get_argument(&task_sdio);
+	char *ch_filename = (char *)arbiter_get_argument(&task_sdio);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = (unsigned long)file;
-			args[1] = (unsigned long)ch_filename;
+	case SEQUENCE_ENTRY:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = (unsigned long)file;
+		args[1] = (unsigned long)ch_filename;
 
-			//Get the file id of the desired file
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILEID))
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILE);
-			break;
-
-		case SDIO_SEQUENCE_GET_FILE:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = file->id;
-			args[1] = (unsigned long)file;
-
-			//Read the entry for the file
-			if (arbiter_callbyvalue(&task_sdio,SDIO_CMD_GET_FILE))
-			{
-				//Check whether entry is a valid file (not a directory and not a system file), before accessing the file and reading the last sector
-				if (file->DirAttr & (DIR_ATTR_DIR | DIR_ATTR_SYS))
-					SD->err = SDIO_ERROR_NOT_A_FILE;
-
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FIRST_CLUSTER);
-			}
+		//Get the file id of the desired file
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILEID))
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILE);
 		break;
 
-		case SDIO_SEQUENCE_READ_FIRST_CLUSTER:
-			// Read the first cluster of the file
-			if (sdio_read_cluster(file, file->StartCluster))
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Goto next state
-			break;
+	case SDIO_SEQUENCE_GET_FILE:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = file->id;
+		args[1] = (unsigned long)file;
 
-		case SEQUENCE_FINISHED:
-			//With first cluster loaded the end-of-file can be determined
-			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_ENDSECTOR_OF_FILE, file))
-				arbiter_return(&task_sdio,1); //Return and signal that the file is opened
-			break;
-		
-		default:
-			break;
+		//Read the entry for the file
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
+		{
+			//Check whether entry is a valid file (not a directory and not a system file), before accessing the file and reading the last sector
+			if (file->DirAttr & (DIR_ATTR_DIR | DIR_ATTR_SYS))
+				SD->err = SDIO_ERROR_NOT_A_FILE;
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FIRST_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_FIRST_CLUSTER:
+		// Read the first cluster of the file
+		if (sdio_read_cluster(file, file->StartCluster))
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED); //Goto next state
+		break;
+
+	case SEQUENCE_FINISHED:
+		//With first cluster loaded the end-of-file can be determined
+		if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_ENDSECTOR_OF_FILE, file))
+			arbiter_return(&task_sdio, 1); //Return and signal that the file is opened
+		break;
+
+	default:
+		break;
 	}
 };
 
@@ -2041,31 +2075,31 @@ void sdio_fclose(void)
 	//perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Save file to sd-card
-			if (arbiter_callbyreference(&task_sdio,SDIO_CMD_WRITE_FILE, file))
-			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
-			}
-			break;
+	case SEQUENCE_ENTRY:
+		//Save file to sd-card
+		if (arbiter_callbyreference(&task_sdio, SDIO_CMD_WRITE_FILE, file))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
 
-		case SEQUENCE_FINISHED:
-			//Clear the filehandler
-			file->id 			= 0;
-			file->CurrentByte 	= 0;
-			file->DirAttr 		= 0;
-			file->DirCluster 	= 0;
-			file->StartCluster 	= 0;
-			file->name[0] 		= 0;
-			file->size 			= 0;
+	case SEQUENCE_FINISHED:
+		//Clear the filehandler
+		file->id = 0;
+		file->CurrentByte = 0;
+		file->DirAttr = 0;
+		file->DirCluster = 0;
+		file->StartCluster = 0;
+		file->name[0] = 0;
+		file->size = 0;
 
-			//exit the command
-			arbiter_return(&task_sdio,1);
-			break;
+		//exit the command
+		arbiter_return(&task_sdio, 1);
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -2083,13 +2117,13 @@ void sdio_fclose(void)
 void sdio_make_entry(void)
 {
 	//Get Arguments
-	unsigned long* l_empty_id = arbiter_get_argument(&task_sdio); //Argument[0]
-	char* ch_filename = (char*)arbiter_get_reference(&task_sdio,1); //Argument[1]
-	unsigned long* l_empty_cluster = l_empty_id + 2; //Argument[2]
-	unsigned char* ch_attribute = (unsigned char*)(l_empty_id + 3); //Argument[3]
+	unsigned long *l_empty_id = arbiter_get_argument(&task_sdio);	  //Argument[0]
+	char *ch_filename = (char *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
+	unsigned long *l_empty_cluster = l_empty_id + 2;				  //Argument[2]
+	unsigned char *ch_attribute = (unsigned char *)(l_empty_id + 3);  //Argument[3]
 
 	//Allocate memory
-	unsigned int* i_address = (unsigned int*)arbiter_malloc(&task_sdio,1);
+	unsigned int *i_address = (unsigned int *)arbiter_malloc(&task_sdio, 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
@@ -2132,13 +2166,13 @@ void sdio_make_entry(void)
 		sdio_write_long(dir->buffer, *i_address + DIR_FILESIZE_pos, 0);
 
 		//Goto next sequence
-		arbiter_set_sequence(&task_sdio,SEQUENCE_FINISHED);
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 		break;
 
 	case SEQUENCE_FINISHED:
 		//Write Entry to sd-card
 		if (sdio_write_current_sector(dir))
-			arbiter_return(&task_sdio,0); //Exit the command when sector was written
+			arbiter_return(&task_sdio, 0); //Exit the command when sector was written
 		break;
 
 	default:
@@ -2158,123 +2192,129 @@ void sdio_make_entry(void)
 void sdio_mkfile(void)
 {
 	//Get arguments
-	char* ch_filename = (char*)arbiter_get_argument(&task_sdio);
+	char *ch_filename = (char *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_empty_cluster = arbiter_malloc(&task_sdio,1);
+	unsigned long *l_empty_cluster = arbiter_malloc(&task_sdio, 1);
+
+	//File is not yet created
+	SD->status &= ~SD_FILE_CREATED;
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = (unsigned long)file;
-			args[1] = (unsigned long)ch_filename;
-			//Check if file already exists
-			if (arbiter_callbyvalue(&task_sdio,SDIO_CMD_FSEARCH))
-			{
-				//When file does not exist create it
-				if (arbiter_get_return_value(&task_sdio))
-					SD->err = SDIO_ERROR_FILE_ALLREADY_EXISTS;
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_DIR_START_CLUSTER);
-			}
-			break;
+	case SEQUENCE_ENTRY:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = (unsigned long)file;
+		args[1] = (unsigned long)ch_filename;
+		//Check if file already exists
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_FSEARCH))
+		{
+			//When file does not exist create it
+			if (arbiter_get_return_value(&task_sdio))
+				arbiter_return(&task_sdio, 0);
+			else
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_DIR_START_CLUSTER);
+		}
+		break;
 
-		case SDIO_SEQUENCE_READ_DIR_START_CLUSTER:
-			//Read the start cluster of the current directory
-			if (sdio_read_cluster(dir,dir->StartCluster))
-			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_GET_EMPTY_CLUSTER);
-			}
-			break;
+	case SDIO_SEQUENCE_READ_DIR_START_CLUSTER:
+		//Read the start cluster of the current directory
+		if (sdio_read_cluster(dir, dir->StartCluster))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_EMPTY_CLUSTER);
+		}
+		break;
 
-		case SDIO_SEQUENCE_GET_EMPTY_CLUSTER:
-			//Get the next empty cluster
-			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_GET_EMPTY_CLUSTER,file))
-			{
-				//Save the id of the empty cluster
-				*l_empty_cluster = arbiter_get_return_value(&task_sdio);
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_EMPTY_ID);
-			}
-			break;
+	case SDIO_SEQUENCE_GET_EMPTY_CLUSTER:
+		//Get the next empty cluster
+		if (arbiter_callbyreference(&task_sdio, SDIO_CMD_GET_EMPTY_CLUSTER, file))
+		{
+			//Save the id of the empty cluster
+			*l_empty_cluster = arbiter_get_return_value(&task_sdio);
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_EMPTY_ID);
+		}
+		break;
 
-		case SDIO_SEQUENCE_GET_EMPTY_ID:
-			//Set the id of the file
-			if (arbiter_callbyreference(&task_sdio,SDIO_CMD_GET_EMPTY_ID,0))
-			{
-				//Save the empty id to the filehandler
-				file->id = arbiter_get_return_value(&task_sdio);
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_MAKE_ENTRY);
-			}
-			break;
+	case SDIO_SEQUENCE_GET_EMPTY_ID:
+		//Set the id of the file
+		if (arbiter_callbyreference(&task_sdio, SDIO_CMD_GET_EMPTY_ID, 0))
+		{
+			//Save the empty id to the filehandler
+			file->id = arbiter_get_return_value(&task_sdio);
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_MAKE_ENTRY);
+		}
+		break;
 
-		case SDIO_SEQUENCE_MAKE_ENTRY:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 4);
-			args[0] = file->id;
-			args[1] = (unsigned long)ch_filename;
-			args[2] = *l_empty_cluster;
-			args[3] = DIR_ATTR_ARCH;
-			//Make the entry of the file in the current directory
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_MAKE_ENTRY))
-			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_CLUSTER);
-			}
-			break;
+	case SDIO_SEQUENCE_MAKE_ENTRY:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 4);
+		args[0] = file->id;
+		args[1] = (unsigned long)ch_filename;
+		args[2] = *l_empty_cluster;
+		args[3] = DIR_ATTR_ARCH;
+		//Make the entry of the file in the current directory
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_MAKE_ENTRY))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_CLUSTER);
+		}
+		break;
 
-		case SDIO_SEQUENCE_SET_CLUSTER:
-			
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 3);
-			args[0] = *l_empty_cluster;
-			args[2] = (unsigned long)file->buffer;
+	case SDIO_SEQUENCE_SET_CLUSTER:
 
-			//Set args[1] according to the used file system
-			if(SD->status & SD_IS_FAT16)//FAT16
-				args[1] = 0xFFFF;
-			else						//FAT32
-				args[1] = 0xFFFFFFFF;
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 3);
+		args[0] = *l_empty_cluster;
+		args[2] = (unsigned long)file->buffer;
 
-			//Load and set the entry in FAT of new cluster to end of file	
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
-			{
-				//goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILE);
-			}
-			break;
+		//Set args[1] according to the used file system
+		if (SD->status & SD_IS_FAT16) //FAT16
+			args[1] = 0xFFFF;
+		else //FAT32
+			args[1] = 0xFFFFFFFF;
 
-		case SDIO_SEQUENCE_GET_FILE:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = file->id;
-			args[1] = (unsigned long)file;
-			//Open file
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
-			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-			}
-			break;
-		
-		case SEQUENCE_FINISHED:
-			//Read first cluster of file
-			if (sdio_read_cluster(file, file->StartCluster))
-			{
-				//When cluster is read return
-				arbiter_return(&task_sdio,1);
-			}
-			break;
+		//Load and set the entry in FAT of new cluster to end of file
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
+		{
+			//goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILE);
+		}
+		break;
 
-		default:
-			break;
+	case SDIO_SEQUENCE_GET_FILE:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = file->id;
+		args[1] = (unsigned long)file;
+		//Open file
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Read first cluster of file
+		if (sdio_read_cluster(file, file->StartCluster))
+		{
+			//File is created
+			SD->status |= SD_FILE_CREATED;
+
+			//When cluster is read return
+			arbiter_return(&task_sdio, 1);
+		}
+		break;
+
+	default:
+		break;
 	}
 };
-
 
 /*
  * Create new directory in current directory.
@@ -2288,12 +2328,15 @@ void sdio_mkfile(void)
 void sdio_mkdir(void)
 {
 	//get arguments
-	char* ch_dirname = (char*)arbiter_get_argument(&task_sdio);
+	char *ch_dirname = (char *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_rootcluster = arbiter_malloc(&task_sdio,6);
-	unsigned long* l_empty_cluster = l_rootcluster + 1;
-	char* ch_tempname = (char*)(l_rootcluster + 2);
+	unsigned long *l_rootcluster = arbiter_malloc(&task_sdio, 6);
+	unsigned long *l_empty_cluster = l_rootcluster + 1;
+	char *ch_tempname = (char *)(l_rootcluster + 2);
+
+	//File is not yet created
+	SD->status &= ~SD_FILE_CREATED;
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
@@ -2308,14 +2351,15 @@ void sdio_mkdir(void)
 		args[1] = (unsigned long)ch_dirname;
 
 		//Check if file already exists
-		if (arbiter_callbyvalue(&task_sdio,SDIO_CMD_FSEARCH))
-			{
-				//When file does not exist create it
-				if (arbiter_get_return_value(&task_sdio))
-					SD->err = SDIO_ERROR_FILE_ALLREADY_EXISTS;
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_DIR_START_CLUSTER);
-			}
-			break;
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_FSEARCH))
+		{
+			//When file does not exist create it
+			if (arbiter_get_return_value(&task_sdio))
+				arbiter_return(&task_sdio, 0);
+			else
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_DIR_START_CLUSTER);
+		}
+		break;
 
 	case SDIO_SEQUENCE_READ_DIR_START_CLUSTER:
 		//Read the root cluster again
@@ -2406,7 +2450,7 @@ void sdio_mkdir(void)
 			for (unsigned char i = 1; i < 11; i++)
 				ch_tempname[i] = 0x20;
 			ch_tempname[11] = 0x00;
-			
+
 			//Goto next sequence
 			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_MAKE_ENTRY_DOT);
 		}
@@ -2451,8 +2495,11 @@ void sdio_mkdir(void)
 		//Read root cluster again
 		if (sdio_read_cluster(dir, *l_rootcluster))
 		{
+			//Directory is created
+			SD->status |= SD_FILE_CREATED;
+
 			//Exit the command and return
-			arbiter_return(&task_sdio,1);
+			arbiter_return(&task_sdio, 1);
 		}
 		break;
 
@@ -2474,110 +2521,110 @@ void sdio_mkdir(void)
 void sdio_rm(void)
 {
 	//Get argument
-	FILE_T* filehandler = (FILE_T*)arbiter_get_argument(&task_sdio);
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_cluster = arbiter_malloc(&task_sdio, 2);
-	unsigned long* l_cluster_next = l_cluster + 1;
+	unsigned long *l_cluster = arbiter_malloc(&task_sdio, 2);
+	unsigned long *l_cluster_next = l_cluster + 1;
 
 	//Perform command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Read the file entry of the file which should be removed
-			if (sdio_read_cluster(dir, filehandler->DirCluster))
+	case SEQUENCE_ENTRY:
+		//Read the file entry of the file which should be removed
+		if (sdio_read_cluster(dir, filehandler->DirCluster))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILE);
+		}
+		break;
+
+	case SDIO_SEQUENCE_GET_FILE:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 2);
+		args[0] = filehandler->id;
+		args[1] = (unsigned long)filehandler;
+
+		//Get the file data
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_EMPTY_ID);
+		}
+		break;
+
+	case SDIO_SEQUENCE_SET_EMPTY_ID:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 1);
+		args[0] = filehandler->id;
+
+		//Set the entry as empty space
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_EMPTY_ID))
+		{
+			//Remember the allocated start cluster of the file
+			*l_cluster = filehandler->StartCluster;
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FAT_POS);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_FAT_POS:
+		//Read the sector with the entry of start cluster of the file
+		if (sdio_read_block(filehandler->buffer, sdio_get_fat_sec(*l_cluster, 1)))
+		{
+			//Determine the FAT entry
+			*l_cluster_next = sdio_read_fat_pos(filehandler->buffer, sdio_get_fat_pos(*l_cluster));
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_SET_CLUSTER:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 3);
+		args[0] = *l_cluster;
+		args[1] = 0;
+		args[2] = (unsigned long)filehandler->buffer;
+
+		//Set current cluster as free space
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
+		{
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Determine whether current cluster was end-of-file or whether other clusters are still allocated
+		if (SD->status & SD_IS_FAT16)
+		{
+			if (*l_cluster_next < 0xFFF8)
 			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_FILE);
-			}
-			break;
-
-		case SDIO_SEQUENCE_GET_FILE:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 2);
-			args[0] = filehandler->id;
-			args[1] = (unsigned long)filehandler;
-
-			//Get the file data
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_FILE))
-			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_SET_EMPTY_ID);
-			}
-			break;
-
-		case SDIO_SEQUENCE_SET_EMPTY_ID:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 1);
-			args[0] = filehandler->id;
-
-			//Set the entry as empty space
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_EMPTY_ID))
-			{
-				//Remember the allocated start cluster of the file
-				*l_cluster = filehandler->StartCluster;
-
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_FAT_POS);
-			}
-			break;
-
-		case SDIO_SEQUENCE_READ_FAT_POS:
-			//Read the sector with the entry of start cluster of the file
-			if (sdio_read_block(filehandler->buffer, sdio_get_fat_sec(*l_cluster,1)))
-			{
-				//Determine the FAT entry
-				*l_cluster_next = sdio_read_fat_pos(filehandler->buffer, sdio_get_fat_pos(*l_cluster));
-
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_CLUSTER);
-			}
-			break;
-
-		case SDIO_SEQUENCE_SET_CLUSTER:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 3);
-			args[0] = *l_cluster;
-			args[1] = 0;
-			args[2] = (unsigned long)filehandler->buffer;
-
-			//Set current cluster as free space
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
-			{	
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-			}
-			break;
-
-		case SEQUENCE_FINISHED:
-			//Determine whether current cluster was end-of-file or whether other clusters are still allocated
-			if (SD->status & SD_IS_FAT16)
-			{
-				if (*l_cluster_next < 0xFFF8)
-				{
-					//Set next cluster to clear
-					*l_cluster = *l_cluster_next;
-					//Start sequence again
-					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FAT_POS);
-				}
-				else
-					arbiter_return(&task_sdio, 1);
+				//Set next cluster to clear
+				*l_cluster = *l_cluster_next;
+				//Start sequence again
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FAT_POS);
 			}
 			else
+				arbiter_return(&task_sdio, 1);
+		}
+		else
+		{
+			if (*l_cluster_next < 0xFFFFFFF8)
 			{
-				if (*l_cluster_next < 0xFFFFFFF8)
-				{
-					//Set next cluster to clear
-					*l_cluster = *l_cluster_next;
-					//Start sequence again
-					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FAT_POS);
-				}
-				else
-					arbiter_return(&task_sdio, 1);
+				//Set next cluster to clear
+				*l_cluster = *l_cluster_next;
+				//Start sequence again
+				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_FAT_POS);
 			}
-			break;
+			else
+				arbiter_return(&task_sdio, 1);
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -2593,60 +2640,60 @@ void sdio_rm(void)
 void sdio_set_filesize(void)
 {
 	//Get arguments
-	FILE_T* filehandler = (FILE_T*)arbiter_get_argument(&task_sdio);
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_count = arbiter_malloc(&task_sdio,2);
-	unsigned int* i_address = (unsigned int*)(l_count + 1);
+	unsigned long *l_count = arbiter_malloc(&task_sdio, 2);
+	unsigned int *i_address = (unsigned int *)(l_count + 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Get the address within one sector for the current file id, see sdio_get_file() for more explanation
-			*i_address = (unsigned int)(filehandler->id % (SDIO_BLOCKLEN / 32) * 32);
+	case SEQUENCE_ENTRY:
+		//Get the address within one sector for the current file id, see sdio_get_file() for more explanation
+		*i_address = (unsigned int)(filehandler->id % (SDIO_BLOCKLEN / 32) * 32);
 
-			//Read root cluster of file
-			if (sdio_read_cluster(dir, filehandler->DirCluster))
+		//Read root cluster of file
+		if (sdio_read_cluster(dir, filehandler->DirCluster))
+		{
+			//Get the sector in which the file id is located
+			*l_count = (filehandler->id / (SDIO_BLOCKLEN / 32));
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
+		//read the next sector until the sector with the current file entry is read
+		if (*l_count)
+		{
+			//Read next sector of cluster
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
 			{
-				//Get the sector in which the file id is located
-				*l_count  = (filehandler->id/(SDIO_BLOCKLEN/32));
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio,SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+				//Check whether sector was found
+				if (!arbiter_get_return_value(&task_sdio))
+					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
+				else
+					*l_count -= 1;
 			}
-			break;
+		}
+		else
+		{
+			//Write file size in entry
+			sdio_write_long(dir->buffer, *i_address + DIR_FILESIZE_pos, filehandler->size);
+			//Goto next state
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
 
-		case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
-			//read the next sector until the sector with the current file entry is read
-			if (*l_count)
-			{
-				//Read next sector of cluster
-				if (arbiter_callbyreference(&task_sdio,SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER,dir))
-				{
-					//Check whether sector was found
-					if (!arbiter_get_return_value(&task_sdio))
-						SD->err = SDIO_ERROR_NO_SUCH_FILEID;
-					else
-						*l_count -= 1;
-				}
-			}
-			else
-			{
-				//Write file size in entry
-				sdio_write_long(dir->buffer, *i_address + DIR_FILESIZE_pos, filehandler->size);
-				//Goto next state
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-			}
-			break;
+	case SEQUENCE_FINISHED:
+		//Write entry
+		if (sdio_write_current_sector(dir))
+			arbiter_return(&task_sdio, 1); //Exit command
+		break;
 
-		case SEQUENCE_FINISHED:
-			//Write entry
-			if (sdio_write_current_sector(dir))
-				arbiter_return(&task_sdio,1); //Exit command
-			break;
-
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -2662,12 +2709,12 @@ void sdio_set_filesize(void)
 void sdio_fclear(void)
 {
 	//Get arguments
-	FILE_T* filehandler = (FILE_T*)arbiter_get_argument(&task_sdio);
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_state_cluster = arbiter_malloc(&task_sdio,1);
-	unsigned long* l_current_cluster = l_state_cluster + 1;
-	unsigned long* l_next_cluster = l_state_cluster + 2;
+	unsigned long *l_state_cluster = arbiter_malloc(&task_sdio, 1);
+	unsigned long *l_current_cluster = l_state_cluster + 1;
+	unsigned long *l_next_cluster = l_state_cluster + 2;
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
@@ -2680,9 +2727,9 @@ void sdio_fclear(void)
 		{
 			//Check filetype
 			if (SD->status & SD_IS_FAT16)
-				*l_state_cluster = 0xFFFF;		//FAT16
+				*l_state_cluster = 0xFFFF; //FAT16
 			else
-				*l_state_cluster = 0xFFFFFFFF;	//FAT32
+				*l_state_cluster = 0xFFFFFFFF; //FAT32
 
 			//Set the Startcluster as first cluster to be deleted
 			*l_current_cluster = filehandler->StartCluster;
@@ -2750,7 +2797,7 @@ void sdio_fclear(void)
 	case SEQUENCE_FINISHED:
 		//Read first cluster of file
 		if (sdio_read_cluster(filehandler, filehandler->StartCluster))
-			arbiter_return(&task_sdio,1); //Exit command
+			arbiter_return(&task_sdio, 1); //Exit command
 		break;
 
 	default:
@@ -2771,127 +2818,127 @@ void sdio_fclear(void)
 void sdio_write_file(void)
 {
 	//Get arguments
-	FILE_T* filehandler = (FILE_T*)arbiter_get_argument(&task_sdio);
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_empty_cluster = arbiter_malloc(&task_sdio,3);
-	unsigned long* l_current_cluster = l_empty_cluster + 1;
-	unsigned long* l_current_sector = l_empty_cluster + 2;
+	unsigned long *l_empty_cluster = arbiter_malloc(&task_sdio, 3);
+	unsigned long *l_current_cluster = l_empty_cluster + 1;
+	unsigned long *l_current_sector = l_empty_cluster + 2;
 
 	//Perform command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Save current position in filesystem
-			*l_empty_cluster = 0;
-			*l_current_cluster = filehandler->CurrentCluster;
-			*l_current_sector = filehandler->CurrentSector;
+	case SEQUENCE_ENTRY:
+		//Save current position in filesystem
+		*l_empty_cluster = 0;
+		*l_current_cluster = filehandler->CurrentCluster;
+		*l_current_sector = filehandler->CurrentSector;
 
-			//Write the current buffer to sd-card
-			if (sdio_write_current_sector(filehandler))
+		//Write the current buffer to sd-card
+		if (sdio_write_current_sector(filehandler))
+		{
+			//goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FILESIZE);
+		}
+		break;
+	case SDIO_SEQUENCE_SET_FILESIZE:
+		//Set the filesize in the directory entry of the file to the current size
+		if (arbiter_callbyreference(&task_sdio, SDIO_CMD_SET_FILESIZE, filehandler))
+		{
+			//If the current sector is full, check whether the cluster is full and allocate the next cluster if necessary
+			if (filehandler->CurrentByte == SDIO_BLOCKLEN)
 			{
-				//goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FILESIZE);
-			}
-			break;
-		case SDIO_SEQUENCE_SET_FILESIZE:
-			//Set the filesize in the directory entry of the file to the current size
-			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_SET_FILESIZE, filehandler))
-			{
-				//If the current sector is full, check whether the cluster is full and allocate the next cluster if necessary
-				if (filehandler->CurrentByte == SDIO_BLOCKLEN)
+				//If current sector equals the amount of sectors per cluster
+				if (*l_current_sector == SD->SecPerClus)
 				{
-					//If current sector equals the amount of sectors per cluster
-					if (*l_current_sector == SD->SecPerClus)
-					{
-						//Goto next sequence
-						arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_EMPTY_CLUSTER);
-					}
-					else
-					{
-						//If cluster is not full, just read the next sector
-						filehandler->CurrentSector = *l_current_sector + 1;
-						filehandler->CurrentCluster = *l_current_cluster;
-						//Set current byte of file to beginning of cluster
-						filehandler->CurrentByte = 0;
-						//Goto next sequence
-						arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-					}
+					//Goto next sequence
+					arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_EMPTY_CLUSTER);
 				}
 				else
 				{
-					//If neither the sector or the cluster were full, just read the same sector again
-					filehandler->CurrentSector = *l_current_sector;
+					//If cluster is not full, just read the next sector
+					filehandler->CurrentSector = *l_current_sector + 1;
 					filehandler->CurrentCluster = *l_current_cluster;
-
-					//goto next sequence
+					//Set current byte of file to beginning of cluster
+					filehandler->CurrentByte = 0;
+					//Goto next sequence
 					arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 				}
 			}
-			break;
-
-		case SDIO_SEQUENCE_GET_EMPTY_CLUSTER:
-			//Search for empty cluster number
-			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_GET_EMPTY_CLUSTER, filehandler))
-			{
-				//Get next empty cluster
-				*l_empty_cluster = arbiter_get_return_value(&task_sdio);
-				//goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_EMPTY_CLUSTER);
-			}
-			break;
-
-		case SDIO_SEQUENCE_SET_EMPTY_CLUSTER:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 3);
-			args[0] = *l_current_cluster;
-			args[1] = *l_empty_cluster;
-			args[2] = (unsigned long)filehandler->buffer;
-
-			//Save empty cluster number to old end-of-file cluster
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
-			{
-				//Goto next sequence
-				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_CLUSTER);
-			}
-			break;
-
-		case SDIO_SEQUENCE_SET_CLUSTER:
-			//Allocate and set the arguments of the called command
-			args = arbiter_allocate_arguments(&task_sdio, 3);
-			args[0] = *l_empty_cluster;
-			args[2] = (unsigned long)filehandler->buffer;
-			
-			//Check filesytem
-			if (SD->status & SD_IS_FAT16)
-				args[1] = 0xFFFF;
 			else
-				args[1] = 0xFFFFFFFF;
-
-			//Load and set the entry in FAT of new cluster to end of file
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
 			{
-				//Save the new write position of the file
-				filehandler->CurrentSector = 1;
-				filehandler->CurrentCluster = *l_empty_cluster;
-				//Set current byte of file to beginning of cluster
-				filehandler->CurrentByte = 0;
-				//Goto next sequence
+				//If neither the sector or the cluster were full, just read the same sector again
+				filehandler->CurrentSector = *l_current_sector;
+				filehandler->CurrentCluster = *l_current_cluster;
+
+				//goto next sequence
 				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 			}
-			break;
+		}
+		break;
 
-		case SEQUENCE_FINISHED:
-			//Read the block containing the new end-of-file byte
-			if (sdio_read_block(filehandler->buffer, sdio_get_lba(filehandler->CurrentCluster) + filehandler->CurrentSector - 1 ))
-			{
-				//Exit the command
-				arbiter_return(&task_sdio, 1);
-			}
-			break;
-		
-		default:
-			break;
+	case SDIO_SEQUENCE_GET_EMPTY_CLUSTER:
+		//Search for empty cluster number
+		if (arbiter_callbyreference(&task_sdio, SDIO_CMD_GET_EMPTY_CLUSTER, filehandler))
+		{
+			//Get next empty cluster
+			*l_empty_cluster = arbiter_get_return_value(&task_sdio);
+			//goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_EMPTY_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_SET_EMPTY_CLUSTER:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 3);
+		args[0] = *l_current_cluster;
+		args[1] = *l_empty_cluster;
+		args[2] = (unsigned long)filehandler->buffer;
+
+		//Save empty cluster number to old end-of-file cluster
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
+		{
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_SET_CLUSTER:
+		//Allocate and set the arguments of the called command
+		args = arbiter_allocate_arguments(&task_sdio, 3);
+		args[0] = *l_empty_cluster;
+		args[2] = (unsigned long)filehandler->buffer;
+
+		//Check filesytem
+		if (SD->status & SD_IS_FAT16)
+			args[1] = 0xFFFF;
+		else
+			args[1] = 0xFFFFFFFF;
+
+		//Load and set the entry in FAT of new cluster to end of file
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_SET_CLUSTER))
+		{
+			//Save the new write position of the file
+			filehandler->CurrentSector = 1;
+			filehandler->CurrentCluster = *l_empty_cluster;
+			//Set current byte of file to beginning of cluster
+			filehandler->CurrentByte = 0;
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Read the block containing the new end-of-file byte
+		if (sdio_read_block(filehandler->buffer, sdio_get_lba(filehandler->CurrentCluster) + filehandler->CurrentSector - 1))
+		{
+			//Exit the command
+			arbiter_return(&task_sdio, 1);
+		}
+		break;
+
+	default:
+		break;
 	}
 };
 
@@ -2908,72 +2955,72 @@ void sdio_write_file(void)
 void sdio_read_end_sector_of_file(void)
 {
 	//Get argument
-	FILE_T* filehandler = (FILE_T*)arbiter_get_argument(&task_sdio);
+	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_sector = arbiter_malloc(&task_sdio, 4);
-	unsigned long* l_used_cluster = l_sector + 1;
-	unsigned long* l_cluster = l_sector + 2;
-	unsigned long* l_count = l_sector + 3;
+	unsigned long *l_sector = arbiter_malloc(&task_sdio, 4);
+	unsigned long *l_used_cluster = l_sector + 1;
+	unsigned long *l_cluster = l_sector + 2;
+	unsigned long *l_count = l_sector + 3;
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Initialize memory
-			*l_sector = 0;
-			*l_used_cluster = 0;
-			*l_cluster = filehandler->StartCluster;
+	case SEQUENCE_ENTRY:
+		//Initialize memory
+		*l_sector = 0;
+		*l_used_cluster = 0;
+		*l_cluster = filehandler->StartCluster;
 
-			//Get the sector in which the file is located
-			*l_count = ((filehandler->size/SDIO_BLOCKLEN)/SD->SecPerClus);
-			
-			//Get next sequence and immediately jump into the sequence -> break is intentionally left out
-			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_NEXT_CLUSTER);
+		//Get the sector in which the file is located
+		*l_count = ((filehandler->size / SDIO_BLOCKLEN) / SD->SecPerClus);
 
-		case SDIO_SEQUENCE_GET_NEXT_CLUSTER:
-			//When sector with file is not yet read
-			if (*l_count)
+		//Get next sequence and immediately jump into the sequence -> break is intentionally left out
+		arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_GET_NEXT_CLUSTER);
+
+	case SDIO_SEQUENCE_GET_NEXT_CLUSTER:
+		//When sector with file is not yet read
+		if (*l_count)
+		{
+			//Allocate and set the arguments of the called command
+			args = arbiter_allocate_arguments(&task_sdio, 2);
+			args[0] = *l_cluster;
+			args[1] = (unsigned long)filehandler->buffer;
+
+			//Read the next sector of the cluster
+			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_NEXT_CLUSTER))
 			{
-				//Allocate and set the arguments of the called command
-				args = arbiter_allocate_arguments(&task_sdio, 2);
-				args[0] = *l_cluster;
-				args[1] = (unsigned long)filehandler->buffer;
-
-				//Read the next sector of the cluster
-				if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_NEXT_CLUSTER))
-				{
-					//get the next cluster
-					*l_cluster = arbiter_get_return_value(&task_sdio);
-					//decrease the call counter
-					*l_count -= 1;
-				}
+				//get the next cluster
+				*l_cluster = arbiter_get_return_value(&task_sdio);
+				//decrease the call counter
+				*l_count -= 1;
 			}
-			else
-			{
-				//Second get the sector of the end cluster in which the file ends
-				*l_sector = ((filehandler->size / SDIO_BLOCKLEN) % SD->SecPerClus);
-				//goto next sequence
-				arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-			}
+		}
+		else
+		{
+			//Second get the sector of the end cluster in which the file ends
+			*l_sector = ((filehandler->size / SDIO_BLOCKLEN) % SD->SecPerClus);
+			//goto next sequence
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
 
-		case SEQUENCE_FINISHED:
-			//Read the end sector of the file
-			if (sdio_read_block(filehandler->buffer, sdio_get_lba(*l_cluster) + *l_sector))
-			{
-				filehandler->CurrentCluster = *l_cluster;
-				filehandler->CurrentSector = *l_sector + 1;
+	case SEQUENCE_FINISHED:
+		//Read the end sector of the file
+		if (sdio_read_block(filehandler->buffer, sdio_get_lba(*l_cluster) + *l_sector))
+		{
+			filehandler->CurrentCluster = *l_cluster;
+			filehandler->CurrentSector = *l_sector + 1;
 
-				//Set the current byte pointer to the first empty byte
-				filehandler->CurrentByte = (unsigned int)(filehandler->size - ((*l_used_cluster * SD->SecPerClus + *l_sector) * SDIO_BLOCKLEN));
+			//Set the current byte pointer to the first empty byte
+			filehandler->CurrentByte = (unsigned int)(filehandler->size - ((*l_used_cluster * SD->SecPerClus + *l_sector) * SDIO_BLOCKLEN));
 
-				//Exit the command
-				arbiter_return(&task_sdio, 1);
-			}
-			break;
+			//Exit the command
+			arbiter_return(&task_sdio, 1);
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -2989,7 +3036,7 @@ void sdio_read_end_sector_of_file(void)
 void sdio_byte2file(void)
 {
 	//Get arguments
-	unsigned char* ch_byte = arbiter_get_argument(&task_sdio);
+	unsigned char *ch_byte = arbiter_get_argument(&task_sdio);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
@@ -3035,40 +3082,40 @@ void sdio_byte2file(void)
 void sdio_int2file(void)
 {
 	//Get argument
-	unsigned int* i_data = arbiter_get_argument(&task_sdio);
+	unsigned int *i_data = arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_count = arbiter_malloc(&task_sdio, 1);
+	unsigned long *l_count = arbiter_malloc(&task_sdio, 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Get number of bytes to write
-			*l_count = 2;
-			//Get next sequence and immediately jump into the sequence -> break is intentionally left out
-			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+	case SEQUENCE_ENTRY:
+		//Get number of bytes to write
+		*l_count = 2;
+		//Get next sequence and immediately jump into the sequence -> break is intentionally left out
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 
-		case SEQUENCE_FINISHED:
-			//repeat for every byte
-			if (*l_count)
-			{
-				//Allocate and set the arguments of the called command
-				unsigned long* args = arbiter_allocate_arguments(&task_sdio, 1);
-				args[0] = ((*i_data) >> ((*l_count-1)*8));
-				//Write byte
-				if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
-					*l_count -= 1; //Decrease byte counter
-			}
-			else
-			{
-				//All bytes are sent, exit the command
-				arbiter_return(&task_sdio, 1);
-			}
-			break;
+	case SEQUENCE_FINISHED:
+		//repeat for every byte
+		if (*l_count)
+		{
+			//Allocate and set the arguments of the called command
+			unsigned long *args = arbiter_allocate_arguments(&task_sdio, 1);
+			args[0] = ((*i_data) >> ((*l_count - 1) * 8));
+			//Write byte
+			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
+				*l_count -= 1; //Decrease byte counter
+		}
+		else
+		{
+			//All bytes are sent, exit the command
+			arbiter_return(&task_sdio, 1);
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -3084,40 +3131,40 @@ void sdio_int2file(void)
 void sdio_long2file(void)
 {
 	//Get argument
-	unsigned long* l_data = arbiter_get_argument(&task_sdio);
+	unsigned long *l_data = arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_count = arbiter_malloc(&task_sdio, 1);
+	unsigned long *l_count = arbiter_malloc(&task_sdio, 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Get number of bytes to write
-			*l_count = 4;
-			//Get next sequence and immediately jump into the sequence -> break is intentionally left out
-			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+	case SEQUENCE_ENTRY:
+		//Get number of bytes to write
+		*l_count = 4;
+		//Get next sequence and immediately jump into the sequence -> break is intentionally left out
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 
-		case SEQUENCE_FINISHED:
-			//repeat for every byte
-			if (*l_count)
-			{
-				//Allocate and set the arguments of the called command
-				unsigned long* args = arbiter_allocate_arguments(&task_sdio, 1);
-				args[0] = ((*l_data) >> ((*l_count-1)*8));
-				//Write byte
-				if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
-					*l_count -= 1; //Decrease byte counter
-			}
-			else
-			{
-				//All bytes are sent, exit the command
-				arbiter_return(&task_sdio, 1);
-			}
-			break;
+	case SEQUENCE_FINISHED:
+		//repeat for every byte
+		if (*l_count)
+		{
+			//Allocate and set the arguments of the called command
+			unsigned long *args = arbiter_allocate_arguments(&task_sdio, 1);
+			args[0] = ((*l_data) >> ((*l_count - 1) * 8));
+			//Write byte
+			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
+				*l_count -= 1; //Decrease byte counter
+		}
+		else
+		{
+			//All bytes are sent, exit the command
+			arbiter_return(&task_sdio, 1);
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };
 
@@ -3133,41 +3180,41 @@ void sdio_long2file(void)
 void sdio_string2file(void)
 {
 	//Get argument
-	char* ch_string = (char*)arbiter_get_argument(&task_sdio);
+	char *ch_string = (char *)arbiter_get_argument(&task_sdio);
 
 	//Allocate memory
-	unsigned long* l_count = arbiter_malloc(&task_sdio, 1);
+	unsigned long *l_count = arbiter_malloc(&task_sdio, 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Initialize byte counter
-			*l_count = 0;
-			//Get next sequence and immediately jump into the sequence -> break is intentionally left out
-			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+	case SEQUENCE_ENTRY:
+		//Initialize byte counter
+		*l_count = 0;
+		//Get next sequence and immediately jump into the sequence -> break is intentionally left out
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 
-		case SEQUENCE_FINISHED:
-			//repeat for every byte
-			if (ch_string[*l_count])
-			{
-				//Allocate and set the arguments of the called command
-				char* args = arbiter_allocate_arguments(&task_sdio, 1);
-				args[0] = ch_string[*l_count];
-				
-				//Write byte
-				if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
-					*l_count += 1; //goto next byte in string
-			}
-			else
-			{
-				//All bytes are sent, exit the command
-				arbiter_return(&task_sdio, 1);
-			}
-			break;
+	case SEQUENCE_FINISHED:
+		//repeat for every byte
+		if (ch_string[*l_count])
+		{
+			//Allocate and set the arguments of the called command
+			char *args = arbiter_allocate_arguments(&task_sdio, 1);
+			args[0] = ch_string[*l_count];
 
-		default:
-			break;
+			//Write byte
+			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
+				*l_count += 1; //goto next byte in string
+		}
+		else
+		{
+			//All bytes are sent, exit the command
+			arbiter_return(&task_sdio, 1);
+		}
+		break;
+
+	default:
+		break;
 	}
 };
 
@@ -3184,47 +3231,47 @@ void sdio_string2file(void)
 void sdio_num2file(void)
 {
 	//Get arguments
-	unsigned long* l_number = arbiter_get_argument(&task_sdio);
-	unsigned long* l_decimal_places = l_number + 1;
+	unsigned long *l_number = arbiter_get_argument(&task_sdio);
+	unsigned long *l_decimal_places = l_number + 1;
 
 	//Allocate memory
-	unsigned long* l_temp_value = arbiter_malloc(&task_sdio,2);
-	unsigned char* ch_character = (unsigned char*)(l_temp_value + 1);
+	unsigned long *l_temp_value = arbiter_malloc(&task_sdio, 2);
+	unsigned char *ch_character = (unsigned char *)(l_temp_value + 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_sdio))
 	{
-		case SEQUENCE_ENTRY:
-			//Calculate the current string character of the number
-			*l_temp_value = *l_number;
-			for (unsigned char i = 1; i < *l_decimal_places; i++)
-				*l_temp_value /= 10;
-			*ch_character = (unsigned char)(*l_temp_value%10)+48;
+	case SEQUENCE_ENTRY:
+		//Calculate the current string character of the number
+		*l_temp_value = *l_number;
+		for (unsigned char i = 1; i < *l_decimal_places; i++)
+			*l_temp_value /= 10;
+		*ch_character = (unsigned char)(*l_temp_value % 10) + 48;
 
-			//Get next sequence and immediately jump into the sequence -> break is intentionally left out
-			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		//Get next sequence and immediately jump into the sequence -> break is intentionally left out
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 
-		case SEQUENCE_FINISHED:
-			//Write the current character of the number
-			args = arbiter_allocate_arguments(&task_sdio,1);
-			args[0] = (unsigned long)*ch_character;
+	case SEQUENCE_FINISHED:
+		//Write the current character of the number
+		args = arbiter_allocate_arguments(&task_sdio, 1);
+		args[0] = (unsigned long)*ch_character;
 
-			//Call the command to write the byte
-			if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
+		//Call the command to write the byte
+		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_BYTE2FILE))
+		{
+			//Check whether all decimal places are written
+			if (*l_decimal_places)
 			{
-				//Check whether all decimal places are written
-				if(*l_decimal_places)
-				{
-					//Write next descimal place
-					*l_decimal_places -= 1;
-					arbiter_set_sequence(&task_sdio, SEQUENCE_ENTRY);
-				}
-				else
-					arbiter_return(&task_sdio, 1); //Exit the command
+				//Write next descimal place
+				*l_decimal_places -= 1;
+				arbiter_set_sequence(&task_sdio, SEQUENCE_ENTRY);
 			}
-			break;
+			else
+				arbiter_return(&task_sdio, 1); //Exit the command
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 };

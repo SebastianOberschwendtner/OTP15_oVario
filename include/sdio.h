@@ -65,6 +65,9 @@
 #define SD_SDHC				(1<<1)	//High Capacity Card
 #define SD_CARD_SELECTED	(1<<2)	//Current card is selected and in transfer mode
 #define SD_IS_FAT16			(1<<3)	//File system is FAT16, if not FAT32 is assumed
+#define SD_IS_BUSY          (1<<4)  //Operation is on-going
+#define SD_CMD_FINISHED     (1<<5)  //Operation finished successfully
+#define SD_FILE_CREATED     (1<<6)  //File was created with MKDIR MKFILE
 
 //Commands of sdio_task
 #define SDIO_CMD_INIT                               1
@@ -215,6 +218,7 @@
 
 //*********** Functions **************
 void            sdio_task                           (void);
+void            sdio_idle                           (void);
 void            sdio_init                           (void);
 void            sdio_init_filesystem                (void);
 void            sdio_register_ipc                   (void);

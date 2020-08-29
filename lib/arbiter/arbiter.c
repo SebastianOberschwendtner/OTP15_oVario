@@ -48,7 +48,8 @@ void arbiter_clear_task(TASK_T* task)
 {
     task->active_command = 0;
     task->wait_counter   = 0;
-    task->allocated_arg   = 0;
+    task->local_counter  = 0;
+    task->allocated_arg  = 0;
 
     for(unsigned char count = 0; count < TASK_QUEUE; count++)
     {
@@ -234,6 +235,16 @@ void arbiter_set_sequence(TASK_T* task, unsigned char next_sequence)
 {
     task->sequence[task->active_command] = next_sequence;
 };
+
+/*
+ * Reset all sequence states
+ */
+void arbiter_reset_sequence(TASK_T* task)
+{
+    //Set every sequence number to 0
+    for (unsigned char i = 0; i < TASK_QUEUE; i++)
+        task->sequence[i] = 0;
+}
 
 /*
  * Get the active state of the arbiter.

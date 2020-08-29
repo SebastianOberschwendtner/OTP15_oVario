@@ -24,7 +24,7 @@
 #include "ipc.h"
 #include "sdio.h"
 #include "spi.h"
-// #include "igc.h"
+#include "igc.h"
 #include "BMS.h"
 #include "DOGXL240.h"
 #include "sound.h"
@@ -55,7 +55,8 @@
 // ==> is now defined in platformio.ini!
 
 //Define SysTick time in ms
-#define SYSTICK			100
+#define SYSTICK			10
+
 //I2C clock speed
 #define I2C_CLOCK		100000UL
 

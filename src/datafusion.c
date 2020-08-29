@@ -28,7 +28,7 @@ float Time = 0;
 float u 	= 0;
 float y 	= 0;
 float T  	= 1;
-float ts 	= (float)SYSTICK / 1000;
+float ts 	= (float)100 / 1000;
 float d 	= 0.9;
 
 float ui1 = 0;

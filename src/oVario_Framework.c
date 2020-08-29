@@ -55,6 +55,16 @@ void system_task(void)
 		// Pet the watchdog
 		sys_watchdog(PET);
 
+		// When no log is going on and a sd-card is inserted, start logging
+		if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & SD_CARD_SELECTED))
+		{
+			SysCmd.did = did_SYS;
+			SysCmd.cmd = cmd_igc_start_logging;
+			SysCmd.data = 0;
+			SysCmd.timestamp = TIM5->CNT;
+			ipc_queue_push((void *)&SysCmd, 10, did_IGC);
+		}
+
 		// Keep the system on
 		GPIOC->BSRRL = GPIO_BSRR_BS_6;
 		// When power switch is off, initiate shutdown procedure
@@ -70,13 +80,17 @@ void system_task(void)
 
 		if(!SHUTDOWN_SENSE)	// Check whether the power switch is still in the off position
 		{
-				// When no log is going on, but a sd-card is inserted, eject the card
-				// SysCmd.did 		= did_SYS;
-				// SysCmd.cmd 		= cmd_igc_eject_card;
-				// SysCmd.timestamp 	= TIM5->CNT;
-				// ipc_queue_push((void*)&SysCmd, 10, did_IGC);
-
-				sys_state = FILECLOSING;
+			// When no log is going on, stop logging
+			if (igc_get_state() == IGC_LOGGING)
+			{
+				SysCmd.did = did_SYS;
+				SysCmd.cmd = cmd_igc_stop_logging;
+				SysCmd.data = 0;
+				SysCmd.timestamp = TIM5->CNT;
+				ipc_queue_push((void *)&SysCmd, 10, did_IGC);
+			}
+			else if(igc_get_state() == IGC_LOG_CLOSED)
+				sys_state = FILECLOSING; //Files are closed
 		}
 		else // When the power switch just bounced, go back to run state
 			sys_state = RUN;
@@ -88,7 +102,7 @@ void system_task(void)
 		sys_watchdog(PET);
 
 		// Check whether there is no sd card active
-		// if(!(p_ipc_sys_sd_data->status & SD_CARD_DETECTED))
+		if(sdio_set_inactive())
 			sys_state = SAVESOC;
 		break;
 
