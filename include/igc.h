@@ -56,26 +56,31 @@
 #define IGC_SEQUENCE_LINE_11            12
 #define IGC_SEQUENCE_LINE_12            13
 #define IGC_SEQUENCE_LINE_13            14
+//Command CLOSE
+#define IGC_SEQUENCE_GET_DIGEST         15
+#define IGC_SEQUENCE_WRITE_DIGEST       16
+#define IGC_SEQUENCE_WRITE_FILE         17
 
 //*********** Functions **************
-void                igc_task                    (void);
-void                igc_check_command           (void);
-void                igc_idle                    (void);
-unsigned char       igc_IsValidCharacter        (unsigned char character);
-unsigned char       igc_IncludeInGrecord        (char* in);
-void                igc_register_ipc            (void);
-void                igc_create_log              (void);
-void                igc_create_header           (void);
-void                igc_CommitCharacter         (unsigned char character);
-void                igc_CommitLine              (char* line);
-void                igc_WriteLine               (void);
-void                igc_NewRecord               (unsigned char type);
-void                igc_AppendString            (char* string);
-void                igc_AppendNumber            (unsigned long number, unsigned char digits);
-void                igc_FRecord                 (void);
-void                igc_BRecord                 (void);
-void                igc_sign                    (void);
-void                igc_close                   (void);
-unsigned char       igc_get_state               (void);
+void                    igc_task                    (void);
+void                    igc_check_commands           (void);
+void                    igc_idle                    (void);
+unsigned char           igc_IsValidCharacter        (unsigned char character);
+unsigned char           igc_IncludeInGrecord        (char* in);
+void                    igc_register_ipc            (void);
+void                    igc_call_task               (unsigned char cmd, unsigned long data, unsigned char did_target);
+// inline unsigned long    igc_get_call_return         (void);
+void                    igc_create_log              (void);
+void                    igc_create_header           (void);
+void                    igc_CommitCharacter         (unsigned char character);
+void                    igc_CommitLine              (char* line);
+void                    igc_WriteLine               (void);
+void                    igc_NewRecord               (unsigned char type);
+void                    igc_AppendString            (char* string);
+void                    igc_AppendNumber            (unsigned long number, unsigned char digits);
+void                    igc_FRecord                 (void);
+void                    igc_BRecord                 (void);
+void                    igc_close                   (void);
+unsigned char           igc_get_state               (void);
 
 #endif /* IGC_H_ */

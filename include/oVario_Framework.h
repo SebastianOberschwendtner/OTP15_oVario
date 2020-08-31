@@ -55,7 +55,7 @@
 // ==> is now defined in platformio.ini!
 
 //Define SysTick time in ms
-#define SYSTICK			10
+#define SYSTICK			50
 
 //I2C clock speed
 #define I2C_CLOCK		100000UL

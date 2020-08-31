@@ -11,6 +11,7 @@
 #include "oVario_Framework.h" //<--- define your hardware setup here
 
 uint32_t error_var = 0;
+// unsigned long tempcount = 0;
 
 int main(void)
 {
@@ -45,6 +46,7 @@ int main(void)
 	vario_init();
 	gui_init();
 	igc_register_ipc();
+	md5_register_ipc();
 
 	
 	// init_igc();
@@ -54,7 +56,7 @@ int main(void)
 	schedule(TASK_CORE,	100/SYSTICK); 		//run core task every 100ms
 	schedule(TASK_AUX,	1);					//run aux task every systick for now
 	//TODO Change the rate of the aux task
-	schedule(TASK_1Hz,  1);	//run every 1s
+	schedule(TASK_1Hz,  1000/SYSTICK);	//run every 1s
 	set_led_red(OFF);
 
 	while(1)
@@ -71,6 +73,7 @@ int main(void)
 			{
 				// set_led_red(ON);
 				sdio_task();
+				igc_task();
 				// set_led_red(OFF);
 			}
 
@@ -91,10 +94,17 @@ int main(void)
 			//***** TASK_1Hz ******
 			if (run(TASK_1Hz,TICK_PASSED))
 			{
-				// set_led_red(TOGGLE);
-				igc_task();
+				
 			}
 		}
+		// tempcount++;
+
+		// if(tempcount == 168000)
+		// {
+		// 	tempcount = 0;
+			
+		// }
+		md5_task();
 	}
 	return 0;
 }

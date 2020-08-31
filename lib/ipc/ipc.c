@@ -87,7 +87,7 @@ uint8_t ipc_queue_push(void* p_data, uint8_t no_bytes, uint8_t did)
 	if(queues[did].cnt >= queues[did].size)
 	{
 		queues[did].cnt = queues[did].size;
-		queue_error = err_queue_overrun;
+		queue_error = (1<<1);
 	}
 
 	queues[did].queue_wr_idx = (queues[did].queue_wr_idx + no_bytes) % queues[did].size;

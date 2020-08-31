@@ -33,6 +33,7 @@ typedef struct
     unsigned char   allocated_arg;
     unsigned char   allocated_stack;
     unsigned long   wait_counter;
+    unsigned long   halt_task;
     unsigned long   local_counter;
 } TASK_T;
 #pragma pack(pop)

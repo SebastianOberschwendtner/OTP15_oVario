@@ -48,6 +48,7 @@ void arbiter_clear_task(TASK_T* task)
 {
     task->active_command = 0;
     task->wait_counter   = 0;
+    task->halt_task      = 0;
     task->local_counter  = 0;
     task->allocated_arg  = 0;
 

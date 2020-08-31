@@ -15,7 +15,12 @@
 
 //*********** Defines **************
 //Clocks
-#define SDIOCLK		48000000UL
+#define SDIOCLK		    48000000UL
+
+//Loop rate for sdio task
+#define SDIO_TASK_us        50000
+#define us2TASKTICKS(x)     (x/SDIO_TASK_us)
+#define ms2TASKTICKS(x)     (x*1000/SDIO_TASK_us)
 
 //Blocklength
 #define SDIO_BLOCKLEN	512		//The blocklength isn't used everythere, so don't change it!!!
@@ -218,7 +223,7 @@
 
 //*********** Functions **************
 void            sdio_task                           (void);
-void            sdio_idle                           (void);
+void            sdio_check_commands                 (void);
 void            sdio_init                           (void);
 void            sdio_init_filesystem                (void);
 void            sdio_register_ipc                   (void);

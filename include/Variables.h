@@ -13,17 +13,20 @@
 
 
 // ******* QUEUE MESSAGES *******
+//Generic signal finished command for all tasks
+#define cmd_ipc_signal_finished		255
+
 // KEYPAD, Do not change the number assignment since it
 // is used in the gui to index the array with corresponding key function
-#define data_KEYPAD_pad_LEFT	0
-#define data_KEYPAD_pad_DOWN	1
-#define data_KEYPAD_pad_UP		2
-#define data_KEYPAD_pad_RIGHT	3
+#define data_KEYPAD_pad_LEFT		0
+#define data_KEYPAD_pad_DOWN		1
+#define data_KEYPAD_pad_UP			2
+#define data_KEYPAD_pad_RIGHT		3
 
 // BMS
-#define cmd_BMS_OTG_OFF			0
-#define cmd_BMS_OTG_ON			1
-#define cmd_BMS_ResetCapacity	2
+#define cmd_BMS_OTG_OFF				0
+#define cmd_BMS_OTG_ON				1
+#define cmd_BMS_ResetCapacity		2
 
 // Sound
 #define cmd_sound_set_frequ 		1
@@ -46,6 +49,9 @@
 #define cmd_igc_stop_logging		1
 #define cmd_igc_eject_card			2
 #define cmd_igc_start_logging		3
+
+//MD5 calculation
+#define cmd_md5_set_active_string	1
 
 //GUI
 #define cmd_gui_eval_keypad			1

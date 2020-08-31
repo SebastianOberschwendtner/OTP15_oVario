@@ -6,6 +6,15 @@
  */
 #include "md5.h"
 
+//***** Varaibles *****
+TASK_T task_md5;		//Task struct for arbiter
+T_command rxcmd_md5;	//Container for received ipc commands
+T_command txcmd_md5;	//Container for commands to transmit via ipc
+unsigned long* args;	//Pointer to handle arguments for arbiter
+
+//TODO Can the active string be transmitted in another way? Maybe a command with 2 data arguments.
+char* active_string;	//Points to the active string which should be appended to the hash
+
 //*********** Constants for hash calculation **************
 unsigned long const k[64] = {
 		// k[i] := floor(abs(sin(i)) * (2 pow 32))
@@ -84,6 +93,121 @@ unsigned long const r[64] = {
 };
 
 /*
+ * Task to calculate the hash
+ */
+
+void md5_task(void)
+{
+	 //When the task wants to wait
+	 if (task_md5.wait_counter)
+		 task_md5.wait_counter--; //Decrease the wait counter
+	 else						  //Execute task when wait is over
+	 {
+		 //Perform command action when the task does not wait for other tasks to finish
+		 if (task_md5.halt_task == 0)
+		 {
+			 //Perform the task action
+			 switch (arbiter_get_command(&task_md5))
+			 {
+			 case CMD_IDLE:
+				 md5_check_commands();
+				 break;
+
+			 case MD5_CMD_APPEND_CHAR:
+				 md5_append_char();
+				 break;
+
+			 case MD5_CMD_APPEND_STRING:
+				 md5_append_string();
+				 break;
+
+			 default:
+				 break;
+			 }
+		 }
+	 }
+};
+
+/**********************************************************
+ * Idle command of the task.
+ **********************************************************
+ * Checks the ipc command queue for new commands and 
+ * handles them.
+ * 
+ * This task can/should not be called via the arbiter.
+ **********************************************************/
+void md5_check_commands(void)
+{
+	//When calling command was not the task itself
+	if (rxcmd_md5.did != did_MD5)
+	{
+		//Send finished signal
+		txcmd_md5.did = did_MD5;
+		txcmd_md5.cmd = cmd_ipc_signal_finished;
+		txcmd_md5.data = arbiter_get_return_value(&task_md5);
+		ipc_queue_push(&txcmd_md5, sizeof(T_command), rxcmd_md5.did); //Signal that command is finished to calling task
+
+		//Reset calling command
+		rxcmd_md5.did = did_MD5;
+	}
+
+	//the idle task assumes that all commands are finished, so reset all sequence states
+	arbiter_reset_sequence(&task_md5);
+
+	//Check for new commands in queue
+	if (ipc_get_queue_bytes(did_MD5) >= sizeof(T_command))
+	{
+		//Check the command in the queue and execute it
+		if (ipc_queue_get(did_MD5, sizeof(T_command), &rxcmd_md5))
+		{
+			switch (rxcmd_md5.cmd) // switch for command
+			{
+				case cmd_md5_set_active_string:
+					//Set the new address of the active string
+					active_string = (char*)rxcmd_md5.data;
+					break;
+				
+				case MD5_CMD_APPEND_STRING:
+					//Set arguments
+					args =arbiter_allocate_arguments(&task_md5,2);
+					args[0] = (unsigned long)active_string;
+					args[1] = rxcmd_md5.data;
+
+					//Append the active string to the hash
+					arbiter_callbyvalue(&task_md5, MD5_CMD_APPEND_STRING);
+					break;
+
+				case MD5_CMD_FINALIZE:
+					md5_finalize((MD5_T*)rxcmd_md5.data);
+					break;
+				
+				default:
+					break;
+			}
+		}
+	}
+};
+
+/*
+ * Register memory for hash calculation.
+ */
+void md5_register_ipc(void)
+{
+	//Register command queue, can hold 5 commands
+	ipc_register_queue(5 * sizeof(T_command), did_MD5);
+
+	//Clear task
+	arbiter_clear_task(&task_md5);
+	arbiter_set_command(&task_md5, CMD_IDLE);
+
+	//Initialize struct for received commands
+	rxcmd_md5.did			= did_MD5;
+	rxcmd_md5.cmd 			= 0;
+	rxcmd_md5.data 			= 0;
+	rxcmd_md5.timestamp 	= 0;
+};
+
+/*
  * initialize md5 hash with custom key
  */
 void md5_initialize(MD5_T* hash, unsigned long* key)
@@ -105,21 +229,98 @@ unsigned long md5_leftrotate(unsigned long x, unsigned long c)
 	return (x << c) | (x >> (32 - c));
 };
 
-/*
- * Append character to hash
- */
-void md5_append_char(MD5_T* hash, unsigned char character)
+/**********************************************************
+ * Append character to hash.
+ **********************************************************
+ * Returns 1 when character is appended to hash.
+ * 
+ * Argument[0]:		unsigned char	ch_character
+ * Argument[1]:		MD5_T*			hash
+ * Return:			unsigned long	l_character_appended
+ * 
+ * call-by-value, nargs = 2
+ **********************************************************/
+void md5_append_char(void)
 {
-	//Get position of buffer to be written to
-	unsigned char position = (unsigned char)(hash->message_length % 64);
-	//Write character
-	hash->buff512[position] = character;
-	//Increase message length
-	hash->message_length++;
-	//If buffer is full, calculate hash
-	if(position == 63)
-		md5_process512(hash);
+	//Get arguments
+	unsigned char* ch_character = (unsigned char*)arbiter_get_argument(&task_md5);
+	MD5_T* hash = (MD5_T*)arbiter_get_reference(&task_md5,1);
+
+	//Allocate memory
+	unsigned char* ch_position = (unsigned char*)arbiter_malloc(&task_md5,1);
+	
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_md5))
+	{
+	case SEQUENCE_ENTRY:
+		//Get position of buffer to be written to
+		*ch_position = (unsigned char)(hash->message_length % 64);
+		//Write character
+		hash->buff512[*ch_position] = *ch_character;
+		//Increase message length
+		hash->message_length++;
+		//Goto next sequence without break
+		arbiter_set_sequence(&task_md5, SEQUENCE_FINISHED);
+
+	case SEQUENCE_FINISHED:
+		//If buffer is full, calculate hash
+		if (*ch_position == 63)
+			md5_process512(hash);
+		//exit the command
+		arbiter_return(&task_md5, 1);
+		break;
+
+	default:
+		break;
+	}
+};
+
+/**********************************************************
+ * Append string to hash.
+ **********************************************************
+ * Returns 1 when string is appended to hash.
+ * 
+ * Argument[0]:	char*			ch_string
+ * Argument[1]:	MD5_T*			hash
+ * Return:		unsigned long 	l_string_appended
+ * 
+ * call-by-value, nargs = 2
+ *********************************************************/
+void md5_append_string(void)
+{
+	//Get arguments
+	char* ch_string = (char*)arbiter_get_reference(&task_md5,0);
+	MD5_T* hash     = (MD5_T*)arbiter_get_reference(&task_md5,1);
+
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_md5))
+	{
+		case SEQUENCE_ENTRY:
+			//Initialize the string counter
+			task_md5.local_counter = 0;
+			//go directly to next sequence
+			arbiter_set_sequence(&task_md5, SEQUENCE_FINISHED);
+
+		case SEQUENCE_FINISHED:
+			//When end of string is not reached
+			if (ch_string[task_md5.local_counter])
+			{
+				args = arbiter_allocate_arguments(&task_md5, 2);
+				args[0] = (unsigned long)ch_string[task_md5.local_counter];
+				args[1] = (unsigned long)hash;
+				//Append character and increase string counter when character is appended
+				if (arbiter_callbyvalue(&task_md5,MD5_CMD_APPEND_CHAR))
+					task_md5.local_counter++;
+			}
+			else
+				arbiter_return(&task_md5,1); //Exit the command
+			break;
+
+		default:
+			break;
+	}
 }
+
 /*
  * Calculate hash.
  * Code adapted from XCSOAR project.
@@ -243,8 +444,7 @@ void md5_GetDigest(MD5_T* hash, char* digest)
 		//Compute the string content, every state occupies 4x2 characters
 		for(unsigned char byte = 0; byte < 4; byte++)
 		{
-			sys_hex2str(digest, *HashPointer, 2);
-			digest += 2;
+			sys_hex2str(digest + 2*byte, *HashPointer, 2);
 			HashPointer++;
 		}
 	}
