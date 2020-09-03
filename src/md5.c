@@ -444,7 +444,7 @@ void md5_GetDigest(MD5_T* hash, char* digest)
 		//Compute the string content, every state occupies 4x2 characters
 		for(unsigned char byte = 0; byte < 4; byte++)
 		{
-			sys_hex2str(digest + 2*byte, *HashPointer, 2);
+			sys_hex2str(digest + 2*byte + 8*state, *HashPointer, 2);
 			HashPointer++;
 		}
 	}

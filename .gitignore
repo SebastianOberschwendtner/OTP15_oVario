@@ -14,7 +14,7 @@ local.properties
 
 # VSCode platformio project file
 .pio
-
+doc 
 LinkerScript.ld
 
 # External tool builders

@@ -564,7 +564,7 @@ void igc_CommitLine(char *line)
 			ch_count++;
 		}
         //Terminate hash buffer
-        IgcInfo.hashbuffer[IgcInfo.hashpointer + 1] = 0x00;
+        IgcInfo.hashbuffer[IgcInfo.hashpointer++] = 0x00;
 
         //Tell md5 task to append the hash
         for (unsigned char i = 0; i < IGC_HASH_NUMBER; i++)

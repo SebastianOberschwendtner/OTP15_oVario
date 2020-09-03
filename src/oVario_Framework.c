@@ -56,7 +56,7 @@ void system_task(void)
 		sys_watchdog(PET);
 
 		// When no log is going on and a sd-card is inserted, start logging
-		if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & (SD_CMD_FINISHED | SD_CARD_SELECTED)))
+		if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & SD_CMD_FINISHED) && (p_ipc_sys_sd_data->status & SD_CARD_SELECTED))
 		{
 			SysCmd.did = did_SYS;
 			SysCmd.cmd = cmd_igc_start_logging;
