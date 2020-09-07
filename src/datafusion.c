@@ -47,6 +47,29 @@ uint8_t tcnt = 0;
 
 // ***** Functions *****
 float debug = 0;
+/*
+ * Register everything relevant for IPC
+ */
+void datafusion_register_ipc(void)
+{
+	//Register everything relevant for IPC
+	df_data = ipc_memory_register(sizeof(datafusion_T),did_DATAFUSION);
+};
+
+/*
+ * Get everything relevant for IPC
+ */
+void datafusion_get_ipc(void)
+{
+	// get the ipc pointer addresses for the needed data
+	ipc_df_data 	= ipc_memory_get(did_MS5611);
+	ipc_df_gps_data = ipc_memory_get(did_GPS);
+
+	// char log_baro[] = {"bar"};
+	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
+	debug = -1;
+};
+
 void datafusion_init(void)
 {
 	ipc_df_data 	= ipc_memory_get(did_MS5611);
@@ -54,7 +77,7 @@ void datafusion_init(void)
 	ipc_df_gps_data = ipc_memory_get(did_GPS);
 
 
-	char log_baro[] = {"bar"};
+	// char log_baro[] = {"bar"};
 	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
 	debug = -1;
 }

@@ -56,6 +56,8 @@ enum states
 
 
 // Functions
+void gui_register_ipc			(void);
+void gui_get_ipc				(void);
 void gui_init					(void);
 void gui_task 					(void);
 

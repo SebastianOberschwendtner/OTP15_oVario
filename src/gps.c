@@ -118,15 +118,28 @@ SYS_T* sys;
 
 // ***** Functions *****
 
-void gps_init ()
+/*
+ * Register everything relevant for IPC
+ */
+void gps_register_ipc(void)
 {
-
+	//Register everything relevant for IPC
 	// get memory
 	pDMABuff 	= ipc_memory_register(dma_buf_size, did_GPS_DMA);
 	p_GPS_data 	= ipc_memory_register(sizeof(GPS_T), did_GPS);
-	sys			= ipc_memory_get(did_SYS);
+};
 
+/*
+ * Get everything relevant for IPC
+ */
+void gps_get_ipc(void)
+{
+	// get the ipc pointer addresses for the needed data
+	sys = ipc_memory_get(did_SYS);
+};
 
+void gps_init(void)
+{
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	/* USART IOs configuration ***********************************/
@@ -222,8 +235,8 @@ void gps_init ()
 	// Config GPS
 	gps_config();
 
-	char log_hdg[] = {"HDG"};
-	char log_spd[] = {"SPD"};
+	// char log_hdg[] = {"HDG"};
+	// char log_spd[] = {"SPD"};
 	// log_include(&p_GPS_data->heading_deg, 4 ,1, &log_hdg[0]);
 	// log_include(&p_GPS_data->speed_kmh, 4 ,1, &log_spd[0]);
 }
@@ -246,7 +259,7 @@ uint8_t buff[50];
 
 void* ptr = 0;
 
-void gps_task ()
+void gps_task(void)
 {
 	// Something else
 	volatile uint16_t msg_cnt = 0;
@@ -321,7 +334,7 @@ void gps_task ()
 
 
 // Handle GPS NAV
-void gps_handle_nav()
+void gps_handle_nav(void)
 {
 	T_UBX_VELNED* pVN;
 	T_UBX_SOL* pSOL;
@@ -364,7 +377,7 @@ void gps_handle_nav()
 }
 
 
-void gps_config()
+void gps_config(void)
 {
 	// Set new baudrate
 	//const unsigned baudrates[] = {9600, 19200, 38400, 57600, 115200};

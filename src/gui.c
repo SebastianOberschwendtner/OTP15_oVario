@@ -26,18 +26,30 @@ extern uint8_t state_sinktone;
 extern unsigned long error_var;
 
 //*********** Functions **************
-void gui_init (void)
+/*
+ * Register everything relevant for IPC
+ */
+void gui_register_ipc(void)
 {
-	// get ipc memory pointers
+	//Register everything relevant for IPC
+	ipc_register_queue(20 * sizeof(T_command), did_GUI);
+};
+
+/*
+ * Get everything relevant for IPC
+ */
+void gui_get_ipc(void)
+{
+	//Get everything relevant for IPC
 	p_ipc_gui_df_data 		= ipc_memory_get(did_DATAFUSION);
 	p_ipc_gui_gps_data 		= ipc_memory_get(did_GPS);
 	p_ipc_gui_bms_data 		= ipc_memory_get(did_BMS);
 	p_ipc_gui_ms5611_data 	= ipc_memory_get(did_MS5611);
 	p_ipc_gui_sd_data		= ipc_memory_get(did_SDIO);
+};
 
-	// register gui command queue
-	ipc_register_queue(200, did_GUI);
-
+void gui_init (void)
+{
 	// intialize the key struct
 	Main_Keys.pressed = 99; 		//No keys pressed
 	Main_Keys.show_functions = 1; 	//Do initally show the function bar at the bottom

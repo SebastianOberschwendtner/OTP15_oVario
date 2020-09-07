@@ -28,10 +28,11 @@
 #define frequ_srate_base_sink	4
 
 //*********** Functions **************
-void vario_init (void);
-void vario_task (void);
+void    vario_register_ipc      (void);
+void    vario_get_ipc           (void);
+void    vario_task              (void);
 
-float vario_wgs84_distance(float lat1, float lon1, float lat2, float lon2);
+float   vario_wgs84_distance    (float lat1, float lon1, float lat2, float lon2);
 
 
 #endif /* VARIO_H_ */

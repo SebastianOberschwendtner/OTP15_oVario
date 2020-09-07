@@ -18,6 +18,16 @@ uint8_t beepcount = 0;
 
 
 // ***** Functions *****
+//********** register and get dummies for tasks ******
+/*
+ * Register everything relevant for IPC
+ */
+void sound_register_ipc(void)
+{
+	//Register everything relevant for IPC
+	ipc_register_queue(5 * sizeof(T_command), did_SOUND);
+};
+
 
 void sound_init()
 {
@@ -106,8 +116,6 @@ void sound_init()
 	sound_state.frequency 	= 1000;
 	sound_state.mode 		= sound_mode_beep;
 	sound_state.period 		= 200;
-
-	ipc_register_queue(50, did_SOUND);
 }
 
 

@@ -222,11 +222,12 @@
 #define SDIO_ERROR_CORRUPT_FILESYSTEM       0x0D
 
 //*********** Functions **************
+void            sdio_register_ipc                   (void);
+void            sdio_get_ipc                        (void);
 void            sdio_task                           (void);
 void            sdio_check_commands                 (void);
 void            sdio_init                           (void);
 void            sdio_init_filesystem                (void);
-void            sdio_register_ipc                   (void);
 void            sdio_read_root                      (void); 
 void            sdio_init_peripheral                (void);
 void            sdio_set_clock                      (unsigned long l_clock);

@@ -18,7 +18,8 @@
 
 
 //*********** Functions **************
-void sound_init();
-void sound_task();
+void sound_register_ipc (void);
+void sound_init         ();
+void sound_task         ();
 
 #endif /* SOUND_H_ */

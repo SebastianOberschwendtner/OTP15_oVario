@@ -15,19 +15,24 @@ unsigned char gauge_buffer[32];
 extern unsigned long error_var;
 
 /*
+ * Register everything relevant for IPC
+ */
+void bms_register_ipc(void)
+{
+	//Register everything relevant for IPC
+	//Register memory
+	pBMS = ipc_memory_register(sizeof(BMS_T),did_BMS);
+	//Register command queue
+	ipc_register_queue(20 * sizeof(T_command), did_BMS);
+};
+
+
+/*
  * init BMS
  * The BQ25700A requires LSB first at communication
  */
 void init_BMS(void)
 {
-	/*
-	 *********  IPC Stuff ************
-	 */
-	//Register memory
-	pBMS = ipc_memory_register(sizeof(BMS_T),did_BMS);
-	//Register command queue
-	ipc_register_queue(200, did_BMS);
-
 	/*
 	 * Set BMS specific IOs
 	 * PA0	Output	PUSH_PULL	EN_OTG

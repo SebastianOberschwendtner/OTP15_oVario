@@ -16,6 +16,47 @@ T_command rxcmd_sdio;	//Command struct for received commands from other tasks vi
 T_command txcmd_sdio;	//Command struct to transmit commands to other ipc tasks
 
 /*
+ * Register the memory for the sdio task
+ */
+void sdio_register_ipc(void)
+{
+	//Register and intialize struct for SDIO task
+	SD = ipc_memory_register(sizeof(SDIO_T), did_SDIO);
+	SD->status = SD_IS_BUSY; //Set card as busy
+	SD->CardName[7] = 0;	 //End of String
+
+	//Initialize task struct
+	arbiter_clear_task(&task_sdio);
+	arbiter_set_command(&task_sdio, SDIO_CMD_INIT);
+
+	//Register and intialize the filehandler for the directory
+	dir = ipc_memory_register(sizeof(FILE_T), did_DIRFILE);
+	dir->name[11] = 0; //End of string
+
+	//Register and intialize the filehandler for the active file
+	file = ipc_memory_register(sizeof(FILE_T), did_FILEHANDLER);
+	file->name[11] = 0; //End of string
+
+	//Intialize the received command struct
+	rxcmd_sdio.did			= did_SDIO;
+	rxcmd_sdio.cmd 			= 0;
+	rxcmd_sdio.data 		= 0;
+	rxcmd_sdio.timestamp 	= 0;
+
+	//Register command queue, 5 commands fit into queue
+	ipc_register_queue(5 * sizeof(T_command), did_SDIO);
+};
+
+/*
+ * Get everything relevant for IPC
+ */
+void sdio_get_ipc(void)
+{
+	// get the ipc pointer addresses for the needed data
+	sys = ipc_memory_get(did_SYS);
+};
+
+/*
  * sdio system task
  */
 void sdio_task(void)
@@ -585,41 +626,6 @@ void sdio_read_root(void)
 	default:
 		break;
 	}
-};
-
-/*
- * Register the memory for the sdio task. did_SYS has to registered!
- */
-void sdio_register_ipc(void)
-{
-	//Register and intialize struct for SDIO task
-	SD = ipc_memory_register(sizeof(SDIO_T), did_SDIO);
-	SD->status = SD_IS_BUSY; //Set card as busy
-	SD->CardName[7] = 0;	 //End of String
-
-	//Initialize task struct
-	arbiter_clear_task(&task_sdio);
-	arbiter_set_command(&task_sdio, SDIO_CMD_INIT);
-
-	//Register and intialize the filehandler for the directory
-	dir = ipc_memory_register(sizeof(FILE_T), did_DIRFILE);
-	dir->name[11] = 0; //End of string
-
-	//Register and intialize the filehandler for the active file
-	file = ipc_memory_register(sizeof(FILE_T), did_FILEHANDLER);
-	file->name[11] = 0; //End of string
-
-	// get the struct with the system data
-	sys = ipc_memory_get(did_SYS);
-
-	//Intialize the received command struct
-	rxcmd_sdio.did			= did_SDIO;
-	rxcmd_sdio.cmd 			= 0;
-	rxcmd_sdio.data 		= 0;
-	rxcmd_sdio.timestamp 	= 0;
-
-	//Register command queue, 5 commands fit into queue
-	ipc_register_queue(50, did_SDIO);
 };
 
 /*

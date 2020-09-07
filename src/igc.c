@@ -39,6 +39,42 @@ unsigned long const g_key[16] = {
     0xc8e899e8, 0x9321c28a, 0x438eba12, 0x8cbe0aee};
 
 /*
+ * register memory for igc
+ */
+void igc_register_ipc(void)
+{
+    //Initialize task struct
+    arbiter_clear_task(&task_igc);
+    arbiter_set_command(&task_igc, CMD_IDLE);
+
+    //Initialize receive command struct
+    rxcmd_igc.did           = did_IGC;
+    rxcmd_igc.cmd           = 0;
+    rxcmd_igc.data          = 0;
+    rxcmd_igc.timestamp     = 0;
+
+    //Initialize IGC data
+    IgcInfo.open = IGC_LOG_CLOSED;
+
+    //Register the command queue, holds 5 commands
+    ipc_register_queue(5 * sizeof(T_command), did_IGC);
+};
+
+/*
+ * Get everything relevant for IPC
+ */
+void igc_get_ipc(void)
+{
+	// get the ipc pointer addresses for the needed data
+    //get sd handler
+    sd = ipc_memory_get(did_SDIO);
+    //get gps handler
+    GpsData = ipc_memory_get(did_GPS);
+    //get the datafusion handler
+    BaroData = ipc_memory_get(did_DATAFUSION);
+};
+
+/*
  * Igc task.
  * Systime has to be up to date.
  */
@@ -63,7 +99,6 @@ void igc_task(void)
                 break;
 
             case IGC_CMD_CREATE_LOG:
-                set_led_red(ON);
                 igc_create_log();
                 break;
 
@@ -73,12 +108,10 @@ void igc_task(void)
 
             case IGC_CMD_WRITE_LOG:
                 // igc_BRecord();
-                set_led_red(TOGGLE);
                 break;
 
             case IGC_CMD_FINISH_LOG:
                 igc_close();
-                set_led_green(ON);
                 break;
 
             default:
@@ -202,35 +235,6 @@ unsigned char igc_IncludeInGrecord(char *in)
 
     return valid;
 };
-
-/*
- * register memory for igc
- */
-void igc_register_ipc(void)
-{
-    //get sd handler
-    sd = ipc_memory_get(did_SDIO);
-    //get gps handler
-    GpsData = ipc_memory_get(did_GPS);
-    //get the datafusion handler
-    BaroData = ipc_memory_get(did_DATAFUSION);
-
-    //Initialize task struct
-    arbiter_clear_task(&task_igc);
-    arbiter_set_command(&task_igc, CMD_IDLE);
-
-    //Initialize receive command struct
-    rxcmd_igc.did           = did_IGC;
-    rxcmd_igc.cmd           = 0;
-    rxcmd_igc.data          = 0;
-    rxcmd_igc.timestamp     = 0;
-
-    //Initialize IGC data
-    IgcInfo.open = IGC_LOG_CLOSED;
-
-    //Register the command queue, holds 5 commands
-    ipc_register_queue(5*sizeof(T_command), did_IGC);
-}
 
 /*
  * Call a other task via the ipc queue

@@ -62,12 +62,13 @@
 #define IGC_SEQUENCE_WRITE_FILE         17
 
 //*********** Functions **************
+void                    igc_register_ipc            (void);
+void                    igc_get_ipc                 (void);
 void                    igc_task                    (void);
-void                    igc_check_commands           (void);
+void                    igc_check_commands          (void);
 void                    igc_idle                    (void);
 unsigned char           igc_IsValidCharacter        (unsigned char character);
 unsigned char           igc_IncludeInGrecord        (char* in);
-void                    igc_register_ipc            (void);
 void                    igc_call_task               (unsigned char cmd, unsigned long data, unsigned char did_target);
 // inline unsigned long    igc_get_call_return         (void);
 void                    igc_create_log              (void);

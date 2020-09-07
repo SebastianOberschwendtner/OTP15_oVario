@@ -93,6 +93,25 @@ unsigned long const r[64] = {
 };
 
 /*
+ * Register memory for hash calculation.
+ */
+void md5_register_ipc(void)
+{
+	//Register command queue, can hold 5 commands
+	ipc_register_queue(5 * sizeof(T_command), did_MD5);
+
+	//Clear task
+	arbiter_clear_task(&task_md5);
+	arbiter_set_command(&task_md5, CMD_IDLE);
+
+	//Initialize struct for received commands
+	rxcmd_md5.did			= did_MD5;
+	rxcmd_md5.cmd 			= 0;
+	rxcmd_md5.data 			= 0;
+	rxcmd_md5.timestamp 	= 0;
+};
+
+/*
  * Task to calculate the hash
  */
 
@@ -186,25 +205,6 @@ void md5_check_commands(void)
 			}
 		}
 	}
-};
-
-/*
- * Register memory for hash calculation.
- */
-void md5_register_ipc(void)
-{
-	//Register command queue, can hold 5 commands
-	ipc_register_queue(5 * sizeof(T_command), did_MD5);
-
-	//Clear task
-	arbiter_clear_task(&task_md5);
-	arbiter_set_command(&task_md5, CMD_IDLE);
-
-	//Initialize struct for received commands
-	rxcmd_md5.did			= did_MD5;
-	rxcmd_md5.cmd 			= 0;
-	rxcmd_md5.data 			= 0;
-	rxcmd_md5.timestamp 	= 0;
 };
 
 /*

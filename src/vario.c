@@ -31,11 +31,23 @@ void vario_tone_sink(float climb);
 void vario_tone_mute();
 
 // ***** Functions *****
-void vario_init(void)
+/*
+ * Register everything relevant for IPC
+ */
+void vario_register_ipc(void)
 {
+	// register ipc queue
+	ipc_register_queue(20 * sizeof(T_command), did_VARIO);
+};
+
+/*
+ * Get everything relevant for IPC
+ */
+void vario_get_ipc(void)
+{
+	// get the ipc pointer addresses for the needed data
 	p_ipc_v_df_data = ipc_memory_get(did_DATAFUSION);
-	ipc_register_queue(200, did_VARIO);
-}
+};
 
 
 void vario_task(void)

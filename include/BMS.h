@@ -194,6 +194,7 @@
 #define ACDSG_EN					(1<<0)	// Accumulated charge enable for discharging current integration
 
 // ***** Functions *****
+void            bms_register_ipc        (void);
 void 			init_BMS				(void);
 void 			BMS_task				(void);
 void 			BMS_SolarPanelController(void);

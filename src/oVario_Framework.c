@@ -22,6 +22,28 @@ uint8_t sys_state = INITIATE;
 uint8_t count = 0;
 
 /*
+ * Register everything relevant for IPC
+ */
+void sys_register_ipc(void)
+{
+	//register system struct
+	sys = ipc_memory_register(sizeof(SYS_T), did_SYS);
+	sys->TimeOffset = 0;
+	set_time(20, 15, 00);
+	set_date(23, 2, 2018);
+};
+
+/*
+ * Get everything relevant for IPC
+ */
+void sys_get_ipc(void)
+{
+	// get the ipc pointer addresses for the needed data
+	p_ipc_sys_sd_data = ipc_memory_get(did_SDIO);
+	p_ipc_sys_bms_data = ipc_memory_get(did_BMS);
+};
+
+/*
  * System task, which monitors whether the system should be shutdown
  */
 void system_task(void)
@@ -34,11 +56,7 @@ void system_task(void)
 		break;
 
 	// Initiate the sys state machine
-	case INITIATE:
-		// get the ipc pointer addresses for the needed data
-		p_ipc_sys_sd_data		= ipc_memory_get(did_SDIO);
-		p_ipc_sys_bms_data 		= ipc_memory_get(did_BMS);
-
+	case INITIATE:	
 		// to prevent unwanted behaviour engage the watchdog
 		sys_watchdog(ON);
 
@@ -195,12 +213,6 @@ void init_clock(void)
 	//Activate FPU
 	SCB->CPACR = (1<<23) | (1<<22) | (1<<21) | (1<<20);
 
-	//register system struct
-	sys = ipc_memory_register(sizeof(SYS_T),did_SYS);
-	sys->TimeOffset = 0;
-	set_time(20,15,00);
-	set_date(23,2,2018);
-
 };
 
 /*
@@ -225,14 +237,15 @@ void init_systick_ms(unsigned long l_ticktime)
 	unsigned long l_temp = (F_CPU/8000)*l_ticktime;
 
 	//Check whether the desired timespan is possible with the 24bit SysTick timer
-	if(l_temp <= 0x1000000)
+	if(l_temp <= SysTick_LOAD_RELOAD_Msk)
 		SysTick->LOAD = l_temp;
 	else
-		SysTick->LOAD = 0x1000000;
+		SysTick->LOAD = SysTick_LOAD_RELOAD_Msk;
+	NVIC_SetPriority (SysTick_IRQn, (1<<__NVIC_PRIO_BITS) - 1);  /* set Priority for Systick Interrupt */
 	SysTick->VAL = 0x00;
 	// Systick from AHB
 	SysTick->CTRL = SysTick_CTRL_ENABLE_Msk;
-}
+};
 
 /*
  * Init system GPIO ports and pins

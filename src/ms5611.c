@@ -28,6 +28,24 @@ extern unsigned long error_var;
 
 
 // ***** Functions *****
+/*
+ * Register everything relevant for IPC
+ */
+void ms5611_register_ipc(void)
+{
+	//register memory
+	msdata = ipc_memory_register(sizeof(ms5611_T), did_MS5611);
+};
+
+// /*
+//  * Get everything relevant for IPC
+//  */
+// void ms5611_get_ipc(void)
+// {
+// 	// get the ipc pointer addresses for the needed data
+// 	p_ipc_sys_sd_data = ipc_memory_get(did_SDIO);
+// 	p_ipc_sys_bms_data = ipc_memory_get(did_BMS);
+// };
 
 void MS5611_init()
 {
