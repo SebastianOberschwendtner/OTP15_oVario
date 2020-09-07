@@ -7,7 +7,7 @@
 
 #include "scheduler.h"
 
-schedule_t os;
+volatile schedule_t os;
 
 /*
  * initialize the os struct
@@ -34,8 +34,8 @@ void init_scheduler(void)
 void schedule(unsigned char task, unsigned int schedule)
 {
 	set_task(task,ACTIVE);	//Set task active
-	os.schedule[task] = schedule; //Update schedule
-	os.timer[task]	  = schedule; //Reload the timer
+	os.schedule[task] = schedule - 1; //Update schedule
+	os.timer[task]	  = schedule - 1; //Reload the timer
 };
 
 /*
@@ -61,14 +61,16 @@ void count_task(unsigned char task)
 {
 	if(os.active[task]) 	//only execute when task is active
 	{
-		os.timer[task]--;	  	//update the timer count
 		if(os.timer[task] == 0) //When the timer is finished, the task wants to execute
 		{
 			os.timer[task] = os.schedule[task]; //Reload the timer with the schedule value
 			os.flag[task] = 1;	//Set the flag for the task
 		}
 		else					//when the timer is not finished, the task does not want to run
+		{
+			os.timer[task]--;	  	//update the timer count
 			os.flag[task] = 0;	//Do not set the flag
+		}
 	}
 	else
 		os.flag[task] = 0;	//Do not set the flag
@@ -86,15 +88,16 @@ void run_scheduler(void)
 /*
  * Perform the scheduling and decide whether to run the specified task
  */
-unsigned char run(unsigned char task, unsigned char tickstate)
+unsigned char run(unsigned char task)
 {
-	if(tickstate) //When another systick is passed, do not execute the task and set the overflow flag
+	//Check whether the task is scheduled tor un
+	if (os.flag[task])
 	{
-		os.loop_ovf = task;
-		return 0;
+		os.flag[task] = 0; 	//Reset the flag of the task
+		return 1;			//Task wants to run
 	}
 	else
-		return os.flag[task]; //Return the state of the task flag
+		return 0;			//Task does not want to run
 };
 
 /*

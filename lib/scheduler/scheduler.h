@@ -51,7 +51,7 @@ void 			set_task			(unsigned char task, unsigned char state);
 unsigned char 	get_task			(unsigned char task);
 void 			count_task			(unsigned char task);
 void 			run_scheduler		(void);
-unsigned char 	run					(unsigned char task, unsigned char tickstate);
+unsigned char 	run					(unsigned char task);
 unsigned char 	schedule_overflow	(void);
 
 #endif /* SCHEDULER_H_ */

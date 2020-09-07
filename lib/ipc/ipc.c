@@ -20,7 +20,6 @@ void* memory_queue_did[did_size];
 
 //extern uint8_t error;
 
-//************************************
 //*********** Functions **************
 
 // register Data Memory and return pointer
