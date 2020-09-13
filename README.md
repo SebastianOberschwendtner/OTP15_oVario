@@ -4,7 +4,7 @@
 ### Branch: `VSCode`
 
 # Open Issues:
-- :white_check_mark: Implement proper task behaviour to *sdio task*. 
+- :white_check_mark: Implement proper task behaviour in *sdio task*. 
 - :white_check_mark: Make *scheduler* interrupt-based.
 - :black_square_button: Adjust timing of *scheduler*.
 - :black_square_button: Improve **IPC** for *I2C* communication.
@@ -122,7 +122,7 @@ When the function is called by *call-by-reference*, you simply use the pointer w
 
 ### Task Structure
 
-The structure of a basic task can be seen here:
+The structure of a generic task can be seen here:
 
 ![Basic Task Structure](.img/Act_Generic_Task.png)
 
@@ -146,7 +146,7 @@ Memory items additionally have the information where they are called by **IPC**.
 
 #### Registered Memory
 
-Memory which is registered but not used is crossed out.
+Memory which is registered but not used in other tasks is crossed out.
 |dID|Type|Registered in|Referenced by|
 |---|---|---|---|
 |did_SYS|`SYS_T`|*oVario_Framework.c*|*sdio.c* <br/> *gps.c*|
@@ -171,8 +171,51 @@ Memory which is registered but not used is crossed out.
 |did_VARIO|20|`T_command`| *vario.c*|
 |did_IGC|5|`T_command`| *igc.c*|
 |did_MD5|5|`T_command`|*md5.c*|
+|did_I2C|10|`T_command`|*i2c.c*|
+|did_MS5611|5|`T_command`|*ms5611.c*|
 
-## Errors Handling
+## Timing
+### Task Overview
+|Task|Selftime|Loop Rate|
+|---|:---:|:---:|
+|sdio_task|50 µs|1 ms|
+|ms5611_task|10 µs|100 ms|
+
+### Task Specification
+#### *ms5611_task()*
+|Command|Called Commands| Self Sequences | Total Sequences|
+|---|---|:---:|:---:|
+|ms5611_init()|-|10|10|
+|ms5611.idle()|ms5611_get_pressure()|2|9|
+|ms5611_get_temperature()|-|3|3|
+|ms5611_get_pressure()|ms5611_get_temperature()|4|7|
+
+
+## List of Interrupts
+|Interrupt Vector|Task|Priority|
+|---|---|:---:|
+|Systick_Handler|*main.c*|0|
+|SDIO_IRQHandler|*sdio.c*|0|
+|EXTI0_IRQHandler|*exti.c*|0|
+|EXTI1_IRQHandler|*exti.c*|0|
+|EXTI2_IRQHandler|*exti.c*|0|
+|EXTI3_IRQHandler|*exti.c*|0|
+|DMA1_Stream1_IRQHandler|*gps.c*|0|
+|TIM3_IRQHandler|*sound.c*|0|
+|I2C1_EV_IRQHandler|*i2c.c*|0|
+|DMA1_Stream6_IRQHandler|*i2c.c*|0|
+|DMA1_Stream5_IRQHandler|*i2c.c*|0|
+
+## Used DMA Streams & Channels
+|DMA#|Stream|Channel|Peripheral|Priority|File|
+|---|:---:|:---:|:---|:---:|---|
+|DMA2|6|4|**SDIO**|xxx|*sdio.c*|
+|DMA1|4|0|**SPI2_TX**|xxx|*DOGXL240.c*|
+|DMA1|1|4|**USART3_RX**|xxx|*gps.c*|
+|DMA1|6|1|**I2C1_TX**|xxx|*i2c.c*|
+|DMA1|5|1|**I2C1_RX**|xxx|*i2c.c*|
+
+## Error Handling
 
 ### Error Codes
 
