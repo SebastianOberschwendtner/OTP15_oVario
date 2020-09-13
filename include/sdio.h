@@ -17,11 +17,6 @@
 //Clocks
 #define SDIOCLK		    48000000UL
 
-//Loop rate for sdio task
-#define SDIO_TASK_us        50000
-#define us2TASKTICKS(x)     (x/SDIO_TASK_us)
-#define ms2TASKTICKS(x)     (x*1000/SDIO_TASK_us)
-
 //Blocklength
 #define SDIO_BLOCKLEN	512		//The blocklength isn't used everythere, so don't change it!!!
 #define DBLOCKSIZE		9		//the power of the blocklen with the base 2 (2^9 = 512)

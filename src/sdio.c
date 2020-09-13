@@ -56,9 +56,16 @@ void sdio_get_ipc(void)
 	sys = ipc_memory_get(did_SYS);
 };
 
-/*
- * sdio system task
- */
+/**********************************************************
+ * TASK SDIO
+ **********************************************************
+ * sdio system task.
+ * 
+ **********************************************************
+ * Execution:	Non-interruptable
+ * Wait: 		No
+ * Halt: 		No
+ **********************************************************/
 void sdio_task(void)
 {
 	//Perform action according to active state
@@ -268,8 +275,8 @@ void sdio_init(void)
 		case SEQUENCE_ENTRY:
 			// initialize the peripherals: Clock, SDIO, DMA, Register Memory
 			sdio_init_peripheral();
-			// wait for a few taskticks
-			task_sdio.wait_counter = ms2TASKTICKS(1);
+			// wait for 5ms
+			task_sdio.wait_counter = MS2TASKTICK(10,LOOP_TIME_TASK_SDIO);
 			// set next sequence step
 			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_RESET_CARD);
 			break;
@@ -278,8 +285,8 @@ void sdio_init(void)
 			//Sent command to reset Card
 			if (sdio_send_cmd(CMD0, 0))
 			{
-				//When command is sent, wait a few taskticks and goto next sequence
-				task_sdio.wait_counter = ms2TASKTICKS(100);
+				//When command is sent, wait for 100ms and goto next sequence
+				task_sdio.wait_counter = MS2TASKTICK(100,LOOP_TIME_TASK_SDIO);
 				arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_SUPPLY);
 			}
 			break;
@@ -386,8 +393,8 @@ void sdio_init(void)
 				//When command is sent, check for error
 				if (!(SD->response & R1_ERROR))
 				{
-					// 4-wire mode was accepted
-					task_sdio.wait_counter = ms2TASKTICKS(10);
+					// 4-wire mode was accepted, wait for 10ms
+					task_sdio.wait_counter = MS2TASKTICK(10,LOOP_TIME_TASK_SDIO);
 					// Set 4-wire mode in sdio peripheral
 					SDIO->CLKCR |= SDIO_CLKCR_WIDBUS_0;
 				}
@@ -730,8 +737,8 @@ void sdio_check_error(void)
  */
 unsigned char sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg)
 {
-	// Command transfer in progress?
-	if (!(SDIO->STA & SDIO_STA_CMDACT))
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		// Finished Sending Command? (no response required)
 		if (!(SDIO->STA & SDIO_STA_CMDSENT))
@@ -755,8 +762,8 @@ unsigned char sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg)
  */
 unsigned char sdio_send_cmd_R1(unsigned char ch_cmd, unsigned long l_arg)
 {
-	// Command transfer in progress?
-	if (!(SDIO->STA & SDIO_STA_CMDACT))
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		// Finished Sending Command? (R1 response required)
 		if (!(SDIO->STA & SDIO_STA_CMDREND))
@@ -783,8 +790,8 @@ unsigned char sdio_send_cmd_R1(unsigned char ch_cmd, unsigned long l_arg)
  */
 unsigned char sdio_send_cmd_R2(unsigned char ch_cmd, unsigned long l_arg)
 {
-	// Command transfer in progress?
-	if (!(SDIO->STA & SDIO_STA_CMDACT))
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		// Finished Sending Command? (R2 response required)
 		if (!(SDIO->STA & SDIO_STA_CMDREND))
@@ -810,8 +817,8 @@ unsigned char sdio_send_cmd_R2(unsigned char ch_cmd, unsigned long l_arg)
  */
 unsigned char sdio_send_cmd_R3(unsigned char ch_cmd, unsigned long l_arg)
 {
-	// Command transfer in progress?
-	if (!(SDIO->STA & SDIO_STA_CMDACT))
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		// Finished Sending Command? (R3 response required, without matching CCRC)
 		if (!(SDIO->STA & (SDIO_STA_CCRCFAIL | SDIO_STA_CMDREND)))
@@ -837,8 +844,8 @@ unsigned char sdio_send_cmd_R3(unsigned char ch_cmd, unsigned long l_arg)
  */
 unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
 {
-	// Command transfer in progress?
-	if (!(SDIO->STA & SDIO_STA_CMDACT))
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		// Finished Sending Command? (R6 response required)
 		if (!(SDIO->STA & SDIO_STA_CMDREND))
@@ -864,8 +871,8 @@ unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
  */
 unsigned char sdio_send_cmd_R7(unsigned char ch_cmd, unsigned long l_arg)
 {
-	// Command transfer in progress?
-	if (!(SDIO->STA & SDIO_STA_CMDACT))
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		// Finished Sending Command? (R7 response required)
 		if (!(SDIO->STA & SDIO_STA_CMDREND))
@@ -915,7 +922,7 @@ unsigned char sdio_set_inactive(void)
 unsigned char sdio_read_block(unsigned long *databuffer, unsigned long l_block_address)
 {
 	//Data Transfer in Progress?
-	if (!(SDIO->STA & SDIO_STA_RXACT))
+	if (!(SDIO->STA & (SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		//Data Transfer finished?
 		if (SDIO->STA & SDIO_STA_DBCKEND)
@@ -972,7 +979,7 @@ void SDIO_IRQHandler(void)
 unsigned char sdio_write_block(unsigned long *databuffer, unsigned long l_block_address)
 {
 	//Data Transfer in Progress?
-	if (!(SDIO->STA & SDIO_STA_RXACT))
+	if (!(SDIO->STA & (SDIO_STA_RXACT | SDIO_STA_TXACT)))
 	{
 		//Data Transfer finished?
 		if (SDIO->STA & SDIO_STA_DBCKEND)
@@ -1167,6 +1174,7 @@ void sdio_set_cluster(void)
 
 	case SDIO_SEQUENCE_SET_FAT_2:
 		//Read the sector with the entry of the current cluster in the 2nd FAT
+		
 		if (sdio_read_block(l_databuffer, *l_lba))
 		{
 			//Determine the FAT entry
@@ -1355,8 +1363,8 @@ void sdio_read_next_sector_of_cluster(void)
 	//Get arguments
 	FILE_T *filehandler = (FILE_T *)arbiter_get_argument(&task_sdio); //Argument[0]
 
-	//intialize temp memory
-	unsigned long l_FATEntry = 0;
+	//allocate memory
+	unsigned long* l_FATEntry = arbiter_malloc(&task_sdio, 1);
 
 	switch (arbiter_get_sequence(&task_sdio))
 	{
@@ -1388,18 +1396,18 @@ void sdio_read_next_sector_of_cluster(void)
 		//Get the entry of the FAT table
 		if (arbiter_callbyvalue(&task_sdio, SDIO_CMD_GET_NEXT_CLUSTER))
 		{
-			l_FATEntry = arbiter_get_return_value(&task_sdio);
+			*l_FATEntry = arbiter_get_return_value(&task_sdio);
 
 			if (SD->status & SD_IS_FAT16) //If FAT16
 			{
-				if (l_FATEntry == 0xFFFF) //End of file
+				if (*l_FATEntry == 0xFFFF) //End of file
 					arbiter_return(&task_sdio, 0);
-				else if (l_FATEntry >= 0xFFF8) //Bad Sector
+				else if (*l_FATEntry >= 0xFFF8) //Bad Sector
 				{
 					SD->err = SDIO_ERROR_BAD_SECTOR;
 					arbiter_return(&task_sdio, 0);
 				}
-				else if (l_FATEntry == 0x0000) //Cluster empty
+				else if (*l_FATEntry == 0x0000) //Cluster empty
 				{
 					SD->err = SDIO_ERROR_FAT_CORRUPTED;
 					arbiter_return(&task_sdio, 0);
@@ -1411,14 +1419,14 @@ void sdio_read_next_sector_of_cluster(void)
 			}
 			else //If FAT32
 			{
-				if (l_FATEntry == 0xFFFFFFFF) //End of file
+				if (*l_FATEntry == 0xFFFFFFFF) //End of file
 					arbiter_return(&task_sdio, 0);
-				else if (l_FATEntry >= 0xFFFFFFF8) //Bad Sector
+				else if (*l_FATEntry >= 0xFFFFFFF8) //Bad Sector
 				{
 					SD->err = SDIO_ERROR_BAD_SECTOR;
 					arbiter_return(&task_sdio, 0);
 				}
-				else if (l_FATEntry == 0x00000000) //Cluster Empty
+				else if (*l_FATEntry == 0x00000000) //Cluster Empty
 				{
 					SD->err = SDIO_ERROR_FAT_CORRUPTED;
 					arbiter_return(&task_sdio, 0);
@@ -1433,8 +1441,8 @@ void sdio_read_next_sector_of_cluster(void)
 
 	case SEQUENCE_FINISHED:
 		//Read the next cluster address and read the first sector
-		l_FATEntry = arbiter_get_return_value(&task_sdio);
-		if (sdio_read_cluster(filehandler, l_FATEntry))
+		*l_FATEntry = arbiter_get_return_value(&task_sdio);
+		if (sdio_read_cluster(filehandler, *l_FATEntry))
 			arbiter_return(&task_sdio, 1);
 		break;
 
@@ -1625,6 +1633,10 @@ void sdio_get_empty_id(void)
 		//Read current cluster
 		if (sdio_read_cluster(dir, dir->CurrentCluster))
 		{
+			//Initialize memory
+			*l_empty_id = 0;
+			*l_entry = 0;
+			//Goto next sequence
 			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
 		}
 		break;

@@ -61,8 +61,8 @@ void system_task(void)
 		sys_watchdog(ON);
 
 		// when battery gauge is active, read the old capacity from the gauge flash
-		if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
-			p_ipc_sys_bms_data->old_capacity = (signed int)BMS_gauge_read_flash_int(MAC_INFO_BLOCK_addr);
+		// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
+		// 	p_ipc_sys_bms_data->old_capacity = (signed int)BMS_gauge_read_flash_int(MAC_INFO_BLOCK_addr);
 
 		// goto run state
 		sys_state = RUN;
@@ -87,8 +87,11 @@ void system_task(void)
 		GPIOC->BSRRL = GPIO_BSRR_BS_6;
 		// When power switch is off, initiate shutdown procedure
 		// Unless there is input power present or no battery is present
-		if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
-				sys_state = SHUTDOWN;
+		// if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
+		// 		sys_state = SHUTDOWN;
+
+		if((!SHUTDOWN_SENSE))
+			sys_state = SHUTDOWN;
 		break;
 
 	// When the power switch was switched
@@ -142,8 +145,8 @@ void system_task(void)
 			ipc_queue_push(&SysCmd, 10, did_GUI);
 
 			// when battery gauge is active, save the capacity to the the gauge flash
-			if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
-				BMS_gauge_send_flash_int(MAC_INFO_BLOCK_addr, (unsigned int)p_ipc_sys_bms_data->discharged_capacity);
+			// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
+			// 	BMS_gauge_send_flash_int(MAC_INFO_BLOCK_addr, (unsigned int)p_ipc_sys_bms_data->discharged_capacity);
 		}
 		break;
 
@@ -154,8 +157,8 @@ void system_task(void)
 
 		count++;
 		if(count == 5){
-			p_ipc_sys_bms_data->crc = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_SUM_addr);
-			p_ipc_sys_bms_data->len = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_LEN_addr);
+			// p_ipc_sys_bms_data->crc = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_SUM_addr);
+			// p_ipc_sys_bms_data->len = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_LEN_addr);
 		// Shutdown power and set PC6 low
 		GPIOC->BSRRH =GPIO_BSRR_BS_6;
 		}
@@ -305,17 +308,18 @@ void set_led_red(unsigned char ch_state)
 void wait_ms(unsigned long l_time)
 {
 	unsigned long l_temp = CURRENT_TICK;
-	signed long l_target = l_temp-((F_CPU/8000)*l_time);
+	signed long l_target = l_temp-((F_CPU/1000)*l_time);
 	if(l_target<0)
 	{
-		wait_systick(1);
-		while(SysTick->VAL>(((F_CPU/8000)*SYSTICK)+l_target));
+		wait_systick((l_time*1000)/SYSTICK);
+		while(SysTick->VAL > (SYSTICK_TICKS+l_target));
 	}
 	else
 	{
-		while(SysTick->VAL>l_target);
+		while(SysTick->VAL > l_target);
 	}
-}
+};
+
 /*
  * Wait for a certain amount of SysTicks
  */

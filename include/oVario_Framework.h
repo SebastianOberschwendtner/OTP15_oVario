@@ -54,16 +54,27 @@
 // #define	F_CPU			168021840UL //Measured with osci
 // ==> is now defined in platformio.ini!
 
-//Define SysTick time in ms
-#define SYSTICK			50
+//Define SysTick time in us
+#define SYSTICK			    1000UL
+#define SYSTICK_TICKS       (unsigned long)(((unsigned long long)SYSTICK*F_CPU)/1000000UL)
 
-//I2C clock speed
-#define I2C_CLOCK		100000UL
+//I2C clock speed in Hz
+#define I2C_CLOCK		    100000UL
 
 //Define Tasks for scheduler
-#define TASK_CORE       TASK0
-#define TASK_AUX        TASK1
-#define TASK_1Hz        TASK2
+#define TASK_GROUP_CORE     TASK0
+#define TASK_GROUP_AUX      TASK1
+#define TASK_GROUP_1Hz      TASK2
+
+//Define Schedule of task groups
+#define SCHEDULE_1ms        1000/SYSTICK
+#define SCHEDULE_100ms      100000/SYSTICK  
+#define SCHEDULE_1s         100000000/SYSTICK      
+
+//Tell each task which loop time it has
+//Task Group AUX
+#define LOOP_TIME_TASK_MS6511    ((SCHEDULE_1ms)*SYSTICK)
+#define LOOP_TIME_TASK_SDIO      ((SCHEDULE_1ms)*SYSTICK)
 
 //Options for hardware setup
 #define SDIO_4WIRE //Use 4 wire mode of SDIO0
@@ -78,14 +89,14 @@
 
 /*
  * Makro for SysTick status and time conversion
- * The conversion assumes that the systick timer is clocked by APB/8.
+ * The conversion assumes that the systick timer is clocked by APB/1.
  */
 #define TICK_PASSED		(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
 #define CURRENT_TICK	SysTick->VAL
-#define MS2TICK(x)		((F_CPU/8000)*x)
-#define US2TICK(x)		((F_CPU/8000000)*x)
-#define TICK2MS(x)		(x*8000)/F_CPU
-#define TICK2US(x)		(x*8000000)/F_CPU
+#define MS2TICK(x)		((F_CPU/1000)*x)
+#define US2TICK(x)		((F_CPU/1000000)*x)
+#define TICK2MS(x)		(x*1000)/F_CPU
+#define TICK2US(x)		(x*1000000)/F_CPU
 
 //PLL variables
 #define PLL_M			25

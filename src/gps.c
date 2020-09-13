@@ -413,7 +413,6 @@ void gps_config(void)
 
 
 	gps_send_bytes(buff, 28);
-
 	wait_ms(100);
 
 	// Set new rates for UBX messages

@@ -93,7 +93,6 @@ uint8_t ipc_queue_push(void* p_data, uint8_t no_bytes, uint8_t did)
 	return queue_error;
 }
 
-
 // fetch data from queue
 uint8_t ipc_queue_get(uint8_t did, uint8_t no_bytes, void* pData)
 {

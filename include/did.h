@@ -28,5 +28,6 @@
 #define		did_IGC			15
 #define     did_FILEHANDLER 16
 #define     did_MD5         17
+#define     did_I2C         18
 
 #endif /* DID_H_ */

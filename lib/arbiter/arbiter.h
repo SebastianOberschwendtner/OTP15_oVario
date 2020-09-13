@@ -17,6 +17,10 @@
 //Stack size in unsigned longs
 #define STACK_SIZE      16
 
+//Calculate waiting times -> Wait time can only be a multiple of the scheduled time
+#define US2TASKTICK(time,task_schedule)  (unsigned long)((time)/(task_schedule))
+#define MS2TASKTICK(time,task_schedule)  (unsigned long)((time*1000)/(task_schedule))
+
 //Structure for arbiter data within one task
 #pragma pack(push, 1)
 typedef struct

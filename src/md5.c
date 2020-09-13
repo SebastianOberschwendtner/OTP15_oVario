@@ -111,10 +111,16 @@ void md5_register_ipc(void)
 	rxcmd_md5.timestamp 	= 0;
 };
 
-/*
- * Task to calculate the hash
- */
-
+/***********************************************************
+ * TASK MD5
+ ***********************************************************
+ * Task to calculate the hash.
+ * 
+ ***********************************************************
+ * Execution:	Non-interruptable
+ * Wait: 		Yes
+ * Halt: 		Yes
+ **********************************************************/
 void md5_task(void)
 {
 	 //When the task wants to wait

@@ -195,19 +195,19 @@
 
 // ***** Functions *****
 void            bms_register_ipc        (void);
-void 			init_BMS				(void);
-void 			BMS_task				(void);
-void 			BMS_SolarPanelController(void);
-void 			BMS_adc_start			(void);
-void 			BMS_get_adc				(void);
-void 			BMS_get_status			(void);
-void 			BMS_charge_start		(void);
-void 			BMS_check_battery		(void);
-void 			BMS_set_charge_current	(unsigned  int i_current);
-void		 	BMS_set_otg				(unsigned char ch_state);
-void 			BMS_gauge_get_adc		(void);
-unsigned int 	BMS_gauge_read_flash_int(unsigned int register_address);
-void 			BMS_gauge_send_flash_int(unsigned int register_address, unsigned int data);
+// void 			init_BMS				(void);
+// void 			BMS_task				(void);
+// void 			BMS_SolarPanelController(void);
+// void 			BMS_adc_start			(void);
+// void 			BMS_get_adc				(void);
+// void 			BMS_get_status			(void);
+// void 			BMS_charge_start		(void);
+// void 			BMS_check_battery		(void);
+// void 			BMS_set_charge_current	(unsigned  int i_current);
+// void		 	BMS_set_otg				(unsigned char ch_state);
+// void 			BMS_gauge_get_adc		(void);
+// unsigned int 	BMS_gauge_read_flash_int(unsigned int register_address);
+// void 			BMS_gauge_send_flash_int(unsigned int register_address, unsigned int data);
 
 
 #endif /* BMS_H_ */

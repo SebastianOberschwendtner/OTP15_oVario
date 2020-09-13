@@ -74,10 +74,16 @@ void igc_get_ipc(void)
     BaroData = ipc_memory_get(did_DATAFUSION);
 };
 
-/*
- * Igc task.
- * Systime has to be up to date.
- */
+/***********************************************************
+ * TASK IGC
+ ***********************************************************
+ * Systime has to be up to date!
+ * 
+ ***********************************************************
+ * Execution:	interruptable
+ * Wait: 		Yes
+ * Halt: 		Yes
+ **********************************************************/
 void igc_task(void)
 {
     //Check commands in queue

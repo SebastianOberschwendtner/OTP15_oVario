@@ -13,6 +13,7 @@
 ms5611_T* ipc_df_data;
 datafusion_T* df_data;
 GPS_T* ipc_df_gps_data;
+T_command txcmd_datafusion;
 
 
 
@@ -171,7 +172,14 @@ void datafusion_task(void)
 
 
 	wind_estimator ();
-}
+
+	//Send request to get next pressure value
+	txcmd_datafusion.did = did_DATAFUSION;
+	txcmd_datafusion.cmd = BARO_CMD_GET_PRESSURE;
+	txcmd_datafusion.data = 0;
+	txcmd_datafusion.timestamp = TIM5->CNT;
+	ipc_queue_push(&txcmd_datafusion, sizeof(T_command), did_MS5611);
+};
 
 uint8_t 	data_cnt = 0; 			// how many valid data points in a row
 float 		psi[128]; 				// heading

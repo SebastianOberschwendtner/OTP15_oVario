@@ -15,24 +15,34 @@
 #define i2c_addr_BMS		0x12
 #define i2c_addr_BMS_GAUGE	0xAA
 
+//Commands for arbiter
+#define I2C_CMD_INIT        1
+#define I2C_CMD_SEND_CHAR   2
+
+#define I2C_CMD_READ_INT    5
+#define I2C_CMD_READ_24BIT  6
+#define I2C_CMD_TEST        7
+
+//Sequences for commands
+#define I2C_SEQUENCE_WAIT       1
+#define I2C_SEQUENCE_REQUEST    2
+#define I2c_SEQUENCE_RX         3
+
 
 // ***** Functions *****
-void 			init_i2c(void);
-void 			i2c_reset_error(void);
-unsigned char 	i2c_get_error(void);
-void 			i2c_send_char(unsigned char ch_address, unsigned char ch_data);
-void 			i2c_send_char_register(unsigned char ch_address, unsigned char ch_register, unsigned char ch_data);
-void 			i2c_send_int(unsigned char ch_address, unsigned int i_data);
-void 			i2c_send_int_LSB(unsigned char ch_address, unsigned int i_data);
-void 			i2c_send_int_register(unsigned char ch_address, unsigned char ch_register, unsigned int i_data);
-void 			i2c_send_int_register_LSB(unsigned char ch_address, unsigned char ch_register, unsigned int i_data);
-unsigned char 	i2c_read_char(unsigned char ch_address, unsigned char ch_command);
-unsigned int 	i2c_read_int(unsigned char ch_address, unsigned char ch_command);
-unsigned int 	i2c_read_int_LSB(unsigned char ch_address, unsigned char ch_command);
-unsigned long 	i2c_read_24bit(unsigned char ch_address, unsigned char ch_command);
-unsigned long 	i2c_read_long(unsigned char ch_address, unsigned char ch_command);
-unsigned char 	i2c_read_array(unsigned char ch_address, unsigned char ch_command, unsigned char* p_array, unsigned char array_size);
-unsigned char 	i2c_send_array(unsigned char ch_address, unsigned char* p_array, unsigned char array_size);
-unsigned char 	i2c_send_read_array(unsigned char ch_address, unsigned char* array_in, unsigned char size_in, unsigned char* array_out, unsigned char size_out);
+void            i2c_register_ipc        (void);
+void            i2c_get_ipc             (void);
+void            i2c_task                (void);
+void            i2c_test                (void);
+void 			i2c_init_peripheral     (void);
+void            i2c_idle                (void);
+void            i2c_send_char           (void);
+void            i2c_read_int            (void);
+void            i2c_read_24bit          (void);
+unsigned char   i2c_decode_did          (unsigned char did);
+unsigned long   i2c_transmit_nbytes     (unsigned char* data, unsigned long nbytes);
+void            i2c_dma_transmit        (void* data, unsigned long nbytes);
+unsigned long   i2c_receive_nbytes      (unsigned char* data, unsigned long nbytes);
+void            i2c_dma_receive         (void* data, unsigned long nbytes);
 
 #endif /* I2C_H_ */
