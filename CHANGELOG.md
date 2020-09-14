@@ -43,6 +43,10 @@ The core functionality of the vario works, but the *igc-logging* and *bms_task()
 
     *igc_task()* does not log the gps data yet.
 
+- :black_square_button: **OVI-006**:
+
+    *i2c_task()* does not recognize faulty sensors.
+
 **Fixed bugs:**
 
 - n/a
