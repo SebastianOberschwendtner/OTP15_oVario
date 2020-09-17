@@ -14,6 +14,7 @@ local.properties
 
 # VSCode platformio project file
 .pio
+.vscode
 doc 
 out
 LinkerScript.ld
