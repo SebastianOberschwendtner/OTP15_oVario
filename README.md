@@ -10,6 +10,13 @@ This repository contains the software framework of the oVario. The oVario is a v
 |:---:|:---:|
 |**`C`**|**`Eclipse`** + **`VSCode`**
 
+## Branches
+|Name|Status|Description|
+|---|---|---|
+|**master**|`default`| Default Branch|
+|**debug**|`active`| |
+|**VSCode**|`active`| Main branch for developing with VSCode|
+ 
 ## Technical Data
 |Type|Value|
 |---|---|
