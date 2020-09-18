@@ -13,6 +13,8 @@
 uint32_t error_var = 0;
 // unsigned long tempcount = 0;
 
+T_command txcmd_main;
+
 void SysTick_Handler(void)
 {
 	//***** Run scheduler *****
@@ -52,7 +54,6 @@ int main(void)
 	
 	//***** intialize peripherals *****
 	//TODO Eventually move all the following initalizations to the corresponding tasks
-	
 	init_lcd();
 	gui_bootlogo();
 	exti_init();
@@ -83,7 +84,8 @@ int main(void)
 			set_led_red(ON);
 			sdio_task();
 			igc_task();
-			ms5611_task();
+			// ms5611_task();
+			bms_task();
 			set_led_red(OFF);
 		}
 
@@ -94,16 +96,21 @@ int main(void)
 			datafusion_task();
 			vario_task();
 			system_task();
-			sound_task();
+			// sound_task();
 			gui_task();
 			gps_task();
-			// BMS_task();
 			set_led_green(OFF);
 		}
 
 		//***** TASK_GROUP_1Hz ******
 		if (run(TASK_GROUP_1Hz))
 		{
+			//Read the status of the bms once a second
+			txcmd_main.did = 0xFF;
+			txcmd_main.cmd = BMS_CMD_GET_ADC;
+			txcmd_main.data = 0;
+			txcmd_main.timestamp = 0;
+			ipc_queue_push(&txcmd_main, sizeof(T_command), did_BMS);
 		}
 
 		//***** Background Tasks *****

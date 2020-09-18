@@ -35,11 +35,11 @@ void i2c_register_ipc(void)
 /*
  * Get everything relevant for IPC
  */
-void i2c_get_ipc(void)
-{
-	// get the ipc pointer addresses for the needed data
+// void i2c_get_ipc(void)
+// {
+// 	// get the ipc pointer addresses for the needed data
 
-};
+// };
 
 /**********************************************************
  * TASK I2C
@@ -52,7 +52,6 @@ void i2c_get_ipc(void)
  * Wait: 		No
  * Halt: 		No
  **********************************************************/
-unsigned char i2c_temp[4];
 void i2c_task(void)
 {
 	//Perform task action
@@ -64,11 +63,18 @@ void i2c_task(void)
 
 	case I2C_CMD_INIT:
 		i2c_init_peripheral();
-		arbiter_set_command(&task_i2c, CMD_IDLE);
+		arbiter_return(&task_i2c, 0);
 		break;
 
 	case I2C_CMD_SEND_CHAR:
 		i2c_send_char();
+		break;
+	case I2C_CMD_SEND_INT:
+		i2c_send_int();
+		break;
+
+	case I2C_CMD_SEND_24BIT:
+		i2c_send_24bit();
 		break;
 
 	case I2C_CMD_READ_INT:
@@ -79,55 +85,10 @@ void i2c_task(void)
 		i2c_read_24bit();
 		break;
 
-	case I2C_CMD_TEST:
-		i2c_test();
-		break;
-
 	default:
 		break;
 	}
 	//TODO Add error handling.
-};
-
-void i2c_test(void)
-{
-	switch(arbiter_get_sequence(&task_i2c))
-	{
-		case SEQUENCE_ENTRY:
-			active_address = i2c_addr_MS5611;
-			i2c_temp[0] = 0x1E;
-			if (arbiter_callbyreference(&task_i2c, I2C_CMD_SEND_CHAR, i2c_temp))
-			{
-				task_i2c.wait_counter = 1;
-				arbiter_set_sequence(&task_i2c, I2C_SEQUENCE_WAIT);
-			}
-			break;
-
-		case I2C_SEQUENCE_WAIT:
-			if (task_i2c.wait_counter)
-			{
-				task_i2c.wait_counter--;
-				break;
-			}
-			else
-				arbiter_set_sequence(&task_i2c, I2C_SEQUENCE_REQUEST);
-
-		case I2C_SEQUENCE_REQUEST:
-			active_address = i2c_addr_MS5611;
-			i2c_temp[0] = 0xA0;
-			if (arbiter_callbyreference(&task_i2c, I2C_CMD_SEND_CHAR, i2c_temp))
-				arbiter_set_sequence(&task_i2c, SEQUENCE_FINISHED);
-			break;
-
-		case SEQUENCE_FINISHED:
-			active_address = i2c_addr_MS5611+1;
-			if (i2c_receive_nbytes(i2c_temp,2))
-				arbiter_return(&task_i2c, 1);
-			break;
-
-		default:
-			break;
-	}
 };
 
 /*
@@ -222,32 +183,10 @@ void i2c_idle(void)
 		//Check the command in the queue and execute it
 		if (ipc_queue_get(did_I2C, sizeof(T_command), &rxcmd_i2c))
 		{
-			switch (rxcmd_i2c.cmd) // switch for command
-			{
-			case I2C_CMD_SEND_CHAR:
-				//Decode i2c address from calling task
-				active_address = i2c_decode_did(rxcmd_i2c.did);
-				//Call the command
-				arbiter_callbyreference(&task_i2c,I2C_CMD_SEND_CHAR,&rxcmd_i2c.data);
-				break;
-
-			case I2C_CMD_READ_INT:
-				//Decode i2c address from calling task
-				active_address = i2c_decode_did(rxcmd_i2c.did);
-				//Call the command
-				arbiter_callbyreference(&task_i2c,I2C_CMD_READ_INT,&rxcmd_i2c.data);
-				break;
-
-			case I2C_CMD_READ_24BIT:
-				//Decode i2c address from calling task
-				active_address = i2c_decode_did(rxcmd_i2c.did);
-				//Call the command
-				arbiter_callbyreference(&task_i2c,I2C_CMD_READ_24BIT,&rxcmd_i2c.data);
-				break;
-
-			default:
-				break;
-			}
+			//Decode i2c address from calling task
+			active_address = i2c_decode_did(rxcmd_i2c.did);
+			//Call the command
+			arbiter_callbyreference(&task_i2c, rxcmd_i2c.cmd , &rxcmd_i2c.data);
 		}
 	}
 };
@@ -272,6 +211,72 @@ void i2c_send_char(void)
 		case SEQUENCE_ENTRY:
 			//Send byte and go next state when finished
 			if (i2c_transmit_nbytes(data,1))
+				arbiter_set_sequence(&task_i2c, SEQUENCE_FINISHED);
+			break;
+		
+		case SEQUENCE_FINISHED:
+			//byte is sent
+			arbiter_return(&task_i2c, 1);
+			break;
+		
+		default:
+			break;
+	}
+};
+
+/**********************************************************
+ * Send int via i2c
+ **********************************************************
+ * 
+ * Argument:	unsigned char* 	data
+ * Return:		unsigned long	l_char_sent
+ * 
+ * call-by-reference
+ **********************************************************/
+void i2c_send_int(void)
+{
+	//Get Arguments
+	unsigned char* data = (unsigned char*) arbiter_get_argument(&task_i2c);
+
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_i2c))
+	{
+		case SEQUENCE_ENTRY:
+			//Send byte and go next state when finished
+			if (i2c_transmit_nbytes(data,2))
+				arbiter_set_sequence(&task_i2c, SEQUENCE_FINISHED);
+			break;
+		
+		case SEQUENCE_FINISHED:
+			//byte is sent
+			arbiter_return(&task_i2c, 1);
+			break;
+		
+		default:
+			break;
+	}
+};
+
+/**********************************************************
+ * Send 24bits via i2c
+ **********************************************************
+ * 
+ * Argument:	unsigned char* 	data
+ * Return:		unsigned long	l_char_sent
+ * 
+ * call-by-reference
+ **********************************************************/
+void i2c_send_24bit(void)
+{
+	//Get Arguments
+	unsigned char* data = (unsigned char*) arbiter_get_argument(&task_i2c);
+
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_i2c))
+	{
+		case SEQUENCE_ENTRY:
+			//Send byte and go next state when finished
+			if (i2c_transmit_nbytes(data,3))
 				arbiter_set_sequence(&task_i2c, SEQUENCE_FINISHED);
 			break;
 		

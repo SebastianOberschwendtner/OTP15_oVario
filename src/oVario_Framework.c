@@ -523,6 +523,24 @@ unsigned char sys_hex2str(char* string, unsigned long l_number, unsigned char ch
 };
 
 /*
+ * Swap the endianess of the input value, the byte width of the data has to be specified.
+ */
+unsigned long sys_swap_endian(unsigned long data_in, unsigned char byte_width)
+{
+	// Initialize output value
+	unsigned long data_out = 0;
+	// Char pointer for byte swapping
+	unsigned char* data = (unsigned char*)&data_in;
+	
+	//Swap the bytes
+	for (unsigned char i = 0; i < byte_width; i++)
+		data_out += (data[byte_width - i - 1] << (8 * i));
+
+	//Return the result
+	return data_out;
+};
+
+/*
  * Function to handle the watchdog timer. you can activate, reset and deactivate the timer.
  * Timeout is fixed to approx. 500ms.
  */

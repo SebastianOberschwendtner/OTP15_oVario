@@ -12,6 +12,31 @@
 
 
 //*********** Defines **************
+//Commands for arbiter
+#define BMS_CMD_INIT                1
+#define BMS_CMD_GET_STATUS          2
+#define BMS_CMD_GET_ADC             3
+#define BMS_CMD_SET_CHARGE_CURRENT  4
+
+//Sequences of commands
+// INIT
+#define BMS_SEQUENCE_SET_OPTION_0   1
+#define BMS_SEQUENCE_SET_OPTION_1   2
+#define BMS_SEQUENCE_SET_OPTION_2   3
+#define BMS_SEQUENCE_SET_OPTION_ADC 4
+#define BMS_SEQUENCE_SET_MAX_VOLT   5
+#define BMS_SEQUENCE_SET_SYS_VOLT   6
+#define BMS_SEQUENCE_SET_INP_CURR   7
+// GET_STATUS
+#define BMS_SEQUENCE_GET_STATUS     8
+// GET_ADC
+#define BMS_SEQUENCE_START_ADC      9
+#define BMS_SEQUENCE_READ_SYS       10
+#define BMS_SEQUENCE_READ_VBUS      11
+#define BMS_SEQUENCE_READ_BAT       12
+#define BMS_SEQUENCE_READ_INP       13
+
+
 /*
  * Register Addresses
  */
@@ -195,19 +220,15 @@
 
 // ***** Functions *****
 void            bms_register_ipc        (void);
-// void 			init_BMS				(void);
-// void 			BMS_task				(void);
-// void 			BMS_SolarPanelController(void);
-// void 			BMS_adc_start			(void);
-// void 			BMS_get_adc				(void);
-// void 			BMS_get_status			(void);
-// void 			BMS_charge_start		(void);
-// void 			BMS_check_battery		(void);
-// void 			BMS_set_charge_current	(unsigned  int i_current);
-// void		 	BMS_set_otg				(unsigned char ch_state);
-// void 			BMS_gauge_get_adc		(void);
-// unsigned int 	BMS_gauge_read_flash_int(unsigned int register_address);
-// void 			BMS_gauge_send_flash_int(unsigned int register_address, unsigned int data);
+void            bms_task                (void);
+void            bms_check_semaphores    (void);
+void            bms_idle                (void);
+void            bms_init                (void);
+void            bms_get_status          (void);
+void            bms_get_adc             (void);
+void            bms_set_charge_current  (void);
+void            bms_init_peripherals    (void);
+void            bms_call_task           (unsigned char cmd, unsigned long data, unsigned char did_target);
 
 
 #endif /* BMS_H_ */

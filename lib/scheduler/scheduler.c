@@ -69,7 +69,7 @@ void count_task(unsigned char task)
 		else					//when the timer is not finished, the task does not want to run
 		{
 			os.timer[task]--;	  	//update the timer count
-			os.flag[task] = 0;	//Do not set the flag
+			// os.flag[task] = 0;	//Do not set the flag
 		}
 	}
 	else

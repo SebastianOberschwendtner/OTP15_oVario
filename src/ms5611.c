@@ -304,7 +304,6 @@ void ms5611_init(void)
 			//Exit the command
 			arbiter_return(&task_ms5611,1);
 			break;
-			break;
 
 		default:
 			break;

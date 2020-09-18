@@ -55,7 +55,7 @@
 // ==> is now defined in platformio.ini!
 
 //Define SysTick time in us
-#define SYSTICK			    1000UL
+#define SYSTICK			    100UL
 #define SYSTICK_TICKS       (unsigned long)(((unsigned long long)SYSTICK*F_CPU)/1000000UL)
 
 //I2C clock speed in Hz
@@ -69,12 +69,13 @@
 //Define Schedule of task groups
 #define SCHEDULE_1ms        1000/SYSTICK
 #define SCHEDULE_100ms      100000/SYSTICK  
-#define SCHEDULE_1s         100000000/SYSTICK      
+#define SCHEDULE_1s         1000000/SYSTICK      
 
 //Tell each task which loop time it has
 //Task Group AUX
 #define LOOP_TIME_TASK_MS6511    ((SCHEDULE_1ms)*SYSTICK)
 #define LOOP_TIME_TASK_SDIO      ((SCHEDULE_1ms)*SYSTICK)
+#define LOOP_TIME_TASK_BMS       ((SCHEDULE_1ms)*SYSTICK)
 
 //Options for hardware setup
 #define SDIO_4WIRE //Use 4 wire mode of SDIO0
@@ -173,6 +174,7 @@ unsigned char 	sys_strcpy          (char* pch_string1, char* pch_string2);
 unsigned char 	sys_num2str         (char* string, unsigned long l_number, unsigned char ch_digits);
 void 			sys_memcpy          (void* data1, void* data2, unsigned char length);
 unsigned char 	sys_hex2str         (char* string, unsigned long l_number, unsigned char ch_digits);
+unsigned long   sys_swap_endian     (unsigned long data_in, unsigned char byte_width);
 void 			sys_watchdog        (unsigned char action);
 
 #endif /* OVARIO_FRAMEWORK_H_ */
