@@ -1,6 +1,8 @@
-![joVario Header](https://github.com/knuffel-v2/OTP15_oVario/wiki/img/header.png)
+![joVario Header](https://github.com/knuffel-v2/OTP15_oVario/wiki/img/header.png) 
 
 # OTP15 - joVario
+![tag](https://img.shields.io/github/v/tag/knuffel-v2/OTP15_oVario?color=green) ![release](https://img.shields.io/github/v/release/knuffel-v2/OTP15_oVario?color=green) ![issues](https://img.shields.io/github/issues-raw/knuffel-v2/OTP15_oVario) ![bugs](https://img.shields.io/github/issues/knuffel-v2/OTP15_oVario/bug?color=red)
+
 This repository contains the software framework of the joVario. The oVario is a vario indended for paragliding. It also features GPS tracking :round_pushpin: + logging :floppy_disk: and has a built-in power bank :battery:.
 
 >More information can be found in the *beautiful* [wiki](https://github.com/knuffel-v2/OTP15_oVario/wiki/home).
