@@ -1,14 +1,17 @@
-/*
- * gps.c
- *
- *  Created on: 01.05.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    gps.c
+ * @author  JK
+ * @version V1.1
+ * @date    01-May-2018
+ * @brief   Talks to the GPS and module and reads its data.
+ ******************************************************************************
  */
 
+//****** Includes ******
 #include "gps.h"
 
-
-// Typedefs
+//****** Typedefs ******
 #pragma pack(push, 1)
 typedef struct{
 	uint8_t start;
@@ -95,28 +98,26 @@ typedef struct{
 
 #pragma pack(pop)
 
+//****** Variables *******
 
 uint8_t msg_buff[255];
 T_hdr_nmea* p_HDR_nmea = (void*)&msg_buff[0];
 T_VTG_nmea act_VTG;
-
-
 
 void *pDMABuff;
 uint8_t DMABuff[dma_buf_size];
 
 T_UBX_hdr *UBX_beg;
 
-
 uint32_t			Rd_Idx = 0;
 uint32_t			Rd_Cnt = 0;
 volatile uint32_t 	Wr_Idx = 0;
 
-//Puplic Variables
+//****** Puplic Variables ******
 GPS_T *p_GPS_data;
 SYS_T* sys;
 
-// ***** Functions *****
+//****** Functions ******
 
 /*
  * Register everything relevant for IPC

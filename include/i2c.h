@@ -1,8 +1,14 @@
-/*
- * i2c.h
- *
- *  Created on: 24.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    i2c.h
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   The driver for the I2C communication. The driver now usese the
+ * 			arbiter to handle the communication. Therefore it does not interrupt
+ * 			or block the execution of other tasks. The command interface is more
+ * 			compact and versatile.
+ ******************************************************************************
  */
 
 #ifndef I2C_H_

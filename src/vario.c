@@ -1,15 +1,16 @@
-/*
- * vario.c
- *
- *  Created on: 06.04.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    vario.c
+ * @author  JK
+ * @version V1.1
+ * @date    06-April-2018
+ * @brief   Tells you whether you are climbing or sinking.
+ ******************************************************************************
  */
-
 // ***** Includes *****
 #include "vario.h"
 
-//Git ist scheiße!
-
+//****** Variables ******
 float temp_climb;
 
 datafusion_T* p_ipc_v_df_data;

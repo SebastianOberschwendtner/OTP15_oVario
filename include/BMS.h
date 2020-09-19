@@ -1,8 +1,12 @@
-/*
- * BMS.h
- *  Created for TI BQ25700A and BQ34110
- *  Created on: 10.05.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    bms.h
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Talks to the BMS IC TI BQ25700A via I2C and manages the battery
+ * 			charging and the OTG functionality.
+ ******************************************************************************
  */
 
 #ifndef BMS_H_

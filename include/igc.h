@@ -1,8 +1,11 @@
-/*
- * igc.h
- *
- *  Created on: 02.09.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    igc.h
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   The task which handles the IGC logging.
+ ******************************************************************************
  */
 
 #ifndef IGC_H_

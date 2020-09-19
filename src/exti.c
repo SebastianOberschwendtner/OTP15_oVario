@@ -1,18 +1,20 @@
-/*
- * exti.c
- *
- *  Created on: 12.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    exti.c
+ * @author  JK
+ * @version V1.0
+ * @date    12-March-2018
+ * @brief   Handles the interrupts to capture the button inputs.
+ ******************************************************************************
  */
-
 
 // ***** Includes *****
 #include "exti.h"
 
-
-// ***** Functions *****
+// ***** Variables *****
 volatile uint8_t testvar = 0;
 
+// ***** Functions *****
 
 void exti_init(void)
 {

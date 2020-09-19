@@ -1,45 +1,47 @@
-/*
- * arbiter.c
+/**
+ ******************************************************************************
+ * @file    arbiter.c
+ * @author  SO
+ * @version V1.0
+ * @date    19-September-2020
+ * @brief   The arbiter is used to handle the command arbitration within one
+ *          task. You can use the arbiter for different tasks, but each task
+ *          has to have its own task-struct.
+ * 
+ *          Example Command Structure:
  *
- *  Created on: 16.08.2020
- *      Author: Sebastian
+ *            void task_command(void)
+ *            {
+ *                //Get arguments
+ *                unsigned long* arg1 = arbiter_get_argument(&task_struct);
+ *                unsigned long* arg2 = arg1 + 1;
+ *
+ *                //Allocate memory
+ *                unsigned long* mem1 = arbiter_malloc(&task_struct, n_mem);
+ *                unsigned long* mem2 = mem1 + 1;
+ *
+ *                //Perform the command action
+ *                switch (arbiter_get_sequence(&task_struc))
+ *                {
+ *                    case SEQUENCE_ENTRY:
+ *                        break;
+ *
+ *                    case SEQUENCE_FINISHED:
+ *                        if (command_finished)
+ *                        {
+ *                            //Exit command
+ *                            arbiter_return(&task_struct, return_value);
+ *                        }
+ *                        break;
+ *
+ *                    defaul:
+ *                        break;
+ *                }
+ *            };
+ ******************************************************************************
  */
+
 #include "arbiter.h"
-
-/********** Example Command Structure ************************************
-
-void task_command(void)
-{
-    //Get arguments
-    unsigned long* arg1 = arbiter_get_argument(&task_struct);
-    unsigned long* arg2 = arg1 + 1;
-
-    //Allocate memory
-    unsigned long* mem1 = arbiter_malloc(&task_struct, n_mem);
-    unsigned long* mem2 = mem1 + 1;
-
-    //Perform the command action
-    switch (arbiter_get_sequence(&task_struc))
-    {
-        case SEQUENCE_ENTRY:
-            break;
-
-        case SEQUENCE_FINISHED:
-            if (command_finished)
-            {
-                //Exit command
-                arbiter_return(&task_struct, return_value);
-            }
-            break;
-
-        defaul:
-            break;
-    }
-};
-
-**************************************************************************
-*/
-
 /*
  * Clear the data of one task struct.
  */

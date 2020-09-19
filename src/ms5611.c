@@ -1,13 +1,17 @@
-/*
- * ms5611.c
- *
- *  Created on: 16.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    ms5611.c
+ * @author  JK
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Talks to the barometer IC MS5611 via I2C. Uses the IPC command
+ * 			communication and the arbiter.
+ ******************************************************************************
  */
-
 #ifndef MS5611_C_
 #define MS5611_C_
 
+//****** Includes *******
 #include "MS5611.h"
 
 // ***** Variables *****

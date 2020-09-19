@@ -1,8 +1,11 @@
-/*
- * timer.h
- *
- *  Created on: 16.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    timer.h
+ * @author  JK
+ * @version V1.0
+ * @date    16-March-2018
+ * @brief   Provides timing for the application.
+ ******************************************************************************
  */
 
 #ifndef TIMER_H_

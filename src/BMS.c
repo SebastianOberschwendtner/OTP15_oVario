@@ -1,8 +1,12 @@
-/*
- * BMS.c
- *	Created for TI BQ25700A
- *  Created on: 10.05.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    bms.c
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Talks to the BMS IC TI BQ25700A via I2C and manages the battery
+ * 			charging and the OTG functionality.
+ ******************************************************************************
  */
 
 #include "BMS.h"
@@ -557,7 +561,7 @@ void bms_set_charge_current(void)
 	unsigned long *pl_charging_current = arbiter_get_argument(&task_bms);
 
 	//Allocate memory
-	unsigned long* pl_argument = arbiter_malloc(&task_bms,1);
+	unsigned long *pl_argument = arbiter_malloc(&task_bms, 1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_bms))
@@ -594,6 +598,34 @@ void bms_set_charge_current(void)
 
 	default:
 		break;
+	}
+};
+
+/**********************************************************
+ * Set the state of the OTG
+ **********************************************************
+ * 
+ * Argument:	unsigned long	l_state_otg
+ * Return:		unsigned long	l_otg_set
+ * 
+ * call-by-value, nargs = 1
+ **********************************************************/
+void bms_set_otg(void)
+{
+	//get argruments
+	unsigned long *pl_state_otg = arbiter_get_argument(&task_bms);
+
+	//perform the command action
+	switch (arbiter_get_sequence(&task_bms))
+	{
+		case SEQUENCE_ENTRY:
+			break;
+
+		case SEQUENCE_FINISHED:
+			break;
+
+		default:
+			break;
 	}
 };
 

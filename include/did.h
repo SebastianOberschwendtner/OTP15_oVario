@@ -1,8 +1,11 @@
-/*
- * did.h
- *
- *  Created on: 10.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    did.h
+ * @author  JK
+ * @version V1.1
+ * @date    10-March-2018
+ * @brief   Contains the dID defines for the IPC communication.
+ ******************************************************************************
  */
 
 #ifndef DID_H_

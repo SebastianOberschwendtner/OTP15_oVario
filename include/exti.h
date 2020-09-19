@@ -1,8 +1,11 @@
-/*
- * exti.h
- *
- *  Created on: 12.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    exti.h
+ * @author  JK
+ * @version V1.0
+ * @date    12-March-2018
+ * @brief   Handles the interrupts to capture the button inputs.
+ ******************************************************************************
  */
 
 #ifndef EXTI_H_

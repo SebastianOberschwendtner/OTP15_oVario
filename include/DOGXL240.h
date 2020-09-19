@@ -1,8 +1,11 @@
-/*
- * DOGXL240.h
- *
- *  Created on: 28.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    DOGXL240.h
+ * @author  SO
+ * @version V1.0
+ * @date    28-February-2018
+ * @brief   Talks to the DOGXL display via the SPI bus.
+ ******************************************************************************
  */
 
 #ifndef DOGXL240_H_

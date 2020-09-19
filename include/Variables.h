@@ -1,8 +1,12 @@
-/*
- * Variables.h
- *
- *  Created on: 25.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    Variables.h
+ * @author  SO
+ * @version V1.1
+ * @date    25-February-2018
+ * @brief   Contains the typedefs for the IPC memory and important system
+ * 			defines.
+ ******************************************************************************
  */
 
 #ifndef VARIABLES_H_

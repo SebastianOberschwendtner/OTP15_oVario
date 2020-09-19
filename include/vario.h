@@ -1,13 +1,16 @@
-/*
- * vario.h
- *
- *  Created on: 06.04.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    vario.h
+ * @author  JK
+ * @version V1.1
+ * @date    06-April-2018
+ * @brief   Tells you whether you are climbing or sinking.
+ ******************************************************************************
  */
 
 #ifndef VARIO_H_
 #define VARIO_H_
-//Git ist scheiße!
+
 //*********** Includes **************
 #include "oVario_Framework.h"
 

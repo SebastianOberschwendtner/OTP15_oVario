@@ -1,8 +1,11 @@
-/*
- * error.h
- *
- *  Created on: 10.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    error.h
+ * @author  JK
+ * @version V1.0
+ * @date    10-March-2018
+ * @brief   The global error variable and defines.
+ ******************************************************************************
  */
 
 #ifndef ERROR_H_

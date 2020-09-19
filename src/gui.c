@@ -1,10 +1,12 @@
-/*
- * gui.c
- *
- *  Created on: 10.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    gui.c
+ * @author  JK
+ * @version V1.1
+ * @date    10-May-2018
+ * @brief   Generates the GUI and handles the user input.
+ ******************************************************************************
  */
-
 
 //*********** Includes **************
 #include "gui.h"

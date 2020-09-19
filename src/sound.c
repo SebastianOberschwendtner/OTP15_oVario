@@ -1,15 +1,17 @@
-/*
- * sound.c
- *
- *  Created on: 12.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    sound.c
+ * @author  JK
+ * @version V1.1
+ * @date    12-March-2018
+ * @brief   Produces the sound of the vario.
+ ******************************************************************************
  */
 // ***** Includes *****
 #include "sound.h"
 
 
 // ***** Variables *****
-
 T_sound_state sound_state;
 uint32_t timet = 0;
 T_command sound_command;

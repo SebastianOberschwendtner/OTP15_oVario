@@ -1,8 +1,11 @@
-/*
- * logging.h
- *
- *  Created on: 01.09.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    logging.h
+ * @author  SO
+ * @version V1.0
+ * @date    01-September-2018
+ * @brief   Logs data to the SD-card.
+ ******************************************************************************
  */
 
 #ifndef LOGGING_H_

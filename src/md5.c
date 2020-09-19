@@ -1,12 +1,17 @@
-/*
- * md5.c
- *
- *  Created on: 02.09.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    md5.c
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Calculates the md5-hash. Uses the IPC command interface.
+ ******************************************************************************
  */
+
+//****** Includes ******
 #include "md5.h"
 
-//***** Varaibles *****
+//****** Variables ******
 TASK_T task_md5;		//Task struct for arbiter
 T_command rxcmd_md5;	//Container for received ipc commands
 T_command txcmd_md5;	//Container for commands to transmit via ipc
@@ -92,6 +97,7 @@ unsigned long const r[64] = {
 		6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
 };
 
+//****** Functions ******
 /*
  * Register memory for hash calculation.
  */

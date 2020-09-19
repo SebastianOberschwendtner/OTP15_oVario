@@ -1,11 +1,18 @@
-/*
- * sdio.c
- *
- *  Created on: 19.05.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    sdio.c
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Handles the communcation with the SD-Card. It uses the IPC command
+ * 			interface. It does not block other tasks by using the arbiter. It
+ * 			also handles the filesystem.
+ ******************************************************************************
  */
+//****** Includes ******
 #include "sdio.h"
 
+//****** Variables ******
 SYS_T *sys;			 	//System struct with system information -> Date and Time is relevant
 TASK_T task_sdio;	 	//Struct for the task status and memory of the sdio task
 SDIO_T *SD;			 	//Struct for status information of the SD-card
@@ -15,6 +22,7 @@ unsigned long *args;	//Pointer to handle arguments for function calls which are 
 T_command rxcmd_sdio;	//Command struct for received commands from other tasks via ipc
 T_command txcmd_sdio;	//Command struct to transmit commands to other ipc tasks
 
+//****** Functions ******
 /*
  * Register the memory for the sdio task
  */

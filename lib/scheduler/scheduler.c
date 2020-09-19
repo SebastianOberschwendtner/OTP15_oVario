@@ -1,14 +1,23 @@
-/*
- * scheduler.c
- *
- *  Created on: 17.04.2020
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    scheduler.c
+ * @author  SO
+ * @version V1.1
+ * @date    17-April-2020
+ * @brief   Schedules different tasks to be executed within a specified rate.
+ * 			The timing is interrupt-based and does there not miss a scheduled
+ * 			event, but since it is not preemptive there can be jitter within
+ * 			the execution times.
+ ******************************************************************************
  */
 
+//****** Includes ******
 #include "scheduler.h"
 
+//****** Variables ******
 volatile schedule_t os;
 
+//****** Functions *******
 /*
  * initialize the os struct
  */

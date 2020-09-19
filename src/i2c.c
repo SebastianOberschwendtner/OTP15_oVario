@@ -1,18 +1,26 @@
-/*
- * i2c.c
- *
- *  Created on: 24.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    i2c.c
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   The driver for the I2C communication. The driver now usese the
+ * 			arbiter to handle the communication. Therefore it does not interrupt
+ * 			or block the execution of other tasks. The command interface is more
+ * 			compact and versatile.
+ ******************************************************************************
  */
 
+//****** Includes ******
 #include "i2c.h"
 
+//****** Variables ******
 TASK_T task_i2c;							//Struct for arbiter
 T_command rxcmd_i2c;						//Command struct for received commands from other tasks via ipc
 T_command txcmd_i2c;						//Command struct to transmit commands to other ipc tasks
 volatile unsigned int active_address = 0;	//Active i2c address for communication
 
-
+//****** Functions ******
 /*
  * Register everything relevant for IPC
  */

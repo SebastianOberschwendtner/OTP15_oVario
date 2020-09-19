@@ -1,8 +1,13 @@
-/*
- * sdio.h
- *
- *  Created on: 19.05.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    sdio.h
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Handles the communcation with the SD-Card. It uses the IPC command
+ * 			interface. It does not block other tasks by using the arbiter. It
+ * 			also handles the filesystem.
+ ******************************************************************************
  */
 
 #ifndef SDIO_H_

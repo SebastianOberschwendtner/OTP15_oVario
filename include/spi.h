@@ -1,8 +1,11 @@
-/*
- * spi.h
- *
- *  Created on: 27.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    spi.h
+ * @author  SO
+ * @version V1.0
+ * @date    27-February-2018
+ * @brief   Handles the SPI communication.
+ ******************************************************************************
  */
 
 #ifndef SPI_H_

@@ -1,12 +1,17 @@
-/*
- * spi.c
- *
- *  Created on: 27.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    spi.c
+ * @author  SO
+ * @version V1.0
+ * @date    27-February-2018
+ * @brief   Handles the SPI communication.
+ ******************************************************************************
  */
 
+//****** Includes ******
 #include "spi.h"
 
+//****** Functions ******
 /*
  * Initialize necessary peripherals
  */

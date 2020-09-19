@@ -1,8 +1,11 @@
-/*
- * font.h
- *
- *  Created on: 12.03.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    font.h
+ * @author  SO
+ * @version V1.0
+ * @date    12-March-2018
+ * @brief   The font and symbols used to display data.
+ ******************************************************************************
  */
 
 #ifndef FONT_H_

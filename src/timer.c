@@ -1,15 +1,21 @@
-/*
- * timer.c
- *
- *  Created on: 16.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    timer.c
+ * @author  JK
+ * @version V1.0
+ * @date    16-March-2018
+ * @brief   Provides timing for the application.
+ ******************************************************************************
  */
 
+//****** Includes ******
 #include "timer.h"
 
+//****** Variables ******
 uint32_t timestamp;
 
-//Timer läuft in 100 us Takt
+//****** Functions ******
+//Timer lï¿½uft in 100 us Takt
 void timer_init(){
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5,ENABLE);
 

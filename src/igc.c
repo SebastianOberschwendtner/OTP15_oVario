@@ -1,12 +1,17 @@
-/*
- * igc.c
- *
- *  Created on: 02.09.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    igc.c
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   The task which handles the IGC logging.
+ ******************************************************************************
  */
+
+//****** Includes ******
 #include "igc.h"
 
-//Typedef for IGC
+//****** Typedefs ******
 #pragma pack(push, 1)
 typedef struct
 {
@@ -19,6 +24,7 @@ typedef struct
 } IGCINFO_T;
 #pragma pack(pop)
 
+//****** Variables ******
 //ipc structs
 SDIO_T *sd;
 GPS_T *GpsData;
@@ -38,6 +44,7 @@ unsigned long const g_key[16] = {
     0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476,
     0xc8e899e8, 0x9321c28a, 0x438eba12, 0x8cbe0aee};
 
+//****** Functions ******
 /*
  * register memory for igc
  */

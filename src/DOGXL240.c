@@ -1,16 +1,19 @@
-/*
- * DOGXL240.c
- *
- *  Created on: 28.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    DOGXL240.c
+ * @author  SO
+ * @version V1.0
+ * @date    28-February-2018
+ * @brief   Talks to the DOGXL display via the SPI bus.
+ ******************************************************************************
  */
 
+//****** Includes *****
 #include "DOGXL240.h"
 #include "font.h"
 
+//****** Variables ******
 unsigned char temp[4];
-
-
 
 #pragma pack(push, 1)
 typedef struct
@@ -31,6 +34,7 @@ extern const unsigned char font6x8[256][8];
 extern const unsigned char battery12x8[5][16];
 extern const unsigned char number16x20[11][40];
 
+//****** Functions ******
 /*
  * Initialize necessary peripherals and display
  */

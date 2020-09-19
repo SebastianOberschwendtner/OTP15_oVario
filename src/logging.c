@@ -1,9 +1,14 @@
-/*
- * logging.c
- *
- *  Created on: 01.09.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    logging.c
+ * @author  SO
+ * @version V1.0
+ * @date    01-September-2018
+ * @brief   Logs data to the SD-card.
+ ******************************************************************************
  */
+
+//****** Includes ******
 #include "logging.h"
 
 // //ipc structs

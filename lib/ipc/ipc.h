@@ -1,8 +1,11 @@
-/*
- * ipc.h
- *
- *  Created on: 10.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    ipc.c
+ * @author  JK
+ * @version V1.0
+ * @date    10-March-2020
+ * @brief   Handles the inter-process-communication -> IPC.
+ ******************************************************************************
  */
 
 #ifndef IPC_H_

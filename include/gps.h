@@ -1,8 +1,11 @@
-/*
- * gps.h
- *
- *  Created on: 01.05.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    gps.h
+ * @author  JK
+ * @version V1.1
+ * @date    01-May-2018
+ * @brief   Talks to the GPS and module and reads its data.
+ ******************************************************************************
  */
 
 #ifndef GPS_H_

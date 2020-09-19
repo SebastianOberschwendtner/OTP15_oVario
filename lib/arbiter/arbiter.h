@@ -1,8 +1,13 @@
-/*
- * arbiter.h
- *
- *  Created on: 16.08.2020
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    arbiter.h
+ * @author  SO
+ * @version V1.0
+ * @date    19-September-2020
+ * @brief   The arbiter is used to handle the command arbitration within one
+ *          task. You can use the arbiter for different tasks, but each task
+ *          has to have its own task-struct.
+ ******************************************************************************
  */
 
 #ifndef ARBITER_H_

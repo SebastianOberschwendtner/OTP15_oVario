@@ -1,8 +1,11 @@
-/*
- * sound.h
- *
- *  Created on: 12.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    sound.c
+ * @author  JK
+ * @version V1.1
+ * @date    12-March-2018
+ * @brief   Produces the sound of the vario.
+ ******************************************************************************
  */
 
 #ifndef SOUND_H_

@@ -1,8 +1,12 @@
-/*
- * oVario_Framework.h
- *
- *  Created on: 25.02.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    oVario_Framework.h
+ * @author  SO
+ * @version V1.1
+ * @date    25-Februar-2018
+ * @brief   Handles the core system tasks and defines the schedule of the
+ * 			other tasks.
+ ******************************************************************************
  */
 
 #ifndef OVARIO_FRAMEWORK_H_

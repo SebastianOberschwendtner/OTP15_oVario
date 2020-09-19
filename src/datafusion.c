@@ -1,8 +1,12 @@
-/*
- * datafusion.c
- *
- *  Created on: 21.03.2018
- *      Author: Admin
+/**
+ ******************************************************************************
+ * @file    datafusion.c
+ * @author  JK
+ * @version V1.1
+ * @date    21-March-2018
+ * @brief   Handles the datafusion between the GPS the barometer and the vario
+ * 			task.
+ ******************************************************************************
  */
 
 // ***** Includes ******

@@ -1,8 +1,11 @@
-/*
- * md5.h
- *
- *  Created on: 02.09.2018
- *      Author: Sebastian
+/**
+ ******************************************************************************
+ * @file    md5.h
+ * @author  SO
+ * @version V2.0
+ * @date    19-September-2020
+ * @brief   Calculates the md5-hash. Uses the IPC command interface.
+ ******************************************************************************
  */
 
 #ifndef MD5_H_
