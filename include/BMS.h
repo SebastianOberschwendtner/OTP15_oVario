@@ -21,6 +21,9 @@
 #define BMS_CMD_GET_STATUS          2
 #define BMS_CMD_GET_ADC             3
 #define BMS_CMD_SET_CHARGE_CURRENT  4
+#define BMS_CMD_SET_OTG             5
+#define BMS_CMD_READ_INT_FLASH      6 ///< call-by-value, nargs = 1
+#define BMS_CMD_WRITE_INT_FLASH     7 ///< call-by-value, nargs = 2
 
 //Sequences of commands
 // INIT
@@ -39,6 +42,13 @@
 #define BMS_SEQUENCE_READ_VBUS      11
 #define BMS_SEQUENCE_READ_BAT       12
 #define BMS_SEQUENCE_READ_INP       13
+// SET_OTG
+#define BMS_SEQUENCE_OTG_VOLTAGE    14
+#define BMS_SEQUENCE_OTG_CURRENT    15
+#define BMS_SEQUENCE_OTG_SET_STATE  16
+// READ_INT_FLASH
+#define BMS_SEQUENCE_GET_CRC        17
+#define BMS_SEQUENCE_GET_LEN        18
 
 
 /*
@@ -231,8 +241,11 @@ void            bms_init                (void);
 void            bms_get_status          (void);
 void            bms_get_adc             (void);
 void            bms_set_charge_current  (void);
+void            bms_set_otg             (void);
+void            coul_read_int_flash     (void);
+void            coul_write_int_flash    (void);
 void            bms_init_peripherals    (void);
 void            bms_call_task           (unsigned char cmd, unsigned long data, unsigned char did_target);
-
+void            coul_call_task          (unsigned char cmd, unsigned long data, unsigned char did_target);
 
 #endif /* BMS_H_ */

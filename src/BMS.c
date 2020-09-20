@@ -8,43 +8,54 @@
  * 			charging and the OTG functionality.
  ******************************************************************************
  */
-
+//****** Includes ******
 #include "BMS.h"
 
+//****** Variables ******
 BMS_T* pBMS;
 unsigned char bat_health = 100;
 unsigned char gauge_command[3];
 unsigned char gauge_buffer[32];
 
-TASK_T task_bms;			//Task struct for ms6511-task
-T_command rxcmd_bms;		//Command struct to receive ipc commands
-T_command txcmd_bms;		//Command struct to send ipc commands
+TASK_T task_bms;			///< Task struct for ms6511-task
+T_command rxcmd_bms;		///< Command struct to receive ipc commands
+T_command txcmd_bms;		///< Command struct to send ipc commands
 
-//inline first!
-/*
- * Get the return value of the last finished ipc task which was called.
+//****** Inline Functions ******
+/**
+ * @brief Get the return value of the last finished ipc task which was called.
+ * @return Return value of command.
+ * @details inline function
  */
 inline unsigned long bms_get_call_return(void)
 {
     return rxcmd_bms.data;
 };
 
-/*
- * Create the data payload for the I2C command.
- * The I2C sends all bytes of the command with LSB first. Some commands
- * set a register address and the an integer value. To convert this order for
- * the I2C command the inline function swaps the bytes:
+/**
+ * @brief Create the data payload for the I2C command.
+ * 
+ * The I2C sends all bytes of the command with MSB first, but the BMS
+ * expects LSB first. 
+ * Some commands set a register address and the an integer value. 
+ * To convert this order for the I2C command the inline function swaps 
+ * the bytes:
  * 
  * In:	00;REG;MSB;LSB;
  * Out: 00;MSB;LSB;REG;
+ * 
+ * @param reg The register address of the data
+ * @param data The data which should be trasnmitted
+ * @return The payload data which is swapped from "MSB to LSB".
  */
 inline unsigned long bms_create_payload(unsigned char reg, unsigned long data)
 {
 	return (data<<8) | reg;
 };
 
-/*
- * Register everything relevant for IPC
+//****** Functions ******
+/**
+ * @brief Register everything relevant for IPC
  */
 void bms_register_ipc(void)
 {
@@ -53,6 +64,7 @@ void bms_register_ipc(void)
 	pBMS = ipc_memory_register(sizeof(BMS_T),did_BMS);
 	//Register command queue
 	ipc_register_queue(5 * sizeof(T_command), did_BMS);
+	ipc_register_queue(5 * sizeof(T_command), did_COUL);
 
 	//Initialize task struct
     arbiter_clear_task(&task_bms);
@@ -66,11 +78,12 @@ void bms_register_ipc(void)
 };
 
 /***********************************************************
- * TASK BMS
+ * @brief TASK BMS
  ***********************************************************
  * 
  * 
  ***********************************************************
+ * @details
  * Execution:	non-interruptable
  * Wait: 		Yes
  * Halt: 		Yes
@@ -108,6 +121,18 @@ void bms_task(void)
 				bms_set_charge_current();
 				break;
 
+			case BMS_CMD_SET_OTG:
+				bms_set_otg();
+				break;
+
+			case BMS_CMD_READ_INT_FLASH:
+				coul_read_int_flash();
+				break;
+
+			case BMS_CMD_WRITE_INT_FLASH:
+				coul_write_int_flash();
+				break;
+
 			default:
 				break;
 			}
@@ -116,20 +141,28 @@ void bms_task(void)
 			bms_check_semaphores(); //Task is waiting for semaphores
 	}
 
-	//Check for errors here
+	///@todo Check for errors here
 };
 
-/*
- * Check the semaphores in the igc queue.
+/**
+ * @brief Check the semaphores in the ipc queue.
+ * 
  * This command is called before the command action. Since the BMS is non-
  * interruptable, this command checks only for semaphores.
  * 
- * Other commands are checked in the idle command.
+ * @details Other commands are checked in the idle command.
  */
 void bms_check_semaphores(void)
 {
-    //Check commands
+    //Check semaphores for BMS
     if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command))      // look for new command in keypad queue
+    {
+		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms);  // get new command
+		if (rxcmd_bms.cmd == cmd_ipc_signal_finished)			//Check for semaphores
+			task_bms.halt_task -= rxcmd_bms.did;
+	}
+	//Check semaphores for Coulomb Counter
+    if (ipc_get_queue_bytes(did_COUL) >= sizeof(T_command))      // look for new command in keypad queue
     {
 		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms);  // get new command
 		if (rxcmd_bms.cmd == cmd_ipc_signal_finished)			//Check for semaphores
@@ -137,8 +170,9 @@ void bms_check_semaphores(void)
 	}
 };
 
-/**********************************************************
- * Idle Command for BMS
+/**
+ **********************************************************
+ * @brief Idle Command for BMS
  **********************************************************
  * 
  * This command checks for new commands in the queue.
@@ -151,7 +185,7 @@ void bms_check_semaphores(void)
  * Argument:	none
  * Return:		none
  * 
- * Should/Can not be called directly via the arbiter.
+ * @details Should/Can not be called directly via the arbiter.
  **********************************************************/
 void bms_idle(void)
 {
@@ -606,7 +640,7 @@ void bms_set_charge_current(void)
  **********************************************************
  * 
  * Argument:	unsigned long	l_state_otg
- * Return:		unsigned long	l_otg_set
+ * Return:		unsigned long	l_new_state
  * 
  * call-by-value, nargs = 1
  **********************************************************/
@@ -615,17 +649,233 @@ void bms_set_otg(void)
 	//get argruments
 	unsigned long *pl_state_otg = arbiter_get_argument(&task_bms);
 
+	//Allocate memory
+	unsigned long *pl_argument = arbiter_malloc(&task_bms, 1);
+
 	//perform the command action
 	switch (arbiter_get_sequence(&task_bms))
 	{
 		case SEQUENCE_ENTRY:
+			//Check whether to enable or disable the OTG mode
+			if (*pl_state_otg)
+			{
+				//Check if input power is present and not in otg mode
+				if (!(pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
+				{
+					//Enable OTG, disable charging
+					*pl_argument = bms_create_payload(CHARGE_CURRENT_addr, 0);
+					bms_call_task(I2C_CMD_SEND_24BIT,*pl_argument,did_I2C);
+
+					//goto next sequence
+					arbiter_set_sequence(&task_bms, BMS_SEQUENCE_OTG_VOLTAGE);
+				}
+				else
+					arbiter_return(&task_bms,0); //OTG cannot be enabled, exit the command				
+			}
+			else
+				arbiter_set_sequence(&task_bms, BMS_SEQUENCE_OTG_SET_STATE); //OTG should be disabled -> directly send the new state
+			break;
+
+		case BMS_SEQUENCE_OTG_VOLTAGE:
+			/*
+			 * Set OTG voltage
+			 * Resolution is 64 mV with this formula:
+			 * VOTG = Register * 64 mV/bit + 4480 mV
+			 *
+			 * The 8-bit value is bitshifted by 6
+			 */
+			//Limit the voltage
+			if(pBMS->otg_voltage > 15000)
+				pBMS->otg_voltage = 15000;
+			
+			//Set the new voltage via I2c
+			*pl_argument = bms_create_payload(OTG_VOLTAGE_addr,(((pBMS->otg_voltage-4480)/64)<<6));
+			bms_call_task(I2C_CMD_SEND_24BIT, *pl_argument, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_OTG_CURRENT);
+			break;
+		
+		case BMS_SEQUENCE_OTG_CURRENT:
+			/*
+			 * Set OTG current
+			 * Resolution is 50 mA with this formula:
+			 * IOTG = Register * 50 mA/bit
+			 *
+			 * The 7-bit value is bitshifted by 8
+			 */
+			//Limit the current
+			if (pBMS->otg_current > 5000)
+				pBMS->otg_current = 5000;
+
+			//Set the current via I2C
+			*pl_argument = bms_create_payload(OTG_CURRENT_addr, ((pBMS->otg_current/50)<<8));
+			bms_call_task(I2C_CMD_SEND_24BIT, *pl_argument, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_OTG_SET_STATE);
+			break;
+
+		case BMS_SEQUENCE_OTG_SET_STATE:
+			//Get the new state
+			if (*pl_state_otg)
+				*pl_argument = bms_create_payload(CHARGE_OPTION_3_addr, EN_OTG);
+			else
+				*pl_argument = bms_create_payload(CHARGE_OPTION_3_addr, 0);
+			
+			//Send the new state via I2C
+			bms_call_task(I2C_CMD_SEND_24BIT, *pl_argument, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
 			break;
 
 		case SEQUENCE_FINISHED:
+			//When communication is finsihed set the enable pin
+			if (*pl_state_otg)
+				GPIOA->BSRRL |= GPIO_BSRR_BS_0;
+			else
+				GPIOA->BSRRH |= GPIO_BSRR_BR_0;
+
+			//Exit the command
+			arbiter_return(&task_bms, *pl_state_otg);
 			break;
 
 		default:
 			break;
+	}
+};
+
+/**
+ **********************************************************
+ * @brief Read an int from the flash of the coulomb counter
+ **********************************************************
+ * 
+ * @param	i_register_address Defines the register address from which the data is read
+ * @return 	Whether the data was sucessfully read or not.
+ * 
+ * @details call-by-value, nargs = 1
+ **********************************************************/
+void coul_read_int_flash(void)
+{
+	//Get arguments
+	unsigned int *pi_register_address = arbiter_get_argument(&task_bms);
+
+	//Allocate memory (array is also used as receive buffer: 32bytes + 1byte => 9 unsigned long)
+	unsigned long *pl_command = arbiter_malloc(&task_bms, 10);
+	unsigned char *pch_array = (unsigned char*)(pl_command + 1);
+
+	//perform the command action
+	switch (arbiter_get_sequence(&task_bms))
+	{
+	case SEQUENCE_ENTRY:
+		//Set the command data to read the flash
+		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
+		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
+
+		//immediately perform the read
+		pch_array[0] = 32; //Set array length
+		coul_call_task(I2C_CMD_READ_ARRAY, pch_array, did_I2C);
+
+		//Goto next sequence
+		arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CRC);
+		break;
+
+	case BMS_SEQUENCE_GET_CRC:
+		//Get the new CRC
+		coul_call_task(I2C_CMD_READ_CHAR, MAC_SUM_addr, did_I2C);
+
+		//goto next sequence
+		arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_LEN);
+		break;
+	
+	case BMS_SEQUENCE_GET_LEN:
+		//Read the returned CRC
+		pBMS->crc = bms_get_call_return();
+
+		//Get the length of the command
+		coul_call_task(I2C_CMD_READ_CHAR, MAC_LEN_addr, did_I2C);
+
+		//goto next sequence
+		arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Read the returned Length of the command
+		pBMS->len = bms_get_call_return();
+
+		//Command finished
+		arbiter_return(&task_bms, 1);
+		break;
+	}
+};
+
+/**
+ **********************************************************
+ * @brief Write an int to the flash of the coulomb counter
+ **********************************************************
+ * 
+ * @param	i_register_address Defines the register address where the data sould be written to
+ * @param   i_data New data which should be written to register address
+ * @return 	Whether the data was sucessfully sent.
+ * 
+ * @details call-by-value, nargs = 2
+ **********************************************************/
+void coul_write_int_flash(void)
+{
+	//Get arguments
+	unsigned int *pi_register_address = arbiter_get_argument(&task_bms);
+	unsigned int *pi_data = (arbiter_get_argument(&task_bms) + 1);
+
+	//Allocate memory (array is also used as receive buffer: 32bytes + 1byte => 9 unsigned long)
+	unsigned long *pl_command = arbiter_malloc(&task_bms, 10);
+	unsigned char *pch_array = (unsigned char*)(pl_command + 1);
+
+	//perform the command action
+	switch (arbiter_get_sequence(&task_bms))
+	{
+	case SEQUENCE_ENTRY:
+		//Set the command data to read the flash
+		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
+		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
+
+		//immediately perform the read
+		pch_array[0] = 32; //Set array length
+		coul_call_task(I2C_CMD_READ_ARRAY, (unsigned long)pch_array, did_I2C);
+
+		//Reset crc
+		pBMS->crc = 0;
+
+		//Goto next sequence
+		arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Set the new data in the received buffer
+		pch_array[2] = (unsigned char)(*pi_data & 0xFF); //Set new MSB
+		pch_array[1] = (unsigned char)(*pi_data >> 8);	 //SET new LSB
+		pch_array[0] = 32; //Length of array
+
+		//calculate the new checksum
+		for(unsigned char count  = 1; count <= 32; count++)
+			pBMS->crc += pch_array[count];
+		pBMS->crc += (*pi_register_address & 0xFF);
+		pBMS->crc += (*pi_register_address >> 8);
+
+		// write the command to set the new flash data and write the data
+		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
+		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
+		coul_call_task(I2C_CMD_SEND_ARRAY, (unsigned long)pch_array, did_I2C);
+		
+		//set the new checksum and length to intiate the flash write
+		coul_call_task(I2C_CMD_SEND_INT, ((~pBMS->crc)<<8)+0x24, did_I2C);
+
+		//Command is finished
+		arbiter_return(&task_bms, 1);
+		break;
+
+	default:
+		break;
 	}
 };
 
@@ -653,6 +903,23 @@ void bms_call_task(unsigned char cmd, unsigned long data, unsigned char did_targ
 {
     //Set the command and data for the target task
     txcmd_bms.did = did_BMS;
+    txcmd_bms.cmd = cmd;
+    txcmd_bms.data = data;
+
+    //Push the command
+    ipc_queue_push(&txcmd_bms, sizeof(T_command), did_target);
+
+    //Set wait counter to wait for called task to finish
+    task_bms.halt_task += did_target;
+};
+
+/*
+ * Call a other task via the ipc queue.
+ */
+void coul_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
+{
+    //Set the command and data for the target task
+    txcmd_bms.did = did_COUL;
     txcmd_bms.cmd = cmd;
     txcmd_bms.data = data;
 
