@@ -41,11 +41,14 @@
  ******************************************************************************
  */
 
+//****** Inludes ******
 #include "arbiter.h"
-/*
- * Clear the data of one task struct.
- */
 
+//****** Functions ******
+/**
+ * @brief Clear the data of one task struct.
+ * @param task Address of task struct which should be cleared
+ */
 void arbiter_clear_task(TASK_T* task)
 {
     task->active_command = 0;
@@ -67,9 +70,13 @@ void arbiter_clear_task(TASK_T* task)
         task->argument_stack[count]         = 0;
 };
 
-/*
- * Call a function using the arbiter. The function call is call-by-reference -> Input argument is a pointer.
- * Returns 1 when the called function is finished.
+/**
+ * @brief Call a function using the arbiter. 
+ * The function call is call-by-reference -> Input argument is a pointer.
+ * @param task Address of task struct
+ * @param command The ID of the command to call
+ * @param argument The passed reference
+ * @return Returns 1 when the called function is finished.
  */
 unsigned char arbiter_callbyreference(TASK_T* task, unsigned char command, void* argument)
 {
@@ -96,10 +103,13 @@ unsigned char arbiter_callbyreference(TASK_T* task, unsigned char command, void*
     return 0;
 };
 
-/*
- * Call a function using the arbiter. This function call is call-by-value -> Input argument is a value.
+/**
+ * @brief Call a function using the arbiter. 
+ * This function call is call-by-value -> Input argument is a value.
  * The value has to be assigned using the arbiter_allocate_argument function!
- * Returns 1 when the called function is finished.
+ * @param task Address of task struct
+ * @param command The ID of the command to call 
+ * @return Returns 1 when the called function is finished.
  */
 unsigned char arbiter_callbyvalue(TASK_T *task, unsigned char command)
 {
@@ -127,8 +137,12 @@ unsigned char arbiter_callbyvalue(TASK_T *task, unsigned char command)
     return 0;
 };
 
-/*
+/**
+ * @brief Allocate memory for task
  * Allocate the memory for the input arguments and get the pointer to the memory.
+ * @param task Address of the task struct
+ * @param n_args Number of (unsigned long) memory to allocate
+ * @return The pointer to the first element of the allocated memory
  */
 void* arbiter_allocate_arguments(TASK_T* task, unsigned long n_args)
 {
@@ -146,8 +160,9 @@ void* arbiter_allocate_arguments(TASK_T* task, unsigned long n_args)
     return (void*) task->argument_pointer[task->active_command + 1];
 };
 
-/*
- * Free the allocated arguments when call is finished.
+/**
+ * @brief Free the allocated arguments when call is finished.
+ * @param task Address of the task struct
  */
 void arbiter_free_arguments(TASK_T* task)
 {
@@ -156,10 +171,12 @@ void arbiter_free_arguments(TASK_T* task)
     task->narg_in_stack[task->active_command + 1] = 0;
 };
 
-/*
- * Signal to the arbiter that the current command has finished. 
+/**
+ * @brief Signal to the arbiter that the current command is finished. 
  * This return function can be called any time, it automatically sets the calling command as FINISHED.
  * Frees any memory in the stack.
+ * @param task Address of the task struct
+ * @param value The value the commands wants to return
  */
 void arbiter_return(TASK_T* task, unsigned long value)
 {
@@ -190,21 +207,25 @@ void arbiter_return(TASK_T* task, unsigned long value)
     }  
 };
 
-/*
- * Get the argument pointer for the current active command.
+/**
+ * @brief Get the argument pointer for the current active command.
  * Returns ALWAYS a pointer regardless whether function was called by reference or value.
  * This enables the call-by-reference function to accept any kind of pointer. It is also more memory efficient.
+ * @param task Address of the task struct
+ * @return The pointer to the first element of the command arguments.
  */
 void* arbiter_get_argument(TASK_T* task)
 {
     return task->argument_pointer[task->active_command];
 };
 
-/*
+/**
+ * @brief Get the address of a reference
  * Get the adress of a reference, when call-by-value was used to forward the pointer address.
  * You have to specify which argument was the address.
- * 
- * Returns the pointer address as an unsigned long.
+ * @param task Address of the task struct
+ * @param arg The number of the argument to be returned
+ * @return Returns the pointer address as an unsigned long.
  */
 unsigned long arbiter_get_reference(TASK_T* task, unsigned long arg)
 {
@@ -212,16 +233,20 @@ unsigned long arbiter_get_reference(TASK_T* task, unsigned long arg)
     return *(temp_pointer + arg);
 };
 
-/*
- * Get the return value of the called command, when it is finished.
+/**
+ * @brief Get the return value of the called command, when it is finished.
+ * @param task Address of the task struct
+ * @return The value which was returned by the previously called command.
  */
 unsigned long arbiter_get_return_value(TASK_T* task)
 {
     return task->return_value[task->active_command+1];
 };
 
-/*
- * Set the active state of the arbiter.
+/**
+ * @brief Set the active state of the arbiter.
+ * @param task Address of the task struct
+ * @param next_state The ID of the next active command
  */
 void arbiter_set_command(TASK_T* task, unsigned char next_state)
 {
@@ -231,16 +256,19 @@ void arbiter_set_command(TASK_T* task, unsigned char next_state)
     task->command[task->active_command]  = next_state;
 };
 
-/*
- * Set the sequence of the  active state of the arbiter.
+/**
+ * @brief Set the sequence of the  active state of the arbiter.
+ * @param task Address of the task struct
+ * @param next_sequence The ID of the next active sequence of the command
  */
 void arbiter_set_sequence(TASK_T* task, unsigned char next_sequence)
 {
     task->sequence[task->active_command] = next_sequence;
 };
 
-/*
- * Reset all sequence states
+/**
+ * @brief Reset all sequence states within one task.
+ * @param task Address of the task struct
  */
 void arbiter_reset_sequence(TASK_T* task)
 {
@@ -249,31 +277,37 @@ void arbiter_reset_sequence(TASK_T* task)
         task->sequence[i] = 0;
 }
 
-/*
- * Get the active state of the arbiter.
+/**
+ * @brief Get the active state of a task.
+ * @param task Address of the task struct
+ * @return The ID of the currently active command.
  */
 unsigned char arbiter_get_command(TASK_T* task)
 {
     return task->command[task->active_command];
 };
 
-/*
- * Get the sequence of the active state of the arbiter.
+/**
+ * @brief Get the sequence of the active comamnd of a task.
+ * @param task Address of the task struct
+ * @return The ID of the active sequence of the currently active command.
  */
 unsigned char arbiter_get_sequence(TASK_T* task)
 {
     return task->sequence[task->active_command];
 };
 
-/*
- * Allocate memory for the current command. Should not be called with memsize = 0.
+/**
+ * @brief Allocate memory for the current command. 
+ * Should not be called with memsize = 0.
  * For now the function can only assign static memory.
  * -> you can call the function multiple times, but the allocated size of the memory
  * has to stay the same, otherwise stack memory could be overwritten (for now at least).
- * 
- * Returns the pointer to the allocated memory.
+ * @param task Address of the task struct
+ * @param memsize Size of the (unsigned long) memory to be allocated
+ * @return The pointer to the allocated memory.
+ * @todo Add dynamic memory allocation
  */
-//TODO Add dynamic memory allocation
 unsigned long* arbiter_malloc(TASK_T* task, unsigned char memsize)
 {
     //Only allocate memory when no memory is allocated
@@ -294,9 +328,10 @@ unsigned long* arbiter_malloc(TASK_T* task, unsigned char memsize)
     return &task->stack[task->stack_pointer[task->active_command]];
 };
 
-/*
- * Free the memory currently allocated for the active command.
+/**
+ * @brief Free the memory currently allocated for the active command.
  * Does nothing when no memory is allocated.
+ * @param task Address to the task struct
  */
 void arbiter_memfree(TASK_T* task)
 {
@@ -326,9 +361,12 @@ void arbiter_memfree(TASK_T* task)
     }
 };
 
-/*
+/**
+ * @brief Get Size of Allocated Memory
  * Get the size in unsigned longs of the allocated memory of the currently active command.
  * Returns 0 when no memory is allocated for the command.
+ * @param task Address of the task struct
+ * @return Size of allocated (unsigned long) memory for the task
  */
 unsigned char arbiter_get_memsize(TASK_T* task)
 {

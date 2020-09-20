@@ -15,11 +15,11 @@
 
 //*********** Defines **************
 
-//The command queue size
+/// The command queue size
 #define TASK_QUEUE      6
-//Size of the argument stack in unsigned longs
+/// Size of the argument stack in unsigned longs
 #define ARG_STACK_SIZE  2*TASK_QUEUE //Two arguments per task
-//Stack size in unsigned longs
+/// Stack size in unsigned longs
 #define STACK_SIZE      16
 
 //Calculate waiting times -> Wait time can only be a multiple of the scheduled time
