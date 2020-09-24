@@ -379,7 +379,7 @@ void i2c_send_long(void)
 void i2c_send_array(void)
 {
 	//Get Arguments
-	unsigned char *pch_array = (unsigned char *)arbiter_get_argument(&task_i2c);
+	unsigned char *pch_array = (unsigned char *)arbiter_get_reference(&task_i2c,0);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_i2c))
@@ -418,7 +418,7 @@ void i2c_read_char(void)
 	unsigned char* data = (unsigned char*)arbiter_get_argument(&task_i2c);
 
 	//Allocate memory
-	unsigned long* l_value = arbiter_malloc(&task_i2c,2);
+	unsigned char* l_value = (unsigned char*)arbiter_malloc(&task_i2c,1);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_i2c))
@@ -436,7 +436,7 @@ void i2c_read_char(void)
 		if (i2c_receive_nbytes(l_value, 1))
 		{
 			//Return the received value
-			arbiter_return(&task_i2c, *l_value);
+			arbiter_return(&task_i2c, (unsigned long)*l_value);
 		}
 		break;
 
@@ -574,7 +574,7 @@ void i2c_read_24bit(void)
 void i2c_read_array(void)
 {
 	//Get arguments
-	unsigned char* pch_data = (unsigned char*)arbiter_get_argument(&task_i2c);
+	unsigned char* pch_data = (unsigned char*)arbiter_get_reference(&task_i2c,0);
 
 	//Perform the command action
 	switch (arbiter_get_sequence(&task_i2c))

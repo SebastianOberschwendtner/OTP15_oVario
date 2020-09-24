@@ -222,7 +222,7 @@ void* arbiter_get_argument(TASK_T* task)
 /**
  * @brief Get the address of a reference
  * Get the adress of a reference, when call-by-value was used to forward the pointer address.
- * You have to specify which argument was the address.
+ * You have to specify the argument number of the address.
  * @param task Address of the task struct
  * @param arg The number of the argument to be returned
  * @return Returns the pointer address as an unsigned long.

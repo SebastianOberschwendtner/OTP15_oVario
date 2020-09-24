@@ -17,9 +17,10 @@ unsigned char bat_health = 100;
 unsigned char gauge_command[3];
 unsigned char gauge_buffer[32];
 
-TASK_T task_bms;			///< Task struct for ms6511-task
-T_command rxcmd_bms;		///< Command struct to receive ipc commands
-T_command txcmd_bms;		///< Command struct to send ipc commands
+TASK_T task_bms;			// Task struct for ms6511-task
+unsigned long *pl_args;		// Pointer to call commands with multiple arguments
+T_command rxcmd_bms;		// Command struct to receive ipc commands
+T_command txcmd_bms;		// Command struct to send ipc commands
 
 //****** Inline Functions ******
 /**
@@ -108,6 +109,10 @@ void bms_task(void)
 			case BMS_CMD_INIT:
 				bms_init();
 				break;
+			
+			case BMS_CMD_INIT_COULOMB:
+				coulomb_init();
+				break;
 
 			case BMS_CMD_GET_STATUS:
 				bms_get_status();
@@ -131,6 +136,10 @@ void bms_task(void)
 
 			case BMS_CMD_WRITE_INT_FLASH:
 				coul_write_int_flash();
+				break;
+
+			case BMS_CMD_GET_ADC_COULOMB:
+				coulomb_get_adc();
 				break;
 
 			default:
@@ -164,14 +173,13 @@ void bms_check_semaphores(void)
 	//Check semaphores for Coulomb Counter
     if (ipc_get_queue_bytes(did_COUL) >= sizeof(T_command))      // look for new command in keypad queue
     {
-		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms);  // get new command
+		ipc_queue_get(did_COUL, sizeof(T_command), &rxcmd_bms);  // get new command
 		if (rxcmd_bms.cmd == cmd_ipc_signal_finished)			//Check for semaphores
 			task_bms.halt_task -= rxcmd_bms.did;
 	}
 };
 
-/**
- **********************************************************
+/**********************************************************
  * @brief Idle Command for BMS
  **********************************************************
  * 
@@ -196,19 +204,20 @@ void bms_idle(void)
     if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command)) // look for new command in keypad queue
     {
 		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms); // get new command
+
 		//Call the command
-		arbiter_callbyreference(&task_bms, rxcmd_bms.cmd , &rxcmd_bms.data);
+		arbiter_callbyreference(&task_bms, rxcmd_bms.cmd, &rxcmd_bms.data);
 	}
 };
 
 /**********************************************************
- * Initialize the BMS System
+ * @brief Initialize the BMS System
  **********************************************************
  * 
  * Argument:	none
  * Return:		none
  * 
- * call-by-reference
+ * @details call-by-reference
  **********************************************************/
 void bms_init(void)
 {
@@ -331,7 +340,10 @@ void bms_init(void)
 			pBMS->charging_state |= (STATUS_BMS_ACTIVE | STATUS_BAT_PRESENT);
 
 			//Exit the command
-			arbiter_return(&task_bms,1);
+			if (arbiter_callbyreference(&task_bms, BMS_CMD_INIT_COULOMB, 0))
+			{
+				arbiter_return(&task_bms, 1);
+			}
 			break;
 
 		default:
@@ -340,13 +352,95 @@ void bms_init(void)
 };
 
 /**********************************************************
- * Read the status of the BMS System
+ * @brief Initialize the Coulomb Counter
  **********************************************************
  * 
  * Argument:	none
  * Return:		none
  * 
- * call-by-reference
+ * @details call-by-reference
+ **********************************************************/
+void coulomb_init(void)
+{
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_bms))
+	{
+		case SEQUENCE_ENTRY:
+			//Allocate Arguments
+			pl_args = arbiter_allocate_arguments(&task_bms, 1);
+
+			//First read the flash to see whether the settings are up-to-date
+			pl_args[0] = MAC_STATUS_INIT_df_addr;
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_READ_INT_FLASH))
+			{
+				//Check whether the current settings match the desired settings
+				/*Desired Settings:
+				 * IGNORE_SD_EN:	Ignore the self-discharge of battery
+				 * ACCHG_EN:		Integrate the charge current
+				 * ACDSG_EN:		Integrate the discharge current
+				 */
+#define COULOMB_MAC_CONFIG (IGNORE_SD_EN | ACCHG_EN | ACDSG_EN) // MAC Settings for Coulomb Counter
+
+				if (arbiter_get_return_value(&task_bms) == COULOMB_MAC_CONFIG)
+					arbiter_set_sequence(&task_bms, BMS_SEQUENCE_READ_CONFIG_A); //Settings did match, goto next setting
+				else
+					arbiter_set_sequence(&task_bms, BMS_SEQUENCE_SET_MAC); //Settings did not match, so update them
+			}
+			break;
+
+		case BMS_SEQUENCE_SET_MAC:
+			//Settings did not match
+			//Allocate Arguments to update the settings
+			pl_args = arbiter_allocate_arguments(&task_bms, 2);
+			pl_args[0] = MAC_STATUS_INIT_df_addr;
+			pl_args[1] = COULOMB_MAC_CONFIG;
+
+			//Write settings and goto next setting afterwards
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_WRITE_INT_FLASH))
+				arbiter_set_sequence(&task_bms, BMS_SEQUENCE_READ_CONFIG_A);
+			break;
+
+		case BMS_SEQUENCE_READ_CONFIG_A:
+			//Allocate Arguments
+			pl_args = arbiter_allocate_arguments(&task_bms, 1);
+
+			//First read the flash to see whether the settings are up-to-date
+			pl_args[0] = CONFIGURATION_A_df_addr;
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_READ_INT_FLASH))
+			{
+				//Check whether the current settings match the desired settings
+				if (arbiter_get_return_value(&task_bms) == 0)
+					arbiter_return(&task_bms, 1); //Settings did match, finish command
+				else
+					arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED); //Settings did not match, so update them
+			}
+			break;
+
+		case SEQUENCE_FINISHED:
+			//Settings for CONFIG_A did not match
+			//Allocate Arguments to update the settings
+			pl_args = arbiter_allocate_arguments(&task_bms, 2);
+			pl_args[0] = CONFIGURATION_A_df_addr;
+			pl_args[1] = 0;
+
+			//Write settings and exit command afterwards
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_WRITE_INT_FLASH))
+				arbiter_return(&task_bms, 1);
+			break;
+		
+		default:
+			break;
+	}
+};
+
+/**********************************************************
+ * @brief Read the status of the BMS System
+ **********************************************************
+ * 
+ * Argument:	none
+ * Return:		none
+ * 
+ * @details call-by-reference
  **********************************************************/
 void bms_get_status(void)
 {
@@ -421,13 +515,13 @@ void bms_get_status(void)
 };
 
 /**********************************************************
- * Get the ADC values of the BMS System
+ * @brief Get the ADC values of the BMS System
  **********************************************************
  * 
  * Argument:	none
  * Return:		none
  * 
- * call-by-reference
+ * @details call-by-reference
  **********************************************************/
 void bms_get_adc(void)
 {
@@ -552,10 +646,10 @@ void bms_get_adc(void)
 			bms_call_task(I2C_CMD_READ_INT, ADC_INPUT_CURRENT_addr, did_I2C);
 
 			//Goto next sequence
-			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_READ_COLOUMB);
 			break;
 
-		case SEQUENCE_FINISHED:
+		case BMS_SEQUENCE_READ_COLOUMB:
 			//When i2c returned the data, convert it to LSB first
 			*l_argument = sys_swap_endian(bms_get_call_return(),2);
 			/*
@@ -565,8 +659,16 @@ void bms_get_adc(void)
 			 */
 			pBMS->input_current = (*l_argument >> 8)*50;
 
-			//Command is finished
-			arbiter_return(&task_bms, 1);
+			//Immediately goto next state
+			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+
+		case SEQUENCE_FINISHED:
+			//Read the ADC of teh coulomb counter
+			if (arbiter_callbyreference(&task_bms, BMS_CMD_GET_ADC_COULOMB, 0))
+			{
+				//Command is finished
+				arbiter_return(&task_bms, 1);
+			}
 			break;
 
 		default:
@@ -575,7 +677,7 @@ void bms_get_adc(void)
 };
 
 /**********************************************************
- * Set the charging current of the BMS
+ * @brief Set the charging current of the BMS
  **********************************************************
  * This command can be used to start and stop the charging.
  * When the battery is not charging, setting a non-zero
@@ -584,10 +686,10 @@ void bms_get_adc(void)
  * current to 0 stops the charging.
  * Returns 1 when the charge current could be set.
  * 
- * Argument:	unsigned long	l_charge_current
- * Return:		unsigned long	l_current_set
+ * @param l_charge_current The new charging current
+ * @return Whether the charging current was set or not.
  * 
- * call-by-value, nargs = 1
+ * @details call-by-value, nargs = 1
  **********************************************************/
 void bms_set_charge_current(void)
 {
@@ -636,17 +738,17 @@ void bms_set_charge_current(void)
 };
 
 /**********************************************************
- * Set the state of the OTG
+ * @brief Set the state of the OTG
  **********************************************************
  * 
- * Argument:	unsigned long	l_state_otg
- * Return:		unsigned long	l_new_state
+ * @param l_state_otg The new OTG state (ON or OFF)
+ * @return The new state which was set.
  * 
- * call-by-value, nargs = 1
+ * @details call-by-value, nargs = 1
  **********************************************************/
 void bms_set_otg(void)
 {
-	//get argruments
+	//get arguments
 	unsigned long *pl_state_otg = arbiter_get_argument(&task_bms);
 
 	//Allocate memory
@@ -657,7 +759,7 @@ void bms_set_otg(void)
 	{
 		case SEQUENCE_ENTRY:
 			//Check whether to enable or disable the OTG mode
-			if (*pl_state_otg)
+			if (*pl_state_otg == ON)
 			{
 				//Check if input power is present and not in otg mode
 				if (!(pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
@@ -718,7 +820,7 @@ void bms_set_otg(void)
 
 		case BMS_SEQUENCE_OTG_SET_STATE:
 			//Get the new state
-			if (*pl_state_otg)
+			if (*pl_state_otg == ON)
 				*pl_argument = bms_create_payload(CHARGE_OPTION_3_addr, EN_OTG);
 			else
 				*pl_argument = bms_create_payload(CHARGE_OPTION_3_addr, 0);
@@ -746,13 +848,15 @@ void bms_set_otg(void)
 	}
 };
 
-/**
- **********************************************************
+/**********************************************************
  * @brief Read an int from the flash of the coulomb counter
  **********************************************************
+ * Although this functions only read an integer from the
+ * specified address, it read 32 bits, the coulomb counter
+ * only allows to READ this blocksize from the flash.
  * 
  * @param	i_register_address Defines the register address from which the data is read
- * @return 	Whether the data was sucessfully read or not.
+ * @return 	The integer value which is returned by the coulomb counter.
  * 
  * @details call-by-value, nargs = 1
  **********************************************************/
@@ -775,7 +879,7 @@ void coul_read_int_flash(void)
 
 		//immediately perform the read
 		pch_array[0] = 32; //Set array length
-		coul_call_task(I2C_CMD_READ_ARRAY, pch_array, did_I2C);
+		coul_call_task(I2C_CMD_READ_ARRAY, (unsigned long)pch_array, did_I2C);
 
 		//Goto next sequence
 		arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CRC);
@@ -804,20 +908,19 @@ void coul_read_int_flash(void)
 		//Read the returned Length of the command
 		pBMS->len = bms_get_call_return();
 
-		//Command finished
-		arbiter_return(&task_bms, 1);
+		//Command finished and return the received value
+		arbiter_return(&task_bms, (pch_array[1]<<8) | pch_array[2]);
 		break;
 	}
 };
 
-/**
- **********************************************************
+/**********************************************************
  * @brief Write an int to the flash of the coulomb counter
  **********************************************************
  * 
- * @param	i_register_address Defines the register address where the data sould be written to
+ * @param	i_register_address Defines the register address where the data should be written to
  * @param   i_data New data which should be written to register address
- * @return 	Whether the data was sucessfully sent.
+ * @return 	Whether the data was successfully sent.
  * 
  * @details call-by-value, nargs = 2
  **********************************************************/
@@ -825,11 +928,11 @@ void coul_write_int_flash(void)
 {
 	//Get arguments
 	unsigned int *pi_register_address = arbiter_get_argument(&task_bms);
-	unsigned int *pi_data = (arbiter_get_argument(&task_bms) + 1);
+	unsigned int *pi_data = (arbiter_get_argument(&task_bms) + 4);
 
 	//Allocate memory (array is also used as receive buffer: 32bytes + 1byte => 9 unsigned long)
 	unsigned long *pl_command = arbiter_malloc(&task_bms, 10);
-	unsigned char *pch_array = (unsigned char*)(pl_command + 1);
+	unsigned char *pch_array = (unsigned char *)(pl_command + 1);
 
 	//perform the command action
 	switch (arbiter_get_sequence(&task_bms))
@@ -854,10 +957,10 @@ void coul_write_int_flash(void)
 		//Set the new data in the received buffer
 		pch_array[2] = (unsigned char)(*pi_data & 0xFF); //Set new MSB
 		pch_array[1] = (unsigned char)(*pi_data >> 8);	 //SET new LSB
-		pch_array[0] = 32; //Length of array
+		pch_array[0] = 32;								 //Length of array
 
 		//calculate the new checksum
-		for(unsigned char count  = 1; count <= 32; count++)
+		for (unsigned char count = 1; count <= 32; count++)
 			pBMS->crc += pch_array[count];
 		pBMS->crc += (*pi_register_address & 0xFF);
 		pBMS->crc += (*pi_register_address >> 8);
@@ -866,9 +969,9 @@ void coul_write_int_flash(void)
 		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
 		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
 		coul_call_task(I2C_CMD_SEND_ARRAY, (unsigned long)pch_array, did_I2C);
-		
+
 		//set the new checksum and length to intiate the flash write
-		coul_call_task(I2C_CMD_SEND_INT, ((~pBMS->crc)<<8)+0x24, did_I2C);
+		coul_call_task(I2C_CMD_SEND_INT, ((~pBMS->crc) << 8) + 0x24, did_I2C);
 
 		//Command is finished
 		arbiter_return(&task_bms, 1);
@@ -879,8 +982,93 @@ void coul_write_int_flash(void)
 	}
 };
 
-/*
- * Initalize the peripherals needed for the bms
+/**********************************************************
+ * @brief Get the ADC values of the Coulomb Counter
+ **********************************************************
+ * 
+ * Argument:	none
+ * @return ADC values where read successfully.
+ * 
+ * @details call-by-reference
+ **********************************************************/
+void coulomb_get_adc(void)
+{
+	//Allocate memory
+	unsigned long *pl_temp = arbiter_malloc(&task_bms, 1);
+
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_bms))
+	{
+		case SEQUENCE_ENTRY:
+			//Keep this state to do some entry stuff here in the future
+			//immediately goto next state
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_TEMP);
+		
+		case BMS_SEQUENCE_GET_TEMP:
+			//Read the temperature of the coulomb counter
+			coul_call_task(I2C_CMD_READ_INT, TEMPERATURE_addr, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_VOLT);
+			break;
+
+		case BMS_SEQUENCE_GET_VOLT:
+			//When i2c returned the data, convert it to LSB first
+			pBMS->temperature = sys_swap_endian(bms_get_call_return(),2);
+
+			//Read the battery voltage measured by the coulomb counter
+			coul_call_task(I2C_CMD_READ_INT, VOLTAGE_addr, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CURRENT);
+			break;
+
+		case BMS_SEQUENCE_GET_CURRENT:
+			//Read the returned value
+			pBMS->battery_voltage = sys_swap_endian(bms_get_call_return(),2);
+
+			//Read the battery current measured by the coulomb counter
+			coul_call_task(I2C_CMD_READ_INT, CURRENT_addr, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CHARGE);
+			break;
+
+		case BMS_SEQUENCE_GET_CHARGE:
+			//Get battery current, has to be converted from unsigned to signed
+			*pl_temp = sys_swap_endian(bms_get_call_return(),2);
+			if (*pl_temp > 32767)
+				pBMS->current = *pl_temp - 65535;
+			else
+				pBMS->current = *pl_temp;
+
+			//Read the accumulated charge measured by the coulomb counter
+			coul_call_task(I2C_CMD_READ_INT, ACC_CHARGE_addr, did_I2C);
+
+			//goto next sequence
+			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			break;
+		
+		case SEQUENCE_FINISHED:
+			//Get accumulated charge, has to be converted from unsigned to signed, positive discharge, negative charge
+			*pl_temp = sys_swap_endian(bms_get_call_return(),2);
+			if (*pl_temp > 32767)
+				pBMS->discharged_capacity = *pl_temp - 65535;
+			else
+				pBMS->discharged_capacity = *pl_temp;
+			pBMS->discharged_capacity += pBMS->old_capacity;
+
+			//Exit the command
+			arbiter_return(&task_bms, 1);
+			break;
+
+		default:
+			break;
+	}
+};
+
+/**
+ * @brief Initalize the peripherals needed for the bms
  */
 void bms_init_peripherals(void)
 {
@@ -896,8 +1084,8 @@ void bms_init_peripherals(void)
 	GPIOA->PUPDR |= GPIO_PUPDR_PUPDR3_0 | GPIO_PUPDR_PUPDR2_0 | GPIO_PUPDR_PUPDR1_0;
 };
 
-/*
- * Call a other task via the ipc queue.
+/**
+ * @brief Call a other task via the ipc queue.
  */
 void bms_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
 {
@@ -913,8 +1101,8 @@ void bms_call_task(unsigned char cmd, unsigned long data, unsigned char did_targ
     task_bms.halt_task += did_target;
 };
 
-/*
- * Call a other task via the ipc queue.
+/**
+ * @brief Call a other task via the ipc queue.
  */
 void coul_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
 {

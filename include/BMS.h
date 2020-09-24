@@ -17,13 +17,15 @@
 
 //*********** Defines **************
 //Commands for arbiter
-#define BMS_CMD_INIT                1
-#define BMS_CMD_GET_STATUS          2
-#define BMS_CMD_GET_ADC             3
-#define BMS_CMD_SET_CHARGE_CURRENT  4
-#define BMS_CMD_SET_OTG             5
-#define BMS_CMD_READ_INT_FLASH      6 ///< call-by-value, nargs = 1
-#define BMS_CMD_WRITE_INT_FLASH     7 ///< call-by-value, nargs = 2
+#define BMS_CMD_INIT                1 // call-by-reference
+#define BMS_CMD_INIT_COULOMB        2 // call-by-reference
+#define BMS_CMD_GET_STATUS          3 // call-by-reference
+#define BMS_CMD_GET_ADC             4 // call-by-reference
+#define BMS_CMD_SET_CHARGE_CURRENT  5 // call-by-value, nargs = 1
+#define BMS_CMD_SET_OTG             6 // call-by-value, nargs = 1
+#define BMS_CMD_READ_INT_FLASH      7 // call-by-value, nargs = 1
+#define BMS_CMD_WRITE_INT_FLASH     8 // call-by-value, nargs = 2
+#define BMS_CMD_GET_ADC_COULOMB     9 // call-by-reference
 
 //Sequences of commands
 // INIT
@@ -42,13 +44,22 @@
 #define BMS_SEQUENCE_READ_VBUS      11
 #define BMS_SEQUENCE_READ_BAT       12
 #define BMS_SEQUENCE_READ_INP       13
+#define BMS_SEQUENCE_READ_COLOUMB   14
 // SET_OTG
-#define BMS_SEQUENCE_OTG_VOLTAGE    14
-#define BMS_SEQUENCE_OTG_CURRENT    15
-#define BMS_SEQUENCE_OTG_SET_STATE  16
+#define BMS_SEQUENCE_OTG_VOLTAGE    15
+#define BMS_SEQUENCE_OTG_CURRENT    16
+#define BMS_SEQUENCE_OTG_SET_STATE  17
 // READ_INT_FLASH
-#define BMS_SEQUENCE_GET_CRC        17
-#define BMS_SEQUENCE_GET_LEN        18
+#define BMS_SEQUENCE_GET_CRC        18
+#define BMS_SEQUENCE_GET_LEN        19
+// GET_ADC_COULOMB
+#define BMS_SEQUENCE_GET_TEMP       20
+#define BMS_SEQUENCE_GET_VOLT       21
+#define BMS_SEQUENCE_GET_CURRENT    22
+#define BMS_SEQUENCE_GET_CHARGE     23
+// INIT_COULOMB
+#define BMS_SEQUENCE_SET_MAC        24
+#define BMS_SEQUENCE_READ_CONFIG_A  25
 
 
 /*
@@ -238,12 +249,14 @@ void            bms_task                (void);
 void            bms_check_semaphores    (void);
 void            bms_idle                (void);
 void            bms_init                (void);
+void            coulomb_init            (void);
 void            bms_get_status          (void);
 void            bms_get_adc             (void);
 void            bms_set_charge_current  (void);
 void            bms_set_otg             (void);
 void            coul_read_int_flash     (void);
 void            coul_write_int_flash    (void);
+void            coulomb_get_adc         (void);
 void            bms_init_peripherals    (void);
 void            bms_call_task           (unsigned char cmd, unsigned long data, unsigned char did_target);
 void            coul_call_task          (unsigned char cmd, unsigned long data, unsigned char did_target);

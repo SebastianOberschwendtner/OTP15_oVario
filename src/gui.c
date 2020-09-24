@@ -760,14 +760,16 @@ void fkt_set_ipc_command(uint8_t command_number)
 	// enables the otg usb port, only if not charging!
 	case gui_cmd_otgon:
 		GUI_cmd.did 		= did_GUI;
-		GUI_cmd.cmd 		= cmd_BMS_OTG_ON;
+		GUI_cmd.cmd 		= BMS_CMD_SET_OTG;
+		GUI_cmd.data		= ON;
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 		break;
 	// disables the otg usb port
 	case gui_cmd_otgoff:
 		GUI_cmd.did 		= did_GUI;
-		GUI_cmd.cmd 		= cmd_BMS_OTG_OFF;
+		GUI_cmd.cmd 		= BMS_CMD_SET_OTG;
+		GUI_cmd.data		= OFF;
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
 		break;

@@ -49,6 +49,7 @@ void            i2c_send_int            (void);
 void            i2c_send_24bit          (void);
 void            i2c_send_long           (void);
 void            i2c_send_array          (void);
+void            i2c_read_char           (void);
 void            i2c_read_int            (void);
 void            i2c_read_24bit          (void);
 void            i2c_read_array          (void);
