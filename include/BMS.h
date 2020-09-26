@@ -254,11 +254,11 @@ void            bms_get_status          (void);
 void            bms_get_adc             (void);
 void            bms_set_charge_current  (void);
 void            bms_set_otg             (void);
-void            coul_read_int_flash     (void);
-void            coul_write_int_flash    (void);
+void            coulomb_read_int_flash  (void);
+void            coulomb_write_int_flash (void);
 void            coulomb_get_adc         (void);
 void            bms_init_peripherals    (void);
 void            bms_call_task           (unsigned char cmd, unsigned long data, unsigned char did_target);
-void            coul_call_task          (unsigned char cmd, unsigned long data, unsigned char did_target);
+void            coulomb_call_task       (unsigned char cmd, unsigned long data, unsigned char did_target);
 
 #endif /* BMS_H_ */

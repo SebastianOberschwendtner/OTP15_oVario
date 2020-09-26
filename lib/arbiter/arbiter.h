@@ -26,6 +26,15 @@
 #define US2TASKTICK(time,task_schedule)  (unsigned long)((time)/(task_schedule))
 #define MS2TASKTICK(time,task_schedule)  (unsigned long)((time*1000)/(task_schedule))
 
+//Structure for timeout data within one task
+#pragma pack(push, 1)
+typedef struct
+{
+    unsigned int reload_value;
+    unsigned int counter;
+} TIMEOUT_T;
+#pragma pack(pop)
+
 //Structure for arbiter data within one task
 #pragma pack(push, 1)
 typedef struct
@@ -44,6 +53,7 @@ typedef struct
     unsigned long   wait_counter;
     unsigned long   halt_task;
     unsigned long   local_counter;
+    TIMEOUT_T       timeout;
 } TASK_T;
 #pragma pack(pop)
 
@@ -72,4 +82,7 @@ unsigned char   arbiter_get_sequence        (TASK_T* task);
 unsigned long*  arbiter_malloc              (TASK_T* task, unsigned char memsize);
 void            arbiter_memfree             (TASK_T* task);
 unsigned char   arbiter_get_memsize         (TASK_T* task);
+void            arbiter_set_timeout         (TASK_T* task, unsigned int timeout);
+void            arbiter_reset_timeout       (TASK_T* task);
+unsigned char   arbiter_timed_out           (TASK_T* task);
 #endif

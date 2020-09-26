@@ -84,8 +84,9 @@ int main(void)
 			set_led_red(ON);
 			sdio_task();
 			igc_task();
-			ms5611_task();
+			// ms5611_task();
 			bms_task();
+			
 			set_led_red(OFF);
 		}
 
@@ -114,8 +115,8 @@ int main(void)
 		}
 
 		//***** Background Tasks *****
-		i2c_task();
 		md5_task();
+		i2c_task();
 	}
 	return 0;
 };

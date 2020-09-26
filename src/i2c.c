@@ -26,14 +26,15 @@ T_command txcmd_i2c;						//Command struct to transmit commands to other ipc tas
 volatile unsigned int active_address = 0;	//Active i2c address for communication
 
 //****** Functions ******
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC
  */
 void i2c_register_ipc(void)
 {
 	//Initialize task struct
 	arbiter_clear_task(&task_i2c);
 	arbiter_set_command(&task_i2c, I2C_CMD_INIT);
+	arbiter_set_timeout(&task_i2c, 10000); //Set the timeout to 10.000 task calls
 
 	//Intialize the received command struct
 	rxcmd_i2c.did			= did_I2C;
@@ -56,7 +57,7 @@ void i2c_register_ipc(void)
 
 /**
  **********************************************************
- * TASK I2C
+ * @brief TASK I2C
  **********************************************************
  * The i2c task, which handles the data transfer and 
  * ipc communication.
@@ -120,7 +121,8 @@ void i2c_task(void)
 	default:
 		break;
 	}
-	//TODO Add error handling.
+	//Handle errors
+	i2c_check_errors();
 };
 
 /*
@@ -193,6 +195,9 @@ void i2c_init_peripheral(void)
  **********************************************************/
 void i2c_idle(void)
 {
+	//Reset the timeout counter
+	arbiter_reset_timeout(&task_i2c);
+
 	//When calling command was not the task itself
 	if (rxcmd_i2c.did != did_I2C)
 	{
@@ -664,7 +669,7 @@ void i2c_dma_transmit(void* data, unsigned long nbytes)
 	//Set the memory address
 	DMA1_Stream6->M0AR = (unsigned long)data;
 	//Set number of bytes to transmit
-	DMA1_Stream6->NDTR = nbytes+1;
+	DMA1_Stream6->NDTR = nbytes + 1;
 	//Clear DMA interrupts
 	DMA1->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
 	//Enable dma
@@ -780,111 +785,28 @@ void DMA1_Stream5_IRQHandler(void)
 	I2C1->CR1 |= I2C_CR1_STOP;
 };
 
-/*
- * send char value to register
+/**
+ * @brief The error handler of the task
+ * @todo What should the error handler do, when a slave blocks and stretches the SCL line?
  */
+void i2c_check_errors(void)
+{
+	//For now the error handler only checks for timeouts
+	if (arbiter_timed_out(&task_i2c))
+	{
+		//When calling command was not the task itself
+		if (rxcmd_i2c.did != did_I2C)
+		{
+			//Send the timeout signal
+			txcmd_i2c.did = did_I2C;
+			txcmd_i2c.cmd = cmd_ipc_outta_time;
+			txcmd_i2c.data = rxcmd_i2c.did;
+			ipc_queue_push(&txcmd_i2c, sizeof(T_command), rxcmd_i2c.did); //Signal that command is finished to calling task
 
-// void i2c_send_char_register(unsigned char ch_address, unsigned char ch_register, unsigned char ch_data)
-// {
-
-// };
-
-// /*
-//  * send int
-//  */
-
-// void i2c_send_int(unsigned char ch_address, unsigned int i_data)
-// {
-
-// };
-
-// /*
-//  * send int LSB first
-//  */
-
-// void i2c_send_int_LSB(unsigned char ch_address, unsigned int i_data)
-// {
-
-// };
-
-// /*
-//  * send int value to register
-//  */
-
-// void i2c_send_int_register(unsigned char ch_address, unsigned char ch_register, unsigned int i_data)
-// {
-
-// };
-
-// /*
-//  * send int value to register, LSB first
-//  */
-
-// void i2c_send_int_register_LSB(unsigned char ch_address, unsigned char ch_register, unsigned int i_data)
-// {
-
-// };
-
-// /*
-//  * Read char
-//  */
-// unsigned char i2c_read_char(unsigned char ch_address, unsigned char ch_command)
-// {
-
-// }
-
-// /*
-//  * Read int
-//  */
-// unsigned int i2c_read_int(unsigned char ch_address, unsigned char ch_command)
-// {
-
-// }
-
-// /*
-//  * Read int LSB first
-//  */
-// unsigned int i2c_read_int_LSB(unsigned char ch_address, unsigned char ch_command)
-// {
-
-// }
-
-// /*
-//  * Read 24bit (3x8bit), meant for MS5611
-//  */
-// unsigned long i2c_read_24bit(unsigned char ch_address, unsigned char ch_command)
-// {
-
-// }
-
-// /*
-//  * Read long
-//  */
-// unsigned long i2c_read_long(unsigned char ch_address, unsigned char ch_command)
-// {
-
-// };
-
-// /*
-//  * Read an array of specific size
-//  */
-// unsigned char i2c_read_array(unsigned char ch_address, unsigned char ch_command, unsigned char* p_array, unsigned char array_size)
-// {
-
-// };
-
-// /*
-//  * Write an array of specific size
-//  */
-// unsigned char i2c_send_array(unsigned char ch_address, unsigned char* p_array, unsigned char array_size)
-// {
-
-// };
-
-// /*
-//  * Write an array and tead an array of specific size
-//  */
-// unsigned char i2c_send_read_array(unsigned char ch_address, unsigned char* array_in, unsigned char size_in, unsigned char* array_out, unsigned char size_out)
-// {
-
-// };
+			//Reset calling command
+			rxcmd_i2c.did = did_I2C;
+		}
+		//Reset the active command to idle
+		arbiter_set_command(&task_i2c, CMD_IDLE);
+	}
+};

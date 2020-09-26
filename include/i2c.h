@@ -58,5 +58,5 @@ unsigned long   i2c_transmit_nbytes     (unsigned char* data, unsigned long nbyt
 void            i2c_dma_transmit        (void* data, unsigned long nbytes);
 unsigned long   i2c_receive_nbytes      (unsigned char* data, unsigned long nbytes);
 void            i2c_dma_receive         (void* data, unsigned long nbytes);
-
+void            i2c_check_errors        (void);
 #endif /* I2C_H_ */

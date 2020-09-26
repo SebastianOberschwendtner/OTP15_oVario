@@ -48,6 +48,7 @@ inline unsigned long bms_get_call_return(void)
  * @param reg The register address of the data
  * @param data The data which should be trasnmitted
  * @return The payload data which is swapped from "MSB to LSB".
+ * @details inline function
  */
 inline unsigned long bms_create_payload(unsigned char reg, unsigned long data)
 {
@@ -78,7 +79,8 @@ void bms_register_ipc(void)
     rxcmd_bms.timestamp     = 0;
 };
 
-/***********************************************************
+/**
+ ***********************************************************
  * @brief TASK BMS
  ***********************************************************
  * 
@@ -88,7 +90,8 @@ void bms_register_ipc(void)
  * Execution:	non-interruptable
  * Wait: 		Yes
  * Halt: 		Yes
- **********************************************************/
+ **********************************************************
+ */
 void bms_task(void)
 {
     //When the task wants to wait
@@ -131,11 +134,11 @@ void bms_task(void)
 				break;
 
 			case BMS_CMD_READ_INT_FLASH:
-				coul_read_int_flash();
+				coulomb_read_int_flash();
 				break;
 
 			case BMS_CMD_WRITE_INT_FLASH:
-				coul_write_int_flash();
+				coulomb_write_int_flash();
 				break;
 
 			case BMS_CMD_GET_ADC_COULOMB:
@@ -163,19 +166,44 @@ void bms_task(void)
  */
 void bms_check_semaphores(void)
 {
+	//Variable to remember when a new command is received
+	unsigned char new_command = 0;
+
     //Check semaphores for BMS
     if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command))      // look for new command in keypad queue
-    {
+	{
+		new_command = 1;
 		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms);  // get new command
-		if (rxcmd_bms.cmd == cmd_ipc_signal_finished)			//Check for semaphores
-			task_bms.halt_task -= rxcmd_bms.did;
 	}
+
 	//Check semaphores for Coulomb Counter
     if (ipc_get_queue_bytes(did_COUL) >= sizeof(T_command))      // look for new command in keypad queue
-    {
-		ipc_queue_get(did_COUL, sizeof(T_command), &rxcmd_bms);  // get new command
-		if (rxcmd_bms.cmd == cmd_ipc_signal_finished)			//Check for semaphores
+	{
+		new_command = 1;
+		ipc_queue_get(did_COUL, sizeof(T_command), &rxcmd_bms); // get new command
+	}
+
+	//When a new command was received
+	if (new_command)
+	{
+		//Evaluate semaphores
+		switch (rxcmd_bms.cmd)
+		{
+		case cmd_ipc_signal_finished:
+			//The called task is finished, decrease halt counter
 			task_bms.halt_task -= rxcmd_bms.did;
+			break;
+
+		case cmd_ipc_outta_time:
+			//The called command timed out, so set the corresponding sensor inactive since it is not responding
+			if (rxcmd_bms.data == did_BMS)
+				pBMS->charging_state &= ~STATUS_BMS_ACTIVE; //The BMS sensors is faulty
+			else if (rxcmd_bms.data == did_COUL)
+				pBMS->charging_state &= ~STATUS_GAUGE_ACTIVE; //The coulomb counter is faulty
+
+		default:
+			break;
+		}
 	}
 };
 
@@ -229,6 +257,9 @@ void bms_init(void)
 	{
 		case SEQUENCE_ENTRY:
 			bms_init_peripherals();
+			//Set the initial communication status
+			pBMS->charging_state |= (STATUS_GAUGE_ACTIVE | STATUS_BMS_ACTIVE | STATUS_BAT_PRESENT);
+			//goto next sequence
 			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_SET_OPTION_0);
 			break;
 
@@ -336,14 +367,9 @@ void bms_init(void)
 			pBMS->otg_voltage = OTG_VOLTAGE;
 			pBMS->otg_current = OTG_CURRENT;
 
-			//TODO Set the actual communication status here
-			pBMS->charging_state |= (STATUS_BMS_ACTIVE | STATUS_BAT_PRESENT);
-
-			//Exit the command
+			//Exit the command, after the coulomb counter is initialized
 			if (arbiter_callbyreference(&task_bms, BMS_CMD_INIT_COULOMB, 0))
-			{
 				arbiter_return(&task_bms, 1);
-			}
 			break;
 
 		default:
@@ -860,7 +886,7 @@ void bms_set_otg(void)
  * 
  * @details call-by-value, nargs = 1
  **********************************************************/
-void coul_read_int_flash(void)
+void coulomb_read_int_flash(void)
 {
 	//Get arguments
 	unsigned int *pi_register_address = arbiter_get_argument(&task_bms);
@@ -875,11 +901,11 @@ void coul_read_int_flash(void)
 	case SEQUENCE_ENTRY:
 		//Set the command data to read the flash
 		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
-		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
+		coulomb_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
 
 		//immediately perform the read
 		pch_array[0] = 32; //Set array length
-		coul_call_task(I2C_CMD_READ_ARRAY, (unsigned long)pch_array, did_I2C);
+		coulomb_call_task(I2C_CMD_READ_ARRAY, (unsigned long)pch_array, did_I2C);
 
 		//Goto next sequence
 		arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CRC);
@@ -887,7 +913,7 @@ void coul_read_int_flash(void)
 
 	case BMS_SEQUENCE_GET_CRC:
 		//Get the new CRC
-		coul_call_task(I2C_CMD_READ_CHAR, MAC_SUM_addr, did_I2C);
+		coulomb_call_task(I2C_CMD_READ_CHAR, MAC_SUM_addr, did_I2C);
 
 		//goto next sequence
 		arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_LEN);
@@ -898,7 +924,7 @@ void coul_read_int_flash(void)
 		pBMS->crc = bms_get_call_return();
 
 		//Get the length of the command
-		coul_call_task(I2C_CMD_READ_CHAR, MAC_LEN_addr, did_I2C);
+		coulomb_call_task(I2C_CMD_READ_CHAR, MAC_LEN_addr, did_I2C);
 
 		//goto next sequence
 		arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
@@ -924,7 +950,7 @@ void coul_read_int_flash(void)
  * 
  * @details call-by-value, nargs = 2
  **********************************************************/
-void coul_write_int_flash(void)
+void coulomb_write_int_flash(void)
 {
 	//Get arguments
 	unsigned int *pi_register_address = arbiter_get_argument(&task_bms);
@@ -940,11 +966,11 @@ void coul_write_int_flash(void)
 	case SEQUENCE_ENTRY:
 		//Set the command data to read the flash
 		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
-		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
+		coulomb_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
 
 		//immediately perform the read
 		pch_array[0] = 32; //Set array length
-		coul_call_task(I2C_CMD_READ_ARRAY, (unsigned long)pch_array, did_I2C);
+		coulomb_call_task(I2C_CMD_READ_ARRAY, (unsigned long)pch_array, did_I2C);
 
 		//Reset crc
 		pBMS->crc = 0;
@@ -967,11 +993,11 @@ void coul_write_int_flash(void)
 
 		// write the command to set the new flash data and write the data
 		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
-		coul_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
-		coul_call_task(I2C_CMD_SEND_ARRAY, (unsigned long)pch_array, did_I2C);
+		coulomb_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
+		coulomb_call_task(I2C_CMD_SEND_ARRAY, (unsigned long)pch_array, did_I2C);
 
 		//set the new checksum and length to intiate the flash write
-		coul_call_task(I2C_CMD_SEND_INT, ((~pBMS->crc) << 8) + 0x24, did_I2C);
+		coulomb_call_task(I2C_CMD_SEND_INT, ((~pBMS->crc) << 8) + 0x24, did_I2C);
 
 		//Command is finished
 		arbiter_return(&task_bms, 1);
@@ -1006,7 +1032,7 @@ void coulomb_get_adc(void)
 		
 		case BMS_SEQUENCE_GET_TEMP:
 			//Read the temperature of the coulomb counter
-			coul_call_task(I2C_CMD_READ_INT, TEMPERATURE_addr, did_I2C);
+			coulomb_call_task(I2C_CMD_READ_INT, TEMPERATURE_addr, did_I2C);
 
 			//goto next sequence
 			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_VOLT);
@@ -1017,7 +1043,7 @@ void coulomb_get_adc(void)
 			pBMS->temperature = sys_swap_endian(bms_get_call_return(),2);
 
 			//Read the battery voltage measured by the coulomb counter
-			coul_call_task(I2C_CMD_READ_INT, VOLTAGE_addr, did_I2C);
+			coulomb_call_task(I2C_CMD_READ_INT, VOLTAGE_addr, did_I2C);
 
 			//goto next sequence
 			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CURRENT);
@@ -1028,7 +1054,7 @@ void coulomb_get_adc(void)
 			pBMS->battery_voltage = sys_swap_endian(bms_get_call_return(),2);
 
 			//Read the battery current measured by the coulomb counter
-			coul_call_task(I2C_CMD_READ_INT, CURRENT_addr, did_I2C);
+			coulomb_call_task(I2C_CMD_READ_INT, CURRENT_addr, did_I2C);
 
 			//goto next sequence
 			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_CHARGE);
@@ -1043,7 +1069,7 @@ void coulomb_get_adc(void)
 				pBMS->current = *pl_temp;
 
 			//Read the accumulated charge measured by the coulomb counter
-			coul_call_task(I2C_CMD_READ_INT, ACC_CHARGE_addr, did_I2C);
+			coulomb_call_task(I2C_CMD_READ_INT, ACC_CHARGE_addr, did_I2C);
 
 			//goto next sequence
 			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
@@ -1086,159 +1112,49 @@ void bms_init_peripherals(void)
 
 /**
  * @brief Call a other task via the ipc queue.
+ * @details Only forwards the call when the sensor is active. Otherwise it does nothing.
+ * This means that, when the sensor is not active, the data in the bms struct will not be valid.
  */
 void bms_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
 {
-    //Set the command and data for the target task
-    txcmd_bms.did = did_BMS;
-    txcmd_bms.cmd = cmd;
-    txcmd_bms.data = data;
+	//Only when bms is active and responding
+	if (pBMS->charging_state & STATUS_BMS_ACTIVE)
+	{
+		//Set the command and data for the target task
+		txcmd_bms.did = did_BMS;
+		txcmd_bms.cmd = cmd;
+		txcmd_bms.data = data;
 
-    //Push the command
-    ipc_queue_push(&txcmd_bms, sizeof(T_command), did_target);
+		//Push the command
+		ipc_queue_push(&txcmd_bms, sizeof(T_command), did_target);
 
-    //Set wait counter to wait for called task to finish
-    task_bms.halt_task += did_target;
+		//Set wait counter to wait for called task to finish
+		task_bms.halt_task += did_target;
+	}
 };
 
 /**
  * @brief Call a other task via the ipc queue.
+ * @details Only forwards the call when the sensor is active. Otherwise it does nothing.
+ * This means that, when the sensor is not active, the data in the bms struct will not be valid.
  */
-void coul_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
+void coulomb_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
 {
-    //Set the command and data for the target task
-    txcmd_bms.did = did_COUL;
-    txcmd_bms.cmd = cmd;
-    txcmd_bms.data = data;
+	//Only when coulomb counter is active and responding
+	if (pBMS->charging_state & STATUS_GAUGE_ACTIVE)
+	{
+		//Set the command and data for the target task
+		txcmd_bms.did = did_COUL;
+		txcmd_bms.cmd = cmd;
+		txcmd_bms.data = data;
 
-    //Push the command
-    ipc_queue_push(&txcmd_bms, sizeof(T_command), did_target);
+		//Push the command
+		ipc_queue_push(&txcmd_bms, sizeof(T_command), did_target);
 
-    //Set wait counter to wait for called task to finish
-    task_bms.halt_task += did_target;
+		//Set wait counter to wait for called task to finish
+		task_bms.halt_task += did_target;
+	}
 };
-
-
-/*
- * init BMS
- * The BQ25700A requires LSB first at communication
- */
-// void init_BMS(void)
-// {
-// 	/*
-// 	 * Set BMS specific IOs
-// 	 * PA0	Output	PUSH_PULL	EN_OTG
-// 	 * PA1	Input	PULL_UP		CHRG_OK
-// 	 * PA2	Input	PULL_UP		PROCHOT
-// 	 * PA3	Input	PULL_UP		ALERT_CC
-// 	 */
-// 	gpio_en(GPIO_A);
-// 	GPIOA->MODER |= GPIO_MODER_MODER0_0;
-// 	GPIOA->PUPDR |= GPIO_PUPDR_PUPDR3_0 | GPIO_PUPDR_PUPDR2_0 | GPIO_PUPDR_PUPDR1_0;
-
-// 	//***********************Setup the coulomb counter**********************************************
-// 	//save the desired manufacturer status init register value
-// 	//At startup without the battery the i2c command waits for a response. Use timeouts -> Fixed
-
-// 	// check the Manufacturing status init, this bits should be set:
-// 	// IGNORE_SD_EN:  	Ignore Self-discharge control
-// 	// ACCHG_EN:		Accumulated Charge Enable for Charging Current Integration
-// 	// ACDSG_EN:		Accumulated Charge Enable for Discharging Current Integration
-// 	unsigned int i_config = BMS_gauge_read_flash_int(MAC_STATUS_INIT_df_addr);
-// 	if (i_config != (IGNORE_SD_EN | ACCHG_EN | ACDSG_EN))
-// 		BMS_gauge_send_flash_int(MAC_STATUS_INIT_df_addr, (IGNORE_SD_EN | ACCHG_EN | ACDSG_EN));
-
-// 	//Operation Config A Register, this bits should be set:
-// 	// none
-// 	i_config = BMS_gauge_read_flash_int(CONFIGURATION_A_df_addr);
-// 	if (i_config != 0)
-// 		BMS_gauge_send_flash_int(CONFIGURATION_A_df_addr, 0);
-
-
-// 	//Check communication status
-// 	if(i2c_get_error())
-// 	{
-// 		pBMS->com_err = (unsigned char)0xF0;
-// 		pBMS->charging_state &= ~STATUS_GAUGE_ACTIVE; // deactivate the gauge, when it is not present at startup
-// 		i2c_reset_error();
-// 	}
-// 	else
-// 		pBMS->charging_state |= STATUS_GAUGE_ACTIVE;
-
-// 	//***********************Setup the BMS**********************************************************
-// 	/*
-// 	 * Set Charge options:
-// 	 * -disable low power mode
-// 	 * -disable WDT
-// 	 * -PWM 800 kHz
-// 	 * -IADPT Gain 40
-// 	 * -IDPM enable
-// 	 * -Out-of-audio enable
-// 	 */
-// 	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_0_addr,
-// 			(PWM_FREQ | IADPT_GAIN | IBAT_GAIN));
-
-// 	/*
-// 	 * Set Charge Option 1 register
-// 	 */
-// 	i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_1_addr,AUTO_WAKEUP_EN);
-// 	/*
-// 	 * Set Charge Option 2 register
-// 	 */
-// 	//i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_2_addr,0);
-
-// 	/*
-// 	 * Set ADC options:
-// 	 * 	-One shot update
-// 	 * 	-Enable VBAT, VBUS, I_IN, I_charge, I_Discharge
-// 	 */
-// 	i2c_send_int_register_LSB(i2c_addr_BMS,ADC_OPTION_addr,
-// 			(EN_ADC_VBAT | EN_ADC_VBUS | EN_ADC_IIN | EN_ADC_ICHG | EN_ADC_IDCHG));
-
-// 	/*
-// 	 * Set max charge voltage
-// 	 * Resolution is 16 mV with this formula:
-// 	 * VMAX = Register * 16 mV/bit
-// 	 *
-// 	 * The 11-bit value is bitshifted by 4
-// 	 */
-// 	i2c_send_int_register_LSB(i2c_addr_BMS,MAX_CHARGE_VOLTAGE_addr,(((MAX_BATTERY_VOLTAGE)/16)<<4));
-
-// 	/*
-// 	 * Set min sys voltage
-// 	 * Resolution is 256 mV with this formula:
-// 	 * VMIN = Register * 256 mV/bit
-// 	 *
-// 	 * The 6-bit value is bitshifted by 8
-// 	 */
-// //		i2c_send_int_register_LSB(i2c_addr_BMS,MIN_SYS_VOLTAGE_addr,(((MIN_BATTERY_VOLTAGE)/256)<<8));
-
-// 	/*
-// 	 * Set max input current
-// 	 * Resolution is 50 mA with this formula:
-// 	 * IMAX = Register * 50 mV/bit
-// 	 *
-// 	 * The 7-bit value is bitshifted by 8
-// 	 */
-// 	i2c_send_int_register_LSB(i2c_addr_BMS,INPUT_LIMIT_HOST_addr,((MAX_CURRENT/50)<<8));
-
-// 	//Set charging current
-// 	pBMS->max_charge_current = 800;
-
-// 	//Set OTG parameters
-// 	pBMS->otg_voltage = OTG_VOLTAGE;
-// 	pBMS->otg_current = OTG_CURRENT;
-
-// 	//Check communication status
-// 	if(i2c_get_error())
-// 	{
-// 		pBMS->com_err = (unsigned char)0x0F;
-// 		pBMS->charging_state &= ~STATUS_BMS_ACTIVE; // deactivate the BMS when it is not responding at startup
-// 		i2c_reset_error();
-// 	}
-// 	else
-// 		pBMS->charging_state |= (STATUS_BMS_ACTIVE | STATUS_BAT_PRESENT);
-// };
 
 // /*
 //  * Task
@@ -1310,216 +1226,6 @@ void coul_call_task(unsigned char cmd, unsigned long data, unsigned char did_tar
 // 	BMS_set_charge_current((unsigned int)I_Charge);
 // }
 
-
-// /*
-//  * Start ADC conversion
-//  */
-
-// void BMS_adc_start(void)
-// {
-// 	//Only when BMS is active and responding
-// 	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
-// 	{
-// 		//Reset i2c error
-// 		i2c_reset_error();
-
-// 		//Send command
-// 		i2c_send_int_register_LSB(i2c_addr_BMS,ADC_OPTION_addr,
-// 				(ADC_START | EN_ADC_VBAT | EN_ADC_VBUS | EN_ADC_IIN | EN_ADC_ICHG | EN_ADC_IDCHG));
-// 		pBMS->charging_state |= STATUS_ADC_REQUESTED;
-// 		pBMS->charging_state &= ~(STATUS_ADC_FINISHED);
-
-// 		//check communication error
-// 		pBMS->com_err += i2c_get_error();
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_BMS)
-// 		{
-// 			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
-// 			error_var |= err_bms_fault;
-// 			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
-// 		}
-// 	}
-// };
-
-// /*
-//  * Read VBAT
-//  * To get a reading of the adc values this function has to be executed at least twice with a delay of at least approx. 50 ms!
-//  */
-// void BMS_get_adc(void)
-// {
-// 	unsigned int i_temp = 0;
-
-// 	//Only when BMS is active and responding
-// 	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
-// 	{
-// 		//Reset i2c error
-// 		i2c_reset_error();
-// 		//read BMS status
-// 		BMS_get_status();
-
-// 		//start ADC when no conversion is started
-// 		if((pBMS->charging_state & STATUS_ADC_FINISHED) && !(pBMS->charging_state & STATUS_ADC_REQUESTED))
-// 			BMS_adc_start();
-// 		//read ADC when conversion is finished
-// 		if((pBMS->charging_state & STATUS_ADC_FINISHED) && (pBMS->charging_state & STATUS_ADC_REQUESTED))
-// 		{
-// 			pBMS->charging_state &= ~(STATUS_ADC_REQUESTED);
-// 			/*
-// 			 * Read the battery voltage, only the last 8 bits are the value of the battery voltage
-// 			 * The voltage reading follows this formula:
-// 			 * VBAT = ADC * 64 mV/bit + 2880 mV
-// 			 */
-// 			i_temp = i2c_read_int_LSB(i2c_addr_BMS,ADC_SYS_VOLTAGE_addr);
-// 			pBMS->battery_voltage = (i_temp & 0b11111111)*64 + 2880;
-
-// 			/*
-// 			 * Read the bus voltage, only the first 8 bits are the value of the bus voltage
-// 			 * The voltage reading follows this formula:
-// 			 * VIN = ADC * 64 mV/bit + 3200 mV
-// 			 */
-// 			//Check whether input voltage is present
-// 			if(pBMS->charging_state & STATUS_INPUT_PRESENT)
-// 				pBMS->input_voltage = (i2c_read_int_LSB(i2c_addr_BMS,ADC_VBUS_addr) >> 8)*64 + 3200;
-// 			else
-// 				pBMS->input_voltage = 0;
-
-// 			//temporary save the battery current adc value
-// 			i_temp = i2c_read_int_LSB(i2c_addr_BMS,ADC_BAT_CURRENT_addr);
-
-// 			/*
-// 			 * Read the charge current, only the first 8 bits are the value of the battery voltage
-// 			 * The voltage reading follows this formula:
-// 			 * I_Charge = ADC * 64 mA/bit
-// 			 */
-// 			pBMS->charge_current = (i_temp >> 8)*64;
-
-// 			/*
-// 			 * Read the discharge current, only the last 8 bits are the value of the battery voltage
-// 			 * The voltage reading follows this formula:
-// 			 * I_Discharge = ADC * 256 mA/bit
-// 			 */
-// 			pBMS->discharge_current = (i_temp & 0b1111111)*256;
-
-// 			/*
-// 			 * Read the input current, only the first 8 bits are the value of the battery voltage
-// 			 * The voltage reading follows this formula:
-// 			 * I_Charge = ADC * 50 mA/bit
-// 			 */
-// 			i_temp = i2c_read_int_LSB(i2c_addr_BMS,ADC_INPUT_CURRENT_addr);
-// 			pBMS->input_current = (i_temp >> 8)*50;
-// 		}
-// 		//check communication error
-// 		pBMS->com_err += i2c_get_error();
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_BMS)
-// 		{
-// 			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
-// 			error_var |= err_bms_fault;
-// 			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
-// 		}
-// 	}
-// };
-
-// /*
-//  * Read the BMS status
-//  */
-// //TODO can the reset of the options bits be optimized?
-// void BMS_get_status(void)
-// {
-// 	//Only when BMS is active and responding
-// 	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
-// 	{
-// 		i2c_reset_error();
-// 		unsigned i_temp = i2c_read_int_LSB(i2c_addr_BMS,CHARGER_STATUS_addr);
-
-// 		//check the status bits from charger_status
-// 		if(i_temp & AC_STAT)
-// 			pBMS->charging_state |= STATUS_INPUT_PRESENT;
-// 		else
-// 			pBMS->charging_state &= ~(STATUS_INPUT_PRESENT);
-
-// 		if(i_temp & IN_FCHRG)
-// 			pBMS->charging_state |= STATUS_FAST_CHARGE;
-// 		else
-// 			pBMS->charging_state &= ~(STATUS_FAST_CHARGE);
-
-// 		if(i_temp & IN_PCHRG)
-// 			pBMS->charging_state |= STATUS_PRE_CHARGE;
-// 		else
-// 			pBMS->charging_state &= ~(STATUS_PRE_CHARGE);
-
-// 		if(i_temp & IN_OTG)
-// 			pBMS->charging_state |= STATUS_OTG_EN;
-// 		else
-// 			pBMS->charging_state &= ~(STATUS_OTG_EN);
-
-// 		//check the adc status
-// 		i_temp = i2c_read_int_LSB(i2c_addr_BMS,ADC_OPTION_addr);
-// 		if(!(i_temp & ADC_START))
-// 			pBMS->charging_state |= STATUS_ADC_FINISHED;
-// 		else
-// 			pBMS->charging_state &= ~(STATUS_ADC_FINISHED);
-
-// 		//check the CHRG_OK pin
-// 		if(GPIOA->IDR & GPIO_IDR_IDR_1)
-// 			pBMS->charging_state |= STATUS_CHRG_OK;
-// 		else
-// 			pBMS->charging_state &= ~(STATUS_CHRG_OK);
-
-// 		//check communication error
-// 		pBMS->com_err += i2c_get_error();
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_BMS)
-// 		{
-// 			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
-// 			error_var |= err_bms_fault;
-// 			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
-// 		}
-// 	}
-// };
-
-// /*
-//  * Start battery charging.
-//  * Checks whether the battery is already charging or not.
-//  */
-// void BMS_charge_start(void)
-// {
-// 	//Only when BMS is active and responding and when battery is present
-// 		if((pBMS->charging_state & STATUS_BMS_ACTIVE)&&(pBMS->charging_state & STATUS_BAT_PRESENT))
-// 	{
-// 		i2c_reset_error();
-
-// 		//Check input source and if in OTG mode
-// 		if((pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
-// 		{
-// 			//Check if allready charging
-// 			if(!(pBMS->charging_state & STATUS_FAST_CHARGE))
-// 			{
-// 				/*
-// 				 * Set charge current in mA. Note that the actual resolution is only 64 mA/bit.
-// 				 * Setting the charge current automatically starts the charge procedure.
-// 				 */
-// 				//Clamp to max charge current of 8128 mA
-// 				if(pBMS->max_charge_current > 8128)
-// 					pBMS->max_charge_current = 8128;
-
-// 				//Set max charge voltage
-// 				i2c_send_int_register_LSB(i2c_addr_BMS,MAX_CHARGE_VOLTAGE_addr,(((MAX_BATTERY_VOLTAGE)/16)<<4));
-// 				//Set charge current
-// 				i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((pBMS->max_charge_current/64)<<6));
-// 			}
-// 		}
-// 		//check communication error
-// 		pBMS->com_err += i2c_get_error();
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_BMS)
-// 		{
-// 			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
-// 			error_var |= err_bms_fault;
-// 			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
-// 		}
-// 	}
-// };
 // /*
 //  * check whether battery is present or not
 //  */
@@ -1558,207 +1264,5 @@ void coul_call_task(unsigned char cmd, unsigned long data, unsigned char did_tar
 // 		BMS_set_charge_current(0);
 // 		pBMS->charging_state &= ~STATUS_BAT_PRESENT;
 // 		bat_health = 100;
-// 	}
-// }
-
-// /*
-//  * Set battery charging current.
-//  * Checks whether input is present or not.
-//  */
-// void BMS_set_charge_current(unsigned  int i_current)
-// {
-// 	//Only when BMS is active and responding and when battery is present
-// 	if((pBMS->charging_state & STATUS_BMS_ACTIVE)&&(pBMS->charging_state & STATUS_BAT_PRESENT))
-// 	{
-// 		i2c_reset_error();
-
-// 		//Check input source and if in OTG mode
-// 		if((pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
-// 		{
-// 			/*
-// 			 * Set charge current in mA. Note that the actual resolution is only 64 mA/bit.
-// 			 * Setting the charge current to 0 automatically terminates the charge.
-// 			 */
-// 			//Clamp to max charge current of 8128 mA
-// 			if(i_current > 8128)
-// 				i_current = 8128;
-
-// 			i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,((i_current/64)<<6));
-// 			pBMS->max_charge_current = i_current;
-// 		}
-
-// 		//check communication error
-// 		pBMS->com_err += i2c_get_error();
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_BMS)
-// 		{
-// 			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
-// 			error_var |= err_bms_fault;
-// 			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
-// 		}
-// 	}
-// };
-
-// /*
-//  * Enables the OTG mode
-//  */
-// //TODO Implement an error if OTG is enabled during charging
-// void BMS_set_otg(unsigned char ch_state)
-// {
-// 	//Only when BMS is active and responding
-// 	if(pBMS->charging_state & STATUS_BMS_ACTIVE)
-// 	{
-// 		i2c_reset_error();
-
-// 		if(ch_state == ON)
-// 		{
-// 			//Check if input power is present and not in otg mode
-// 			if(!(pBMS->charging_state & STATUS_CHRG_OK) && !(pBMS->charging_state & STATUS_OTG_EN))
-// 			{
-// 				i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_CURRENT_addr,0);		//Set charging current 0
-
-// 				/*
-// 				 * Set OTG voltage
-// 				 * Resolution is 64 mV with this formula:
-// 				 * VOTG = Register * 64 mV/bit + 4480 mV
-// 				 *
-// 				 * The 8-bit value is bitshifted by 6
-// 				 */
-// 				//Limit the voltage
-// 				if(pBMS->otg_voltage > 15000)
-// 					pBMS->otg_voltage = 15000;
-// 				i2c_send_int_register_LSB(i2c_addr_BMS,OTG_VOLTAGE_addr,(((pBMS->otg_voltage-4480)/64)<<6));
-
-// 				/*
-// 				 * Set OTG current
-// 				 * Resolution is 50 mA with this formula:
-// 				 * IOTG = Register * 50 mA/bit
-// 				 *
-// 				 * The 7-bit value is bitshifted by 8
-// 				 */
-// 				//Limit the voltage
-// 				if(pBMS->otg_current > 5000)
-// 					pBMS->otg_current = 5000;
-// 				i2c_send_int_register_LSB(i2c_addr_BMS,OTG_CURRENT_addr,((pBMS->otg_current/50)<<8));
-
-// 				//Enable OTG
-// 				i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_3_addr,EN_OTG);
-// 				GPIOA->BSRRL |= GPIO_BSRR_BS_0;										//Set EN_OTG high
-// 			}
-// 		}
-// 		else
-// 		{
-// 			//disable OTG
-// 			GPIOA->BSRRH |= GPIO_BSRR_BR_0;										//Set EN_OTG low
-// 			i2c_send_int_register_LSB(i2c_addr_BMS,CHARGE_OPTION_3_addr,0);
-// 		}
-// 		//check communication error
-// 		pBMS->com_err += i2c_get_error();
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_BMS)
-// 		{
-// 			pBMS->com_err &= 0b11110000; //Reset the communication error for the BMS
-// 			error_var |= err_bms_fault;
-// 			pBMS->charging_state &= ~(STATUS_BMS_ACTIVE);
-// 		}
-// 	}
-// };
-
-// /*
-//  * Get the battery parameters from the coulomb counter
-//  */
-// //TODO discuss whether signed int for current should be used, problem: i2c data register is unsigned
-// void BMS_gauge_get_adc(void)
-// {
-// 	//Only when GAUGE is active and responding and when battery is present
-// 	if((pBMS->charging_state & STATUS_GAUGE_ACTIVE)&&(pBMS->charging_state & STATUS_BAT_PRESENT))
-// 	{
-// 		i2c_reset_error();
-
-// 		//get temperature
-// 		pBMS->temperature = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,TEMPERATURE_addr);
-
-// 		//get battery voltage
-// 		pBMS->battery_voltage = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,VOLTAGE_addr);
-
-// 		//Get battery current, has to be converted from unsigned to signed
-// 		unsigned int i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,CURRENT_addr);
-// 		if(i_temp > 32767)
-// 			pBMS->current = i_temp - 65535;
-// 		else
-// 			pBMS->current = i_temp;
-
-// 		//Get accumulated charge, has to be converted from unsigned to signed, positive discharge, negative charge
-// 		//TODO Add offline saving of discharged capacity.
-
-// 		i_temp = i2c_read_int_LSB(i2c_addr_BMS_GAUGE,ACC_CHARGE_addr);
-// 		if(i_temp > 32767)
-// 			pBMS->discharged_capacity = i_temp - 65535;
-// 		else
-// 			pBMS->discharged_capacity = i_temp;
-// 		pBMS->discharged_capacity += pBMS->old_capacity;
-
-// 		//check communication error
-// 		pBMS->com_err += (i2c_get_error()<<4);
-// 		//when to many communication errors occur, set the global error variable and disable the sensor.
-// 		if(pBMS->com_err & SENSOR_ERROR_GAUGE)
-// 		{
-// 			pBMS->com_err &= 0b00001111; //Reset the communication error for the gauge
-// 			error_var |= err_coloumb_fault; //Set the global error variable
-// 			pBMS->charging_state &= ~(STATUS_GAUGE_ACTIVE); //Set the sensor as inactive
-// 		}
-// 	}
-// };
-
-// // Read an integer register in the flash of the gauge
-// unsigned int BMS_gauge_read_flash_int(unsigned int register_address)
-// {
-// 	gauge_command[0] = (unsigned char)MAC_addr; 				//Read the MAC of the Gauge
-// 	gauge_command[1] = (unsigned char)(register_address>>0);  //LSB of Address
-// 	gauge_command[2] = (unsigned char)(register_address>>8);	//MSB of Address
-
-// 	//send the command to read flash and read flash
-// 	unsigned char read_successful = i2c_send_read_array(i2c_addr_BMS_GAUGE, gauge_command, 3, gauge_buffer, 32);
-// 	//update the checksum and length of the command
-// 	pBMS->crc = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_SUM_addr);
-// 	pBMS->len = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_LEN_addr);
-
-// 	//when read was successful return the read value
-// 	if(read_successful)
-// 		return (gauge_buffer[0]<<8) | gauge_buffer[1];
-// 	else
-// 		return (unsigned int) 0;
-// };
-
-// // Write an integer to a register in the flash of the gauge
-// void BMS_gauge_send_flash_int(unsigned int register_address, unsigned int data)
-// {
-// 	unsigned char crc = 0;
-
-// 	gauge_command[0] = (unsigned char)MAC_addr; 				//Read the MAC of the Gauge
-// 	gauge_command[1] = (unsigned char)(register_address>>0);  //LSB of Address
-// 	gauge_command[2] = (unsigned char)(register_address>>8);	//MSB of Address
-
-// 	//send the command to read flash and read flash
-// 	if(i2c_send_read_array(i2c_addr_BMS_GAUGE, gauge_command, 3, gauge_buffer, 32))
-// 	{
-// 		//set the new data in the buffer
-// 		gauge_buffer[1] = (unsigned char) (data&0xFF);		//Set new MSB
-// 		gauge_buffer[0] = (unsigned char) (data>>8);		//SET new LSB
-
-// 		//calculate the new checksum
-// 		for(unsigned char count  = 0; count<32;count++)
-// 			crc += gauge_buffer[count];
-// 		crc += gauge_command[1];
-// 		crc += gauge_command[2];
-
-// 		// write the command to set the new flash data and write the data
-// 		i2c_send_array(i2c_addr_BMS_GAUGE, gauge_command, 3);
-// 		i2c_send_array(i2c_addr_BMS_GAUGE, gauge_buffer, 32);
-// 		//set the new checksum and length to intiate the flash write
-// 		i2c_send_int(i2c_addr_BMS_GAUGE, ((~crc)<<8)+0x24);
-
-// 		//wait for flash write to finish
-// 		wait_systick(1);
 // 	}
 // }

@@ -51,23 +51,30 @@
  */
 void arbiter_clear_task(TASK_T* task)
 {
+    //Clear single values
     task->active_command = 0;
     task->wait_counter   = 0;
     task->halt_task      = 0;
     task->local_counter  = 0;
     task->allocated_arg  = 0;
 
+    //Clear the struct for each command queue item
     for(unsigned char count = 0; count < TASK_QUEUE; count++)
     {
         task->command[count]                = 0;
         task->sequence[count]               = 0;
-        task->argument_pointer[count]     = 0;
-        task->narg_in_stack[count]                 = 0;
+        task->argument_pointer[count]       = 0;
+        task->narg_in_stack[count]          = 0;
         task->return_value[count]           = 0;
     }
 
+    //Clear the argument stack
     for(unsigned char count = 0; count < ARG_STACK_SIZE; count++)
         task->argument_stack[count]         = 0;
+
+    //Reset the timeout counter
+    task->timeout.counter       = 0;
+    task->timeout.reload_value  = 0;
 };
 
 /**
@@ -380,5 +387,45 @@ unsigned char arbiter_get_memsize(TASK_T* task)
     }
     else
         return task->allocated_stack;
+    return 0;
+};
+
+/**
+ * @brief Set the timeout value of the task. The timeout is defined as a maximum amount of
+ *        task calls befor the command is finished.
+ * @param task      Address of the task struct
+ * @param timeout   The timeout of the task
+ */
+void arbiter_set_timeout(TASK_T* task, unsigned int timeout)
+{
+    //Set timeout
+    task->timeout.reload_value = timeout;
+    //reset counter
+    task->timeout.counter = task->timeout.reload_value;
+};
+
+/**
+ * @brief Reset the timeout counter of the task. This means the task ran without a timeout.
+ * @param task Address of the task struct
+ */
+void arbiter_reset_timeout(TASK_T* task)
+{
+    task->timeout.counter = task->timeout.reload_value;
+};
+
+/**
+ * @brief Decreases the timeout counter and sets the timeout event
+ * @param task Address of the task struct
+ * @return Returns 1 when the task did time out.
+ */
+unsigned char arbiter_timed_out(TASK_T* task)
+{
+    //Decrease the timeout counter, when it is not zero
+    if (task->timeout.counter)
+        task->timeout.counter--;
+    else
+        return 1;   //Counter is 0, which means task did timeout -> return 1
+
+    //Task did not timeout, return 0
     return 0;
 };

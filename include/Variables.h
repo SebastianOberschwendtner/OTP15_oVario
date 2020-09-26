@@ -17,8 +17,8 @@
 
 
 // ******* QUEUE MESSAGES *******
-//Generic signal finished command for all tasks
-#define cmd_ipc_signal_finished		255
+#define cmd_ipc_signal_finished		255 //Generic signal finished command for all tasks
+#define cmd_ipc_outta_time			254 //Generic signal to signal that the called command timed out
 
 // KEYPAD, Do not change the number assignment since it
 // is used in the gui to index the array with corresponding key function
