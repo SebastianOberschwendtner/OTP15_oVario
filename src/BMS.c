@@ -14,8 +14,8 @@
 //****** Variables ******
 BMS_T* pBMS;
 unsigned char bat_health = 100;
-unsigned char gauge_command[3];
-unsigned char gauge_buffer[32];
+// unsigned char gauge_command[3];
+// unsigned char gauge_buffer[32];
 
 TASK_T task_bms;			// Task struct for ms6511-task
 unsigned long *pl_args;		// Pointer to call commands with multiple arguments
@@ -512,10 +512,10 @@ void bms_get_status(void)
 			bms_call_task(I2C_CMD_READ_INT, ADC_OPTION_addr, did_I2C);
 
 			//Goto next sequence
-			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_CHECK_CHARGING);
 			break;
 
-		case SEQUENCE_FINISHED:
+		case BMS_SEQUENCE_CHECK_CHARGING:
 			//When i2c returned the data, convert it to LSB first
 			*l_status = sys_swap_endian(bms_get_call_return(),2);
 
@@ -531,6 +531,25 @@ void bms_get_status(void)
 			else
 				pBMS->charging_state &= ~(STATUS_CHRG_OK);
 
+			//Check whether battery can be charged and set next sequence accordingly
+			//When input is present and not in charging mode
+			if ((pBMS->charging_state & (STATUS_INPUT_PRESENT | STATUS_CHRG_OK)) && !(pBMS->charging_state & (STATUS_FAST_CHARGE | STATUS_PRE_CHARGE)))
+				arbiter_set_sequence(&task_bms, BMS_SEQUENCE_SET_CHARGING);
+			else
+				arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			break;
+		
+		case BMS_SEQUENCE_SET_CHARGING:
+			//Get arguments
+			pl_args = arbiter_allocate_arguments(&task_bms, 1);
+			*pl_args = pBMS->max_charge_current;
+
+			//Set the charging current
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_SET_CHARGE_CURRENT))
+				arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			break;
+
+		case SEQUENCE_FINISHED:
 			//Exit the command
 			arbiter_return(&task_bms,1);
 			break;
@@ -672,10 +691,10 @@ void bms_get_adc(void)
 			bms_call_task(I2C_CMD_READ_INT, ADC_INPUT_CURRENT_addr, did_I2C);
 
 			//Goto next sequence
-			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_READ_COLOUMB);
+			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_READ_COULOMB);
 			break;
 
-		case BMS_SEQUENCE_READ_COLOUMB:
+		case BMS_SEQUENCE_READ_COULOMB:
 			//When i2c returned the data, convert it to LSB first
 			*l_argument = sys_swap_endian(bms_get_call_return(),2);
 			/*
@@ -751,9 +770,6 @@ void bms_set_charge_current(void)
 		break;
 
 	case SEQUENCE_FINISHED:
-		//Remember new charge current
-		pBMS->max_charge_current = *pl_charging_current;
-
 		//Charge current was set, exit the command
 		arbiter_return(&task_bms,1);
 		break;
@@ -1156,6 +1172,45 @@ void coulomb_call_task(unsigned char cmd, unsigned long data, unsigned char did_
 	}
 };
 
+/**
+ * @brief Checks whether battery is present or not
+ */
+// void bms_check_battery(void)
+// {
+
+// 	// When already in charging mode, check whether a battery is present via the actual chargin current
+// 	if (pBMS->charging_state & STATUS_FAST_CHARGE)
+// 	{
+// 		// When the charging current is bigger than 10 mA the battery should be present, otherwise decrease the
+// 		// battery health
+// 		if ((pBMS->current < 10) && (pBMS->current > -10))
+// 			bat_health--;
+// 	}
+// 	// When no battery should be present, but the Battery Gauge can measure a voltage, reset the battery presence
+// 	// When not in fast charge mode. In charge mode the battery voltage is present regardless whether there is
+// 	// a battery present.
+// 	else
+// 	{
+// 		if ((pBMS->charging_state & STATUS_GAUGE_ACTIVE) && (pBMS->battery_voltage > 2880) && !(pBMS->charging_state & STATUS_BAT_PRESENT))
+// 			bat_health++;
+// 	}
+
+// 	// check the bat health whether the battery is present or not. The variable is used as a counter, because the
+// 	// voltage response of the battery removal takes some time.
+// 	if (bat_health > 250)
+// 	{
+// 		pBMS->charging_state |= STATUS_BAT_PRESENT;
+// 		bat_health = 100;
+// 	}
+// 	else if (bat_health < 80)
+// 	{
+// 		// when the charging current is to small, disable the charging
+// 		BMS_set_charge_current(0);
+// 		pBMS->charging_state &= ~STATUS_BAT_PRESENT;
+// 		bat_health = 100;
+// 	}
+// };
+
 // /*
 //  * Task
 //  */
@@ -1224,45 +1279,4 @@ void coulomb_call_task(unsigned char cmd, unsigned long data, unsigned char did_
 // 	U_error 	= (float)pBMS->input_voltage - n_cells * U_MPP;
 // 	I_Charge 	+= I_Gain * U_error;
 // 	BMS_set_charge_current((unsigned int)I_Charge);
-// }
-
-// /*
-//  * check whether battery is present or not
-//  */
-// void BMS_check_battery(void)
-// {
-
-// 	// When already in charging mode, check whether a battery is present via the actual chargin current
-// 	if (pBMS->charging_state & STATUS_FAST_CHARGE)
-// 	{
-// 		// When the charging current is bigger than 10 mA the battery should be present, otherwise decrease the
-// 		// battery health
-// 		if((pBMS->current < 10) && (pBMS->current > -10))
-// 			bat_health--;
-// 	}
-// 	// When no battery should be present, but the Battery Gauge can measure a voltage, reset the battery presence
-// 	// When not in fast charge mode. In charge mode the battery voltage is present regardless whether there is
-// 	// a battery present.
-// 	else
-// 	{
-// 		if((pBMS->charging_state & STATUS_GAUGE_ACTIVE)
-// 				&&(pBMS->battery_voltage>2880)
-// 				&&!(pBMS->charging_state & STATUS_BAT_PRESENT))
-// 			bat_health++;
-// 	}
-
-// 	// check the bat health whether the battery is present or not. The variable is used as a counter, because the
-// 	// voltage response of the battery removal takes some time.
-// 	if(bat_health > 115)
-// 	{
-// 		pBMS->charging_state |= STATUS_BAT_PRESENT;
-// 		bat_health = 100;
-// 	}
-// 	else if (bat_health < 98)
-// 	{
-// 		// when the charging current is to small, disable the charging
-// 		BMS_set_charge_current(0);
-// 		pBMS->charging_state &= ~STATUS_BAT_PRESENT;
-// 		bat_health = 100;
-// 	}
 // }
