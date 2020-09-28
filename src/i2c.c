@@ -153,6 +153,7 @@ void i2c_init_peripheral(void)
 
 	//Enable the i2c interrupt
 	NVIC_EnableIRQ(I2C1_EV_IRQn);
+	NVIC_EnableIRQ(I2C1_ER_IRQn);
 
 	//Init dma for transmitting
 	/*
@@ -195,6 +196,7 @@ void i2c_init_peripheral(void)
  **********************************************************/
 void i2c_idle(void)
 {
+
 	//Reset the timeout counter
 	arbiter_reset_timeout(&task_i2c);
 
@@ -635,8 +637,8 @@ unsigned char i2c_decode_did(unsigned char did)
  */
 unsigned long i2c_transmit_nbytes(unsigned char* data, unsigned long nbytes)
 {
-	//Data transfer ongoing?
-	if (!(I2C1->SR2 & I2C_SR2_BUSY))
+	//When I2C is not busy and when no address error occurred
+	if (!(I2C1->SR2 & I2C_SR2_BUSY) && !(I2C1->SR1 & I2C_SR1_AF))
 	{
 		// Data transfer finished?
 		if (DMA1->HISR & DMA_HISR_TCIF6)
@@ -648,9 +650,9 @@ unsigned long i2c_transmit_nbytes(unsigned char* data, unsigned long nbytes)
 		else
 		{
 			//Enable the dma stream, transmit nbytes
-			i2c_dma_transmit(data,nbytes);
+			i2c_dma_transmit(data, nbytes);
 			//Enable interrupt to catch when the start condition was generated and enable DMA request
-			I2C1->CR2 |= I2C_CR2_DMAEN | I2C_CR2_ITEVTEN;
+			I2C1->CR2 |= I2C_CR2_DMAEN | I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
 			//Transfer has not started, send start condition
 			I2C1->CR1 |= I2C_CR1_START;
 		}
@@ -666,12 +668,12 @@ unsigned long i2c_transmit_nbytes(unsigned char* data, unsigned long nbytes)
  */
 void i2c_dma_transmit(void* data, unsigned long nbytes)
 {
-	//Set the memory address
-	DMA1_Stream6->M0AR = (unsigned long)data;
 	//Set number of bytes to transmit
 	DMA1_Stream6->NDTR = nbytes + 1;
+	//Set the memory address
+	DMA1_Stream6->M0AR = (unsigned long)data;
 	//Clear DMA interrupts
-	DMA1->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
+	DMA1->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
 	//Enable dma
 	DMA1_Stream6->CR = DMA_CONFIG_I2C_TX | DMA_SxCR_EN;
 };
@@ -702,15 +704,31 @@ void I2C1_EV_IRQHandler(void)
 				I2C1->CR1 |= I2C_CR1_ACK; //Otherwhise enable the ACK flag
 		}
 
-		//disable the i2c interrupt
-		// if (I2C1->SR2 & I2C_SR2_MSL)
-		I2C1->CR2 &= ~I2C_CR2_ITEVTEN;
+		//disable the i2c interrupts again
+		I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
 	}
 };
 
-/*
- * DMA transfer finished interrupt, to generate stop condition,
+/**
+ * @brief I2C interrupt when an error occurred. It is used to catch a
+ * NACK after address transmission.
+ * @details interrupt handler
+ */
+void I2C1_ER_IRQHandler(void)
+{
+	//when this interrupt is entered the address was not acknowledged
+	//disable the i2c interrupts again
+	I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+
+	//Disable both DMAs
+	DMA1_Stream5->CR &= ~DMA_SxCR_EN; //Disable stream
+	DMA1_Stream6->CR &= ~DMA_SxCR_EN; //Disable stream
+};
+
+/**
+ * @brief DMA transfer finished interrupt, to generate stop condition,
  * when bytes are transmitted.
+ * @details interrupt handler
  */
 void DMA1_Stream6_IRQHandler(void)
 {
@@ -728,10 +746,10 @@ void DMA1_Stream6_IRQHandler(void)
  * @param nbytes The number of bytes which should be received.
  * @return Returns 1, when the communication is finished.
  */
-unsigned long i2c_receive_nbytes(unsigned char* data, unsigned long nbytes)
+unsigned long i2c_receive_nbytes(unsigned char *data, unsigned long nbytes)
 {
-	//Data transfer ongoing?
-	if (!(I2C1->SR2 & I2C_SR2_BUSY))
+	//When I2C is not busy and when no address error occurred
+	if (!(I2C1->SR2 & I2C_SR2_BUSY) && !(I2C1->SR1 & I2C_SR1_AF))
 	{
 		// Data transfer finished?
 		if (DMA1->HISR & DMA_HISR_TCIF5)
@@ -743,9 +761,9 @@ unsigned long i2c_receive_nbytes(unsigned char* data, unsigned long nbytes)
 		else
 		{
 			//Enable the dma stream, transmit nbytes
-			i2c_dma_receive(data,nbytes);
+			i2c_dma_receive(data, nbytes);
 			//Enable interrupt to catch when the start condition was generated and enable DMA request
-			I2C1->CR2 |= I2C_CR2_DMAEN | I2C_CR2_ITEVTEN;
+			I2C1->CR2 |= I2C_CR2_DMAEN | I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
 			//Transfer has not started, send start condition
 			I2C1->CR1 |= I2C_CR1_START;
 		}
@@ -766,14 +784,14 @@ void i2c_dma_receive(void* data, unsigned long nbytes)
 	//Set number of bytes to transmit
 	DMA1_Stream5->NDTR = nbytes;
 	//Clear DMA interrupts
-	DMA1->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5 | DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5;
+	DMA1->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5;
 	//Enable dma
 	DMA1_Stream5->CR = DMA_CONFIG_I2C_RX | DMA_SxCR_EN;
 };
 
 /*
  * DMA transfer finished interrupt, to generate stop condition,
- * when bytes are transmitted.
+ * when bytes are received.
  */
 void DMA1_Stream5_IRQHandler(void)
 {
@@ -787,17 +805,47 @@ void DMA1_Stream5_IRQHandler(void)
 
 /**
  * @brief The error handler of the task
- * @todo What should the error handler do, when a slave blocks and stretches the SCL line?
+ * @todo Should the error variable be included in the task struct?
  */
 void i2c_check_errors(void)
 {
-	//For now the error handler only checks for timeouts
+	//temporary error code
+	unsigned long i2c_error = 0;
+
+	//Check for errors
+	//timeout error
 	if (arbiter_timed_out(&task_i2c))
+		i2c_error = 1;	
+
+	//Address error
+	if (I2C1->SR1 & I2C_SR1_AF)
+	{
+		i2c_error = 2;	
+		I2C1->SR1 &= ~I2C_SR1_AF; //Reset flag
+		DMA1->HIFCR |= DMA_HIFCR_CTCIF6;
+	}
+
+	//Transmit error
+	if (DMA1->HISR & DMA_HISR_TEIF6)
+	{
+		i2c_error = 3;
+		DMA1->HIFCR |= DMA_HIFCR_CTEIF6; //Reset flag
+	}
+
+	//Receive error
+	if (DMA1->HISR & DMA_HISR_TEIF5)
+	{
+		i2c_error = 4; 
+		DMA1->HIFCR |= DMA_HIFCR_CTEIF5; //Reset flag
+	}
+	
+	//check whether an error occurred
+	if (i2c_error)
 	{
 		//When calling command was not the task itself
 		if (rxcmd_i2c.did != did_I2C)
 		{
-			//Send the timeout signal
+			//Send the timeout signal, this is the standard error signal for now
 			txcmd_i2c.did = did_I2C;
 			txcmd_i2c.cmd = cmd_ipc_outta_time;
 			txcmd_i2c.data = rxcmd_i2c.did;

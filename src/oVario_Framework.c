@@ -91,11 +91,8 @@ void system_task(void)
 		GPIOC->BSRRL = GPIO_BSRR_BS_6;
 		// When power switch is off, initiate shutdown procedure
 		// Unless there is input power present or no battery is present
-		// if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
-		// 		sys_state = SHUTDOWN;
-
-		if((!SHUTDOWN_SENSE))
-			sys_state = SHUTDOWN;
+		if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
+				sys_state = SHUTDOWN;
 		break;
 
 	// When the power switch was switched

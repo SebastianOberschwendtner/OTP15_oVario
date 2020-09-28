@@ -64,6 +64,9 @@ void bms_register_ipc(void)
 	//Register everything relevant for IPC
 	//Register memory
 	pBMS = ipc_memory_register(sizeof(BMS_T),did_BMS);
+	//initialize the charging_state assuming that the battery and input are present
+	pBMS->charging_state = STATUS_BAT_PRESENT | STATUS_CHRG_OK | STATUS_INPUT_PRESENT;
+
 	//Register command queue
 	ipc_register_queue(5 * sizeof(T_command), did_BMS);
 	ipc_register_queue(5 * sizeof(T_command), did_COUL);
@@ -152,7 +155,6 @@ void bms_task(void)
 		else
 			bms_check_semaphores(); //Task is waiting for semaphores
 	}
-
 	///@todo Check for errors here
 };
 
@@ -195,6 +197,10 @@ void bms_check_semaphores(void)
 			break;
 
 		case cmd_ipc_outta_time:
+			//decrease the halt counter and goto idle state
+			task_bms.halt_task -= rxcmd_bms.did;
+			arbiter_set_command(&task_bms,CMD_IDLE);
+
 			//The called command timed out, so set the corresponding sensor inactive since it is not responding
 			if (rxcmd_bms.data == did_BMS)
 				pBMS->charging_state &= ~STATUS_BMS_ACTIVE; //The BMS sensors is faulty
@@ -211,7 +217,10 @@ void bms_check_semaphores(void)
  * @brief Idle Command for BMS
  **********************************************************
  * 
- * This command checks for new commands in the queue.
+ * This command checks for new commands in the queue and
+ * performs the general housekeeping of the battery data.
+ * It reads the ADC approx. every second and sets the
+ * charging current when an input is present.
  * 
  * Attention:
  * As of now, commands which are received when this task is
@@ -225,16 +234,53 @@ void bms_check_semaphores(void)
  **********************************************************/
 void bms_idle(void)
 {
-	//the idle task assumes that all commands are finished, so reset all sequence states
-	arbiter_reset_sequence(&task_bms);
-
-	 //Check commands
+	//Check commands, takes priority over the command action
     if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command)) // look for new command in keypad queue
     {
-		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms); // get new command
-
+		//get new command
+		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms); 
+		//the idle task assumes that all commands are finished, so reset all sequence states befor calling the new command
+		arbiter_reset_sequence(&task_bms);
 		//Call the command
 		arbiter_callbyreference(&task_bms, rxcmd_bms.cmd, &rxcmd_bms.data);
+	}
+	else
+	{
+		//Perform the command action
+		switch (arbiter_get_sequence(&task_bms))
+		{
+		case SEQUENCE_ENTRY:
+			//The local counter is used to time the houskeeping action
+			if (task_bms.local_counter)
+				task_bms.local_counter--; //Keep on waiting
+			else
+			{
+				//wait time is over, get the ADC of the BMS
+				if (arbiter_callbyreference(&task_bms, BMS_CMD_GET_ADC, 0))
+				{
+					//Check whether battery and input are present
+					if ((pBMS->charging_state & STATUS_BAT_PRESENT) && (pBMS->charging_state & STATUS_INPUT_PRESENT))
+						arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED); //Goto next state
+
+					//reset the wait counter
+					task_bms.local_counter = MS2TASKTICK(1000, LOOP_TIME_TASK_BMS);
+				}
+			}
+			break;
+
+		case SEQUENCE_FINISHED:
+			//Allocate the argument
+			pl_args = arbiter_allocate_arguments(&task_bms, 1);
+			*pl_args = pBMS->max_charge_current;
+			
+			//Enable the battery charging
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_SET_CHARGE_CURRENT))
+				arbiter_set_sequence(&task_bms, SEQUENCE_ENTRY); //Start wait again
+			break;
+
+		default:
+			break;
+		}
 	}
 };
 
@@ -512,10 +558,10 @@ void bms_get_status(void)
 			bms_call_task(I2C_CMD_READ_INT, ADC_OPTION_addr, did_I2C);
 
 			//Goto next sequence
-			arbiter_set_sequence(&task_bms, BMS_SEQUENCE_CHECK_CHARGING);
+			arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
 			break;
 
-		case BMS_SEQUENCE_CHECK_CHARGING:
+		case SEQUENCE_FINISHED:
 			//When i2c returned the data, convert it to LSB first
 			*l_status = sys_swap_endian(bms_get_call_return(),2);
 
@@ -531,26 +577,7 @@ void bms_get_status(void)
 			else
 				pBMS->charging_state &= ~(STATUS_CHRG_OK);
 
-			//Check whether battery can be charged and set next sequence accordingly
-			//When input is present and not in charging mode
-			if ((pBMS->charging_state & (STATUS_INPUT_PRESENT | STATUS_CHRG_OK)) && !(pBMS->charging_state & (STATUS_FAST_CHARGE | STATUS_PRE_CHARGE)))
-				arbiter_set_sequence(&task_bms, BMS_SEQUENCE_SET_CHARGING);
-			else
-				arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
-			break;
-		
-		case BMS_SEQUENCE_SET_CHARGING:
-			//Get arguments
-			pl_args = arbiter_allocate_arguments(&task_bms, 1);
-			*pl_args = pBMS->max_charge_current;
-
-			//Set the charging current
-			if (arbiter_callbyvalue(&task_bms, BMS_CMD_SET_CHARGE_CURRENT))
-				arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
-			break;
-
-		case SEQUENCE_FINISHED:
-			//Exit the command
+			//exit the command
 			arbiter_return(&task_bms,1);
 			break;
 
@@ -711,6 +738,12 @@ void bms_get_adc(void)
 			//Read the ADC of teh coulomb counter
 			if (arbiter_callbyreference(&task_bms, BMS_CMD_GET_ADC_COULOMB, 0))
 			{
+				//check whether battery is present, when battery voltage is greater than 0, it is present
+				if (pBMS->battery_voltage > 0)
+					pBMS->charging_state |= STATUS_BAT_PRESENT;
+				else
+					pBMS->charging_state &= ~STATUS_BAT_PRESENT;
+
 				//Command is finished
 				arbiter_return(&task_bms, 1);
 			}
@@ -1147,6 +1180,8 @@ void bms_call_task(unsigned char cmd, unsigned long data, unsigned char did_targ
 		//Set wait counter to wait for called task to finish
 		task_bms.halt_task += did_target;
 	}
+	else
+		rxcmd_bms.data = 0; //Only "receive" zeros
 };
 
 /**
@@ -1170,6 +1205,8 @@ void coulomb_call_task(unsigned char cmd, unsigned long data, unsigned char did_
 		//Set wait counter to wait for called task to finish
 		task_bms.halt_task += did_target;
 	}
+	else
+		rxcmd_bms.data = 0; //Only "receive" zeros
 };
 
 /**

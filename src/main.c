@@ -81,26 +81,26 @@ int main(void)
 		//***** TASK_GROUP_AUX ******
 		if (run(TASK_GROUP_AUX))
 		{
-			set_led_red(ON);
+			// set_led_red(ON);
 			sdio_task();
 			igc_task();
 			// ms5611_task();
 			bms_task();
 			
-			set_led_red(OFF);
+			// set_led_red(OFF);
 		}
 
 		//***** TASK_GROUP_CORE ******
 		if (run(TASK_GROUP_CORE))
 		{
-			set_led_green(ON);
+			// set_led_green(ON);
 			datafusion_task();
 			vario_task();
 			system_task();
 			// sound_task();
 			gui_task();
 			gps_task();
-			set_led_green(OFF);
+			// set_led_green(OFF);
 		}
 
 		//***** TASK_GROUP_1Hz ******
@@ -111,7 +111,7 @@ int main(void)
 			txcmd_main.cmd = BMS_CMD_GET_ADC;
 			txcmd_main.data = 0;
 			txcmd_main.timestamp = 0;
-			ipc_queue_push(&txcmd_main, sizeof(T_command), did_BMS);
+			// ipc_queue_push(&txcmd_main, sizeof(T_command), did_BMS);
 		}
 
 		//***** Background Tasks *****
