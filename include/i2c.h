@@ -23,15 +23,15 @@
 
 //Commands for arbiter
 #define I2C_CMD_INIT        1
-#define I2C_CMD_SEND_CHAR   2   ///< call-by-reference
-#define I2C_CMD_SEND_INT    3
-#define I2C_CMD_SEND_LONG   4
-#define I2C_CMD_SEND_ARRAY  5
-#define I2C_CMD_SEND_24BIT  6
-#define I2C_CMD_READ_CHAR   7   ///< call-by-reference
-#define I2C_CMD_READ_INT    8
-#define I2C_CMD_READ_24BIT  9
-#define I2C_CMD_READ_ARRAY  10
+#define I2C_CMD_SEND_CHAR   2   // call-by-reference
+#define I2C_CMD_SEND_INT    3   // call-by-reference
+#define I2C_CMD_SEND_LONG   4   // call-by-reference
+#define I2C_CMD_SEND_ARRAY  5   // call-by-reference
+#define I2C_CMD_SEND_24BIT  6   // call-by-reference
+#define I2C_CMD_READ_CHAR   7   // call-by-reference
+#define I2C_CMD_READ_INT    8   // call-by-reference
+#define I2C_CMD_READ_24BIT  9   // call-by-reference
+#define I2C_CMD_READ_ARRAY  10  // call-by-reference
 
 //Sequences for commands
 #define I2C_SEQUENCE_WAIT       1

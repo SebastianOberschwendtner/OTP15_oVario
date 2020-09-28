@@ -63,6 +63,7 @@ void i2c_register_ipc(void)
  * ipc communication.
  * 
  **********************************************************
+ * @details
  * @Execution:	Non-interruptable
  * @Wait: 		No
  * @Halt: 		No
@@ -125,8 +126,8 @@ void i2c_task(void)
 	i2c_check_errors();
 };
 
-/*
- * Initialize necessary peripherals
+/**
+ * @brief Initialize necessary peripherals
  */
 void i2c_init_peripheral(void)
 {
@@ -186,14 +187,16 @@ void i2c_init_peripheral(void)
 	NVIC_EnableIRQ(DMA1_Stream5_IRQn);						//Enable the global dma interrupt
 };
 
-/**********************************************************
- * Idle command for i2c
+/**
+ **********************************************************
+ * @brief Idle command for i2c
  **********************************************************
  * Checks for commands in queue and triggers the 
  * transmission.
  * 
- * Should/Can not be called via the arbiter!
- **********************************************************/
+ * @details Should/Can not be called via the arbiter!
+ **********************************************************
+ */
 void i2c_idle(void)
 {
 
@@ -264,15 +267,16 @@ void i2c_send_char(void)
 	}
 };
 
-/**********************************************************
- * Send int via i2c
+/**
+ **********************************************************
+ * @brief Send int via i2c
  **********************************************************
  * 
- * Argument:	unsigned char* 	data
- * Return:		unsigned long	l_char_sent
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	data 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_send_int(void)
 {
 	//Get Arguments
@@ -297,15 +301,16 @@ void i2c_send_int(void)
 	}
 };
 
-/**********************************************************
- * Send 24bits via i2c
+/**
+ **********************************************************
+ * @brief Send 24bits via i2c
  **********************************************************
  * 
- * Argument:	unsigned char* 	data
- * Return:		unsigned long	l_char_sent
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	data 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_send_24bit(void)
 {
 	//Get Arguments
@@ -330,15 +335,16 @@ void i2c_send_24bit(void)
 	}
 };
 
-/**********************************************************
- * Send long via i2c
+/**
+ **********************************************************
+ * @brief Send long via i2c
  **********************************************************
  * 
- * Argument:	unsigned char* 	pch_data
- * Return:		unsigned long	l_char_sent
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	pch_data 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_send_long(void)
 {
 	//Get Arguments
@@ -363,8 +369,9 @@ void i2c_send_long(void)
 	}
 };
 
-/**********************************************************
- * Send an array via i2c
+/**
+ **********************************************************
+ * @brief Send an array via i2c
  **********************************************************
  * To be able to call this command directly via IPC, the
  * input array has to contain the length of the array as
@@ -378,11 +385,11 @@ void i2c_send_long(void)
  * 							 .
  * 		   pch_array[length] = data[length-1]
  * 
- * Argument:	unsigned char* 	pch_array
- * Return:		unsigned long	l_char_sent
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	pch_array 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_send_array(void)
 {
 	//Get Arguments
@@ -407,7 +414,8 @@ void i2c_send_array(void)
 	}
 };
 
-/**********************************************************
+/**
+ **********************************************************
  * @brief Read char via i2c
  **********************************************************
  * Reads a char from a specified device register. The
@@ -415,10 +423,10 @@ void i2c_send_array(void)
  * the returned char value.
  * 
  * @param 	data The specified device register.
- * @return 	Returns the recevied value of the register.
- * 
+ * @return 	Returns the received value of the register.
  * @details call-by-reference
- **********************************************************/
+ **********************************************************
+ */
 void i2c_read_char(void)
 {
 	//Get arguments
@@ -452,19 +460,20 @@ void i2c_read_char(void)
 	}
 };
 
-/**********************************************************
- * Read int via i2c
+/**
+ **********************************************************
+ * @brief Read int via i2c
  **********************************************************
  * Reads an int from a specified device register. The
  * return value is an unsigned long with the value of
  * the returned int value. -> Byte swapping from MSB to
  * LSB is performed within the function.
  * 
- * Argument:	unsigned char* 	data
- * Return:		unsigned long	l_value
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	data 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_read_int(void)
 {
 	//Get arguments
@@ -503,19 +512,20 @@ void i2c_read_int(void)
 	}
 };
 
-/**********************************************************
- * Read 24bit via i2c
+/**
+ **********************************************************
+ * @brief Read 24bit via i2c
  **********************************************************
  * Reads 24bits from a specified device register. The
  * return value is an unsigned long with the value of
  * the returned value. -> Byte swapping from MSB to
  * LSB is performed within the function.
  * 
- * Argument:	unsigned char* 	data
- * Return:		unsigned long	l_value
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	data 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_read_24bit(void)
 {
 	//Get arguments
@@ -554,8 +564,9 @@ void i2c_read_24bit(void)
 	}
 };
 
-/**********************************************************
- * Read an array via i2c
+/**
+ **********************************************************
+ * @brief Read an array via i2c
  **********************************************************
  * Does NOT transmit a register address first!
  * 
@@ -573,11 +584,11 @@ void i2c_read_24bit(void)
  * 							 .
  * 		   pch_array[length] = data[length-1]
  * 
- * Argument:	unsigned char* 	pch_array
- * Return:		unsigned long   l_array_received
- * 
- * call-by-reference
- **********************************************************/
+ * @param 	pch_data 		Pointer to input data.
+ * @return 	Returns 1 when data was sent successful.
+ * @details call-by-reference
+ **********************************************************
+ */
 void i2c_read_array(void)
 {
 	//Get arguments
@@ -604,8 +615,12 @@ void i2c_read_array(void)
 	}
 };
 
-/*
- * Get the i2c address from the received did.
+/**
+ * @brief Get the i2c address from the received did.
+ * @param did The did of the calling command
+ * @return The i2c address of the associated sensor.
+ * @details When a new sensor is added, the new address has to be added here.
+ * @todo Can the address decoding be done without the did, but still keep the simple command message?
  */
 unsigned char i2c_decode_did(unsigned char did)
 {
@@ -629,11 +644,12 @@ unsigned char i2c_decode_did(unsigned char did)
 	}
 };
 
-/*
- * Send bytes via the i2c bus. The bytes are sent to the currently
+/**
+ * @brief Send bytes via the i2c bus. The bytes are sent to the currently
  * active bus address. The number of bytes and data pointer have to be specified.
- * 
- * Returns 1, when the bytes are sent.
+ * @param data 		The pointer to the data which should be sent
+ * @param nbytes 	The number of bytes to be sent
+ * @return Returns 1, when the bytes are sent.
  */
 unsigned long i2c_transmit_nbytes(unsigned char* data, unsigned long nbytes)
 {
@@ -662,9 +678,11 @@ unsigned long i2c_transmit_nbytes(unsigned char* data, unsigned long nbytes)
 	return 0;
 };
 
-/*
- * Enable the dma to transmit data. The data is defined by the pointer which is passed.
+/**
+ * @brief Enable the dma to transmit data. The data is defined by the pointer which is passed.
  * You can set the number of bytes to be transmitted.
+ * @param data		The pointer to the data which should be sent
+ * @param nbytes 	The number of bytes to be sent
  */
 void i2c_dma_transmit(void* data, unsigned long nbytes)
 {
@@ -678,10 +696,11 @@ void i2c_dma_transmit(void* data, unsigned long nbytes)
 	DMA1_Stream6->CR = DMA_CONFIG_I2C_TX | DMA_SxCR_EN;
 };
 
-/*
- * Interrupthandler for the i2c bus to handle the communication.
+/**
+ * @brief Interrupthandler for the i2c bus to handle the communication.
  * The handler assumes that is is only called after the generation of the start condition.
  * The rest of the communication is done via the DMA.
+ * @details interrupt handler
  */
 void I2C1_EV_IRQHandler(void)
 {
@@ -773,9 +792,11 @@ unsigned long i2c_receive_nbytes(unsigned char *data, unsigned long nbytes)
 	return 0;
 };
 
-/*
- * Enable the dma to receive data. The data is defined by the pointer which is passed.
+/**
+ * @brief Enable the dma to receive data. The data is defined by the pointer which is passed.
  * You can set the number of bytes to be transmitted.
+ * @param data		The pointer to the data which should be received
+ * @param nbytes 	The number of bytes to be received
  */
 void i2c_dma_receive(void* data, unsigned long nbytes)
 {
@@ -789,9 +810,10 @@ void i2c_dma_receive(void* data, unsigned long nbytes)
 	DMA1_Stream5->CR = DMA_CONFIG_I2C_RX | DMA_SxCR_EN;
 };
 
-/*
- * DMA transfer finished interrupt, to generate stop condition,
+/**
+ * @brief DMA transfer finished interrupt, to generate stop condition,
  * when bytes are received.
+ * @details interrupt handler
  */
 void DMA1_Stream5_IRQHandler(void)
 {
