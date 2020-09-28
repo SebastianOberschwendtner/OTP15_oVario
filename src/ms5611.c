@@ -35,17 +35,21 @@ T_command txcmd_ms5611;		//Command struct to send ipc commands
 
 // ***** Functions *****
 //inline first!
-/*
- * Get the return value of the last finished ipc task which was called.
+/**
+ * @brief Get the return value of the last finished ipc task which was called.
+ * @return Return value of the last called command
+ * @details inline function
  */
 inline unsigned long ms5611_get_call_return(void)
 {
     return rxcmd_ms5611.data;
 };
 
-/*
- * Calculate the pressure after the raw data was read from the sensor.
- * D1 has to be read from the sensor!
+/**
+ * @brief Calculate the pressure after the raw data was read from the sensor.
+ * D1 has to be read from the sensor first!
+ * @return New pressure value
+ * @details inline function
  */
 inline unsigned long ms5611_convert_pressure(void)
 {
@@ -79,8 +83,8 @@ inline unsigned long ms5611_convert_pressure(void)
 	return pressure;
 };
 
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC
  */
 void ms5611_register_ipc(void)
 {
@@ -110,16 +114,19 @@ void ms5611_register_ipc(void)
 // 	p_ipc_sys_bms_data = ipc_memory_get(did_BMS);
 // };
 
-/***********************************************************
- * TASK MS5611
+/**
+ ***********************************************************
+ * @brief TASK MS5611
  ***********************************************************
  * 
  * 
  ***********************************************************
+ * @details
  * Execution:	interruptable
  * Wait: 		Yes
  * Halt: 		Yes
- **********************************************************/
+ **********************************************************
+ */
 void ms5611_task(void)
 {
 	//Check commands in queue
@@ -161,8 +168,8 @@ void ms5611_task(void)
 	//Check for errors here
 };
 
-/*
- * Check the commands in the igc queue and call the corresponding command
+/**
+ * @brief Check the commands in the igc queue and call the corresponding command
  */
 void ms5611_check_commands(void)
 {
@@ -188,8 +195,9 @@ void ms5611_check_commands(void)
 	}
 };
 
-/**********************************************************
- * Idle Command for MS5611
+/**
+ **********************************************************
+ * @brief Idle Command for MS5611
  **********************************************************
  * The Idle command checks for new request to measure
  * the pressure.
@@ -197,8 +205,9 @@ void ms5611_check_commands(void)
  * Argument:	none
  * Return:		none
  * 
- * Should/Can not be called directly via the arbiter.
- **********************************************************/
+ * @details Should/Can not be called directly via the arbiter.
+ **********************************************************
+ */
 void ms5611_idle(void)
 {
 	//  //Check commands
@@ -218,15 +227,17 @@ void ms5611_idle(void)
 	// }
 };
 
-/**********************************************************
- * Initialize the MS5611
+/**
+ **********************************************************
+ * @brief Initialize the MS5611
  **********************************************************
  * 
  * Argument:	none
  * Return:		none
  * 
- * call-by-reference
- **********************************************************/
+ * @details call-by-reference
+ **********************************************************
+ */
 void ms5611_init(void)
 {
 	//Perform the command action
@@ -314,14 +325,15 @@ void ms5611_init(void)
 	}
 };
 
-/**********************************************************
- * Read Temperature from MS5611
+/**
+ **********************************************************
+ * @brief Read Temperature from MS5611
  **********************************************************
  * 
  * Argument:	none
  * Return:		none
  * 
- * call-by-reference
+ * @details call-by-reference
  **********************************************************/
 void ms5611_get_temperature(void)
 {
@@ -359,8 +371,9 @@ void ms5611_get_temperature(void)
 	}
 };
 
-/**********************************************************
- * Read Pressure from MS5611
+/**
+ **********************************************************
+ * @brief Read Pressure from MS5611
  **********************************************************
  * 
  * All the data is written to the global variables defined
@@ -369,7 +382,7 @@ void ms5611_get_temperature(void)
  * Argument:	none
  * Return:		none
  * 
- * call-by-reference
+ * @details call-by-reference
  **********************************************************/
 void ms5611_get_pressure(void)
 {
@@ -423,8 +436,11 @@ void ms5611_get_pressure(void)
 	}
 };
 
-/*
- * Call a other task via the ipc queue.
+/**
+ * @brief Call a other task via the ipc queue.
+ * @param cmd			The new command which should be called
+ * @param data			The data which should be passed to the command
+ * @param did_target	The did of the target task
  */
 void ms5611_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
 {
@@ -439,13 +455,4 @@ void ms5611_call_task(unsigned char cmd, unsigned long data, unsigned char did_t
     //Set wait counter to wait for called task to finish
     task_ms5611.halt_task += did_target;
 };
-
-
-// function to read temperature
-// int32_t get_temp_MS()
-// {
-// 	catch_temp_MS();
-// 	int32_t Temp_temp = Temp;
-// 	return Temp_temp;
-// }
 #endif /* MS5611_C_ */

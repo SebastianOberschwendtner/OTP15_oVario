@@ -16,9 +16,9 @@
 
 //***** Defines *****
 //Commands for arbiter
-#define BARO_CMD_INIT               1
-#define BARO_CMD_GET_TEMPERATURE    2
-#define BARO_CMD_GET_PRESSURE       3
+#define BARO_CMD_INIT               1   // call-by-reference
+#define BARO_CMD_GET_TEMPERATURE    2   // call-by-reference
+#define BARO_CMD_GET_PRESSURE       3   // call-by-reference
 
 //Sequences for commands
 // INIT
