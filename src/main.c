@@ -52,7 +52,7 @@ int main(void)
 	sdio_get_ipc();
 	igc_get_ipc();
 	
-	//***** intialize peripherals *****
+	//***** Initialize peripherals *****
 	//TODO Eventually move all the following initalizations to the corresponding tasks
 	init_lcd();
 	gui_bootlogo();

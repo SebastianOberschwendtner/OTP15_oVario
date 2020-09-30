@@ -3,30 +3,25 @@
  * @file    oVario_Framework.c
  * @author  SO
  * @version V1.1
- * @date    25-Februar-2018
+ * @date    25-February-2018
  * @brief   Handles the core system tasks and defines the schedule of the
  * 			other tasks.
  ******************************************************************************
  */
-
+//****** Includes ******
 #include "oVario_Framework.h"
 
-SDIO_T* p_ipc_sys_sd_data;
-BMS_T* 	p_ipc_sys_bms_data;
+//****** Variables ******
+SDIO_T* p_ipc_sys_sd_data;		//IPC Data from SD-card
+BMS_T* 	p_ipc_sys_bms_data;		//IPC Data from BMS
+SYS_T* sys;						//IPC System Data
+T_command rxcmd_system;			//IPC command struct for received commands
+T_command txcmd_system;			//IPC command struct for commands to transmit
+TASK_T task_system;				//Task struct for arbiter
 
-SYS_T* sys;
-T_command SysCmd;
-
-//Important!: When there is no softbutton installed, initialize the sys_state with NOSTATES
-#ifndef SOFTSWITCH
-uint8_t sys_state = NOSTATES;
-#else
-uint8_t sys_state = INITIATE;
-#endif
-uint8_t count = 0;
-
-/*
- * Register everything relevant for IPC
+//****** Functions ******
+/**
+ * @brief Register everything relevant for IPC
  */
 void sys_register_ipc(void)
 {
@@ -35,10 +30,22 @@ void sys_register_ipc(void)
 	sys->TimeOffset = 0;
 	set_time(20, 15, 00);
 	set_date(23, 2, 2018);
+
+	//register command queue
+	ipc_register_queue(5 * sizeof(T_command), did_SYS);
+
+	//Initialize the system task
+	arbiter_clear_task(&task_system);
+//Important!: When there is no softbutton installed, initialize the sys_state with NOSTATES
+#ifndef SOFTSWITCH
+	arbiter_set_command(&task_system, CMD_IDLE);
+#else
+	arbiter_set_command(&task_system, SYS_CMD_INIT);
+#endif
 };
 
-/*
- * Get everything relevant for IPC
+/**
+* @brief Get everything relevant for IPC
  */
 void sys_get_ipc(void)
 {
@@ -47,132 +54,198 @@ void sys_get_ipc(void)
 	p_ipc_sys_bms_data = ipc_memory_get(did_BMS);
 };
 
-/*
- * System task, which monitors whether the system should be shutdown
+/**
+ ***********************************************************
+ * @brief TASK System
+ ***********************************************************
+ * 
+ * 
+ ***********************************************************
+ * @details
+ * Execution:	non-interruptable
+ * Wait: 		Yes
+ * Halt: 		No
+ **********************************************************
  */
 void system_task(void)
 {
-	// perform action according to current state of system
-	switch(sys_state)
+	//When the task wants to wait
+	if (task_system.wait_counter)
+		task_system.wait_counter--; //Decrease the wait counter
+	else							//Execute task when wait is over
 	{
-	// do not use state machine
-	case NOSTATES:
-		break;
+		//Perform action according to active state
+		switch (arbiter_get_command(&task_system))
+		{
+		case CMD_IDLE:
+			//When in idle this task does and will do nothing
+			break;
 
-	// Initiate the sys state machine
-	case INITIATE:	
-		// to prevent unwanted behaviour engage the watchdog
-		sys_watchdog(ON);
+		case SYS_CMD_INIT:
+			system_init();
+			break;
 
-		// when battery gauge is active, read the old capacity from the gauge flash
-		// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
-		// 	p_ipc_sys_bms_data->old_capacity = (signed int)BMS_gauge_read_flash_int(MAC_INFO_BLOCK_addr);
+		case SYS_CMD_RUN:
+			system_run();
+			break;
 
-		// goto run state
-		sys_state = RUN;
-		break;
+		case SYS_CMD_SHUTDOWN:
+			system_shutdown();
+			break;
 
-	// Normal Run state
-	case RUN:
-		// Pet the watchdog
+		default:
+			break;
+		}
+	}
+	///@todo Check for errors here
+};
+
+/**
+ **********************************************************
+ * @brief Initialize the System
+ **********************************************************
+ * 
+ * Argument:	none
+ * Return:		none
+ * 
+ * @details call-by-reference
+ **********************************************************
+ */
+void system_init(void)
+{
+	// to prevent unwanted behaviour engage the watchdog
+	sys_watchdog(ON);
+
+	// when battery gauge is active, read the old capacity from the gauge flash
+	// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
+	// 	p_ipc_sys_bms_data->old_capacity = (signed int)BMS_gauge_read_flash_int(MAC_INFO_BLOCK_addr);
+
+	// goto run state
+	arbiter_set_command(&task_system, SYS_CMD_RUN);
+};
+
+/**
+ **********************************************************
+ * @brief Keep the system running
+ **********************************************************
+ * 
+ * Argument:	none
+ * Return:		none
+ * 
+ * @details call-by-reference
+ **********************************************************
+ */
+void system_run(void)
+{
+	// Pet the watchdog
 		sys_watchdog(PET);
+		// Keep the system on
+		GPIOC->BSRRL = GPIO_BSRR_BS_6;
 
 		// When no log is going on and a sd-card is inserted, start logging
 		if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & SD_CMD_FINISHED) && (p_ipc_sys_sd_data->status & SD_CARD_SELECTED))
 		{
-			SysCmd.did = did_SYS;
-			SysCmd.cmd = cmd_igc_start_logging;
-			SysCmd.data = 0;
-			SysCmd.timestamp = TIM5->CNT;
-			ipc_queue_push(&SysCmd, sizeof(T_command), did_IGC);
+			txcmd_system.did = did_SYS;
+			txcmd_system.cmd = cmd_igc_start_logging;
+			txcmd_system.data = 0;
+			txcmd_system.timestamp = TIM5->CNT;
+			ipc_queue_push(&txcmd_system, sizeof(T_command), did_IGC);
 		}
 
-		// Keep the system on
-		GPIOC->BSRRL = GPIO_BSRR_BS_6;
+		
 		// When power switch is off, initiate shutdown procedure
 		// Unless there is input power present or no battery is present
 		if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
-				sys_state = SHUTDOWN;
-		break;
+				arbiter_callbyreference(&task_system, SYS_CMD_SHUTDOWN, 0);
+};
 
-	// When the power switch was switched
-	case SHUTDOWN:
-		// Pet the watchdog
-		sys_watchdog(PET);
+/**
+ **********************************************************
+ * @brief Shut the system down
+ **********************************************************
+ * 
+ * Argument:	none
+ * Return:		none
+ * 
+ * @details call-by-reference
+ **********************************************************
+ */
+void system_shutdown(void)
+{
+	// Pet the watchdog
+	sys_watchdog(PET);
 
-		if(!SHUTDOWN_SENSE)	// Check whether the power switch is still in the off position
+	//Perform the command action
+	switch (arbiter_get_sequence(&task_system))
+	{
+	case SEQUENCE_ENTRY:
+		if (!SHUTDOWN_SENSE) // Check whether the power switch is still in the off position
 		{
 			// When no log is going on, stop logging
 			if (igc_get_state() == IGC_LOGGING)
 			{
-				SysCmd.did = did_SYS;
-				SysCmd.cmd = cmd_igc_stop_logging;
-				SysCmd.data = 0;
-				SysCmd.timestamp = TIM5->CNT;
-				ipc_queue_push((void *)&SysCmd, 10, did_IGC);
+				txcmd_system.did = did_SYS;
+				txcmd_system.cmd = cmd_igc_stop_logging;
+				txcmd_system.data = 0;
+				txcmd_system.timestamp = TIM5->CNT;
+				ipc_queue_push((void *)&txcmd_system, 10, did_IGC);
 			}
-			else if(igc_get_state() == IGC_LOG_CLOSED)
-				sys_state = FILECLOSING; //Files are closed
+			else if (igc_get_state() == IGC_LOG_CLOSED)
+				arbiter_set_sequence(&task_system, SYS_SEQUENCE_FILECLOSING); //Files are closed
 		}
 		else // When the power switch just bounced, go back to run state
-			sys_state = RUN;
+			arbiter_return(&task_system, 0);
 		break;
 
-	// Wait until the sd card is ejected
-	case FILECLOSING:
-		// Pet the watchdog
-		sys_watchdog(PET);
-
+	case SYS_SEQUENCE_FILECLOSING:
 		// Check whether there is no sd card active
-		if(sdio_set_inactive())
-			sys_state = SAVESOC;
+		if (sdio_set_inactive())
+		{
+			//Set wait
+			task_system.wait_counter = 5;
+			//goto next sequence
+			arbiter_set_sequence(&task_system, SYS_SEQUENCE_SAVESOC);
+		}
 		break;
 
-	// Save current state of charge of the battery
-	case SAVESOC:
-		// Pet the watchdog
-		sys_watchdog(PET);
-
-		count++;
-		if(count == 5)
-		{
-			count = 0;
-			sys_state = HALTSYSTEM;
+	case SYS_SEQUENCE_SAVESOC:
 			//Send infobox
-			SysCmd.did 			= did_SYS;
-			SysCmd.cmd			= cmd_gui_set_std_message;
-			SysCmd.data 		= data_info_shutting_down;
-			SysCmd.timestamp 	= TIM5->CNT;
-			ipc_queue_push(&SysCmd, 10, did_GUI);
+			txcmd_system.did = did_SYS;
+			txcmd_system.cmd = cmd_gui_set_std_message;
+			txcmd_system.data = data_info_shutting_down;
+			txcmd_system.timestamp = TIM5->CNT;
+			ipc_queue_push(&txcmd_system, 10, did_GUI);
 
 			// when battery gauge is active, save the capacity to the the gauge flash
 			// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
 			// 	BMS_gauge_send_flash_int(MAC_INFO_BLOCK_addr, (unsigned int)p_ipc_sys_bms_data->discharged_capacity);
-		}
+
+			//set wait
+			task_system.wait_counter = 5;
+			//Goto next sequence
+			arbiter_set_sequence(&task_system, SYS_SEQUENCE_HALTSYSTEM);
 		break;
 
-	// Halt the system and cut the power
-	case HALTSYSTEM:
-		// Pet the watchdog
-		sys_watchdog(PET);
-
-		count++;
-		if(count == 5){
+	case SYS_SEQUENCE_HALTSYSTEM:
 			// p_ipc_sys_bms_data->crc = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_SUM_addr);
 			// p_ipc_sys_bms_data->len = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_LEN_addr);
-		// Shutdown power and set PC6 low
-		GPIOC->BSRRH =GPIO_BSRR_BS_6;
-		}
+			// Shutdown power and set PC6 low
+			GPIOC->BSRRH = GPIO_BSRR_BS_6;
+
+			//goto next sequence
+			arbiter_set_sequence(&task_system, SEQUENCE_FINISHED);
+		break;
+
+	case SEQUENCE_FINISHED:
 		break;
 
 	default:
-		sys_state = NOSTATES;
 		break;
 	}
 };
 
-/*
- * Init Clock
+/**
+ * @brief Initialize the clocks for the peripherals and the PLL
  */
 void init_clock(void)
 {
@@ -219,8 +292,9 @@ void init_clock(void)
 
 };
 
-/*
- * Enable Clock for GPIO
+/**
+ * @brief Enable Clock for GPIO
+ * @param ch_port The port where the clock should be enabled
  */
 void gpio_en(unsigned char ch_port)
 {
@@ -228,9 +302,9 @@ void gpio_en(unsigned char ch_port)
 	RCC->AHB1ENR = l_temp | (1<<ch_port);
 };
 
-/*
- * Init systick timer
- * i_ticktime: time the flag_tick is set in ms
+/**
+ * @brief Init systick timer
+ * @param i_ticktime The time the SysTick timer generates the ticks in ms
  */
 void init_systick_ms(unsigned long l_ticktime)
 {
@@ -251,8 +325,8 @@ void init_systick_ms(unsigned long l_ticktime)
 	SysTick->CTRL = SysTick_CTRL_ENABLE_Msk;
 };
 
-/*
- * Init system GPIO ports and pins
+/**
+ * @brief Init system GPIO ports and pins
  * PB1: OUT Push-Pull	LED_RED
  * PB0: OUT Push-Pull	LED_GREEN
  * PC6: OUT	Push-Pull	SHUTDOWN_OUT
@@ -277,8 +351,9 @@ void init_gpio(void)
 	GPIOC->BSRRL = GPIO_BSRR_BS_6;
 };
 
-/*
- * Set green LED
+/**
+ * @brief Set green LED
+ * @param ch_state The new state of the LED (ON, OFF, TOGGLE)
  */
 void set_led_green(unsigned char ch_state)
 {
@@ -288,9 +363,11 @@ void set_led_green(unsigned char ch_state)
 		GPIOB->ODR ^= GPIO_ODR_ODR_0;
 	else
 		GPIOB->BSRRH = (GPIO_BSRR_BR_0>>16);
-}
-/*
- * Set red LED
+};
+
+/**
+ * @brief Set red LED
+ * @param ch_state The new state of the LED (ON, OFF, TOGGLE)
  */
 void set_led_red(unsigned char ch_state)
 {
@@ -300,11 +377,14 @@ void set_led_red(unsigned char ch_state)
 		GPIOB->ODR ^= GPIO_ODR_ODR_1;
 	else
 		GPIOB->BSRRH = (GPIO_BSRR_BR_1>>16);
-}
-/*
- * Wait for a certain time in ms
+};
+
+/**
+ * @brief Wait for a certain time in ms
  * The function counts up to a specific value to reach the desired wait time.
  * The count value is calculated using the system clock speed F_CPU.
+ * @param l_time The time to wait in ms.
+ * @deprecated Should not be used anymore. Use the timing of the arbiter, when you need to wait.
  */
 void wait_ms(unsigned long l_time)
 {
@@ -321,19 +401,21 @@ void wait_ms(unsigned long l_time)
 	}
 };
 
-/*
- * Wait for a certain amount of SysTicks
+/**
+ * @brief Wait for a certain amount of SysTicks
+ * @param l_ticks The time to wait in multiple of Systicks
+ * @deprecated Should not be used anymore. Use the timing of the arbiter, when you need to wait.
  */
 void wait_systick(unsigned long l_ticks)
 {
 	for(unsigned long l_count = 0;l_count<l_ticks; l_count++)
 		while(!TICK_PASSED);
-}
+};
 
-/*
- * Set the timezone using dates, i.e. sommer and winter time
- * Problem: the change is always on the last sunday of October/March, we do not track the weekday yet.
- * So the switchof the timezones only takes the month into account.
+/**
+ * @brief Set the timezone using dates, i.e. sommer and winter time
+ * @details The change is always on the last sunday of October/March, we do not track the weekday yet.
+ * So the switch of the timezones only takes the month into account.
  */
 void set_timezone(void)
 {
@@ -345,98 +427,142 @@ void set_timezone(void)
 		sys->TimeOffset = 1;
 };
 
-/*
- * Set the time in UTC!
+/**
+ * @brief Set the time in UTC!
+ * @param ch_hour The hour of the time
+ * @param ch_minute The minute of the time
+ * @param ch_second The second of the time
+ * @details Remember UTC!
  */
 void set_time(unsigned char ch_hour, unsigned char ch_minute, unsigned char ch_second)
 {
 	sys->time = (ch_hour<<SYS_TIME_HOUR_pos) | (ch_minute<<SYS_TIME_MINUTE_pos) | ((ch_second)<<SYS_TIME_SECONDS_pos);
 };
 
-/*
- * Get seconds of time
+/**
+ * @brief Get seconds of UTC time
+ * @return The seconds of the current time
  */
 unsigned char get_seconds_utc(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_SECONDS_pos) & 0x3F);
 };
+
+/**
+ * @brief Get seconds of local time
+ * @return The seconds of the current time
+ */
 unsigned char get_seconds_lct(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_SECONDS_pos) & 0x3F);
 };
 
-/*
- * Get minutes of time
+/**
+ * @brief Get minutes of UTC time
+ * @return The minutes of the current time
  */
 unsigned char get_minutes_utc(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_MINUTE_pos) & 0x3F);
 };
+
+/**
+ * @brief Get minutes of local time
+ * @return The minutes of the current time
+ */
 unsigned char get_minutes_lct(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_MINUTE_pos) & 0x3F);
 };
 
-/*
- * Get hours of time
+/**
+ * @brief Get hours of UTC time
+ * @return The hour of the current time
  */
 unsigned char get_hours_utc(void)
 {
 	return (unsigned char)((sys->time>>SYS_TIME_HOUR_pos) & 0x1F);
 };
+
+/**
+ * @brief Get hours of local time
+ * @return The hour of the current time
+ */
 unsigned char get_hours_lct(void)
 {
 	return (unsigned char)(((sys->time>>SYS_TIME_HOUR_pos) & 0x1F) + sys->TimeOffset);
 };
 
-
-
-/*
- * Set the date in UTC!
+/**
+ * @brief Set the date in UTC!
+ * @param ch_day The day of the date
+ * @param ch_month The month of the date
+ * @param i_year The year of the date
  */
 void set_date(unsigned char ch_day, unsigned char ch_month, unsigned int i_year)
 {
 	sys->date = (unsigned int)(((unsigned char)(i_year-1980)<<SYS_DATE_YEAR_pos) | (ch_month<<SYS_DATE_MONTH_pos) | (ch_day<<SYS_DATE_DAY_pos));
 };
 
-/*
- * Get Day of date
+/**
+ * @brief Get day of date in UTC
+ * @return The day of the current date
  */
 unsigned char get_day_utc(void)
 {
 	return (unsigned char)((sys->date>>SYS_DATE_DAY_pos) & 0x1F);
 };
+
+/**
+ * @brief Get day of date in local time
+ * @return The day of the current date
+ */
 unsigned char get_day_lct(void)
 {
 	return (unsigned char)((sys->date>>SYS_DATE_DAY_pos) & 0x1F);
 };
 
-/*
- * Get Month of date
+/**
+ * @brief Get month of date in UTC
+ * @return The month of the current date
  */
 unsigned char get_month_utc(void)
 {
 	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0xF);
 };
+
+/**
+ * @brief Get month of date in local time
+ * @return The month of the current date
+ */
 unsigned char get_month_lct(void)
 {
 	return (unsigned char)((sys->date>>SYS_DATE_MONTH_pos) & 0xF);
 };
 
-/*
- * Get Day of date
+/**
+ * @brief Get year of date in UTC
+ * @return The year of the current date
  */
 unsigned int get_year_utc(void)
 {
 	return (unsigned int)(((sys->date>>SYS_DATE_YEAR_pos) & 0x3F) + 1980);
 };
+
+/**
+ * @brief Get year of date in local time
+ * @return The year of the current date
+ */
 unsigned int get_year_lct(void)
 {
 	return (unsigned int)(((sys->date>>SYS_DATE_YEAR_pos) & 0x3F) + 1980);
 };
 
-/*
- * Compare two strings. The first string sets the compare length
+/**
+ * @brief Compare two strings. The first string sets the compare length.
+ * @param pch_string1 First input string. Sets the compare length
+ * @param pch_string2 Second input string.
+ * @return Returns 1 when the strings match upon the length of the first string.
  */
 unsigned char sys_strcmp(char* pch_string1, char* pch_string2)
 {
@@ -448,9 +574,11 @@ unsigned char sys_strcmp(char* pch_string1, char* pch_string2)
 	return 1;
 };
 
-/*
- * Copy one string to another. The second string is copied to the first string.
- * The functions returns 0 if string2 did not fit completely in string1.
+/**
+ * @brief Copy one string to another. The second string is copied to the first string.
+ * @param pch_string1 First input string. Sets the maximum copy length.
+ * @param pch_string2 The string which is copied to the first string.
+ * @return Returns 0 if string2 did not fit completely in string1.
  */
 unsigned char sys_strcpy(char* pch_string1, char* pch_string2)
 {
@@ -468,9 +596,13 @@ unsigned char sys_strcpy(char* pch_string1, char* pch_string2)
 	return 1;
 };
 
-/*
- * Write a number with a specific amount of digits to a stringin dec format.
+/**
+ * @brief Write a number with a specific amount of digits to a string in dec format.
  * This function copies directly to the input string.
+ * @param string The string where the number should be encoded
+ * @param l_number The number to convert
+ * @param ch_digits How many digits the output string should have.
+ * @return Returns 1 when operation was successful.
  */
 unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch_digits)
 {
@@ -483,9 +615,12 @@ unsigned char sys_num2str(char* string, unsigned long l_number, unsigned char ch
 	return 1;
 };
 
-/*
- * Copy memory.
- * length euqals the whole data length in bytes!
+/**
+ * @brief Copy memory.
+ * length equals the whole data length in bytes!
+ * @param data1 The pointer where the data should be copied to
+ * @param data2 The pointer of the data which should be copied
+ * @param length The number of bytes which should be copied
  */
 void sys_memcpy(void* data1, void* data2, unsigned char length)
 {
@@ -500,9 +635,13 @@ void sys_memcpy(void* data1, void* data2, unsigned char length)
 	}
 };
 
-/*
- * Write a number with a specific amount of digits to a string in hex format.
+/**
+ * @brief Write a number with a specific amount of digits to a string in hex format.
  * This function copies directly to the input string.
+ * @param string The string where the number should be encoded
+ * @param l_number The number to convert
+ * @param ch_digits How many digits the output string should have.
+ * @return Returns 1 when operation was successful.
  */
 unsigned char sys_hex2str(char* string, unsigned long l_number, unsigned char ch_digits)
 {
@@ -523,8 +662,12 @@ unsigned char sys_hex2str(char* string, unsigned long l_number, unsigned char ch
 	return 1;
 };
 
-/*
- * Swap the endianess of the input value, the byte width of the data has to be specified.
+/**
+ * @brief Swap the endianess of the input value, 
+ * the byte width of the data has to be specified.
+ * @param data_in The input number where the bytes should be swapped
+ * @param byte_width The number of relevant input bytes
+ * @return The byte swapped number.
  */
 unsigned long sys_swap_endian(unsigned long data_in, unsigned char byte_width)
 {
@@ -541,9 +684,10 @@ unsigned long sys_swap_endian(unsigned long data_in, unsigned char byte_width)
 	return data_out;
 };
 
-/*
- * Function to handle the watchdog timer. you can activate, reset and deactivate the timer.
- * Timeout is fixed to approx. 500ms.
+/**
+ * @brief Function to handle the watchdog timer. you can activate,
+ *  reset and deactivate the timer. Timeout is fixed to approx. 500ms.
+ * @param action The action to perform with the watchdog.
  */
 void sys_watchdog(unsigned char action)
 {
@@ -565,4 +709,4 @@ void sys_watchdog(unsigned char action)
 	default:
 		break;
 	}
-}
+};

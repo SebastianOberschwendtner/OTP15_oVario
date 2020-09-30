@@ -3,7 +3,7 @@
  * @file    oVario_Framework.h
  * @author  SO
  * @version V1.1
- * @date    25-Februar-2018
+ * @date    25-February-2018
  * @brief   Handles the core system tasks and defines the schedule of the
  * 			other tasks.
  ******************************************************************************
@@ -58,6 +58,15 @@
 // #define	F_CPU			168021840UL //Measured with osci
 // ==> is now defined in platformio.ini!
 
+//****************************************************
+//************** Options for USER ********************
+
+#define SDIO_4WIRE //Use 4 wire mode of SDIO0
+#define SOFTSWITCH //When the softswitch is installed
+
+//************** End of Options **********************
+//****************************************************
+
 //Define SysTick time in us
 #define SYSTICK			    100UL
 #define SYSTICK_TICKS       (unsigned long)(((unsigned long long)SYSTICK*F_CPU)/1000000UL)
@@ -80,10 +89,6 @@
 #define LOOP_TIME_TASK_MS6511    ((SCHEDULE_1ms)*SYSTICK)
 #define LOOP_TIME_TASK_SDIO      ((SCHEDULE_1ms)*SYSTICK)
 #define LOOP_TIME_TASK_BMS       ((SCHEDULE_1ms)*SYSTICK)
-
-//Options for hardware setup
-#define SDIO_4WIRE //Use 4 wire mode of SDIO0
-#define SOFTSWITCH //When the softswitch is installed
 
 //BMS parameters
 #define MAX_BATTERY_VOLTAGE	4200 //[mV]
@@ -126,14 +131,17 @@
 #define TOGGLE			3
 #define PET				4
 
+//Commands for arbiter
 //sys state defines
-#define INITIATE		1
-#define RUN				2
-#define SHUTDOWN		3
-#define FILECLOSING		4
-#define SAVESOC			5
-#define HALTSYSTEM		6
-#define NOSTATES		7
+#define SYS_CMD_INIT		        1
+#define SYS_CMD_RUN				    2
+#define SYS_CMD_SHUTDOWN		    3
+
+//Sequences for commands
+//SHUTDOWN
+#define SYS_SEQUENCE_FILECLOSING	1
+#define SYS_SEQUENCE_SAVESOC		2
+#define SYS_SEQUENCE_HALTSYSTEM		3
 
 //Positions for date and time bits
 #define SYS_DATE_YEAR_pos		9
@@ -150,6 +158,9 @@
 void            sys_register_ipc    (void);
 void            sys_get_ipc         (void);
 void 			system_task         (void);
+void            system_init         (void);
+void            system_run          (void);
+void            system_shutdown      (void);
 void 			init_clock          (void);
 void 			gpio_en             (unsigned char ch_port);
 void            init_systick_ms     (unsigned long l_ticktime);
