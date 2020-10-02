@@ -201,7 +201,7 @@
 
 //CHARGE_OPTION_1
 #define EN_PROCHOT_LPWR_pos			13
-#define CMP_DEG_pos					4		// Set independent comparator deglitch time
+#define CMP_DEG_pos					4		// Set independent comparator de-glitch time
 
 //CHARGE_OPTION_2
 #define PKPWR_TOVL_DEG_pos			14		// Input overload time in peak power mode
@@ -216,8 +216,9 @@
 #define STATUS_ADC_FINISHED			(1<<10)
 #define STATUS_CHRG_OK				(1<<9)	//Status of the CHRG_OK pin
 #define STATUS_BMS_ACTIVE			(1<<8)  //The BMS sensor is healthy and responding
-#define STATUS_GAUGE_ACTIVE         (1<<7)	//The battery gauge (coloumb counter) is healthy and responding
+#define STATUS_GAUGE_ACTIVE         (1<<7)	//The battery gauge (coulomb counter) is healthy and responding
 #define STATUS_BAT_PRESENT			(1<<6)  //Whether a battery is present or not, this is detected via the charge current
+#define STATUS_INITIALIZED          (1<<5)  //When the task is finished initializing
 
 //********************BQ34110*************************************************************
 // CONFIG_A

@@ -19,8 +19,8 @@ unsigned char bat_health = 100;
 
 TASK_T task_bms;			// Task struct for ms6511-task
 unsigned long *pl_args;		// Pointer to call commands with multiple arguments
-T_command rxcmd_bms;		// Command struct to receive ipc commands
-T_command txcmd_bms;		// Command struct to send ipc commands
+T_command rxcmd_bms;		// Command struct to receive ipc commands, remembers when a higher level task called this command
+T_command txcmd_bms;		// Command struct to send ipc commands, is used to temporarily save received commands from lower level tasks
 
 //****** Inline Functions ******
 /**
@@ -30,7 +30,7 @@ T_command txcmd_bms;		// Command struct to send ipc commands
  */
 inline unsigned long bms_get_call_return(void)
 {
-    return rxcmd_bms.data;
+    return txcmd_bms.data;
 };
 
 /**
@@ -162,50 +162,59 @@ void bms_task(void)
  * @brief Check the semaphores in the ipc queue.
  * 
  * This command is called before the command action. Since the BMS is non-
- * interruptable, this command checks only for semaphores.
+ * interruptable, this command checks only for semaphores and pushed commands
+ * to end of the queue.
  * 
  * @details Other commands are checked in the idle command.
  */
 void bms_check_semaphores(void)
 {
-	//Variable to remember when a new command is received
-	unsigned char new_command = 0;
-
     //Check semaphores for BMS
     if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command))      // look for new command in keypad queue
 	{
-		new_command = 1;
-		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms);  // get new command
+		ipc_queue_get(did_BMS, sizeof(T_command), &txcmd_bms);  // get new command
+		//Evaluate semaphores
+		switch (txcmd_bms.cmd)
+		{
+		case cmd_ipc_signal_finished:
+			//The called task is finished, decrease halt counter
+			task_bms.halt_task -= txcmd_bms.did;
+			break;
+
+		case cmd_ipc_outta_time:
+			//decrease the halt counter and goto idle state
+			task_bms.halt_task -= txcmd_bms.did;
+			arbiter_set_command(&task_bms,CMD_IDLE);
+
+			//The called command timed out, so set the corresponding sensor inactive since it is not responding
+			pBMS->charging_state &= ~STATUS_BMS_ACTIVE; //The BMS sensors is faulty
+
+		default:
+			//If command is not a semaphore push it back into the queue
+			ipc_queue_push(&txcmd_bms, sizeof(T_command), did_BMS);
+			break;
+		}
 	}
 
 	//Check semaphores for Coulomb Counter
     if (ipc_get_queue_bytes(did_COUL) >= sizeof(T_command))      // look for new command in keypad queue
 	{
-		new_command = 1;
-		ipc_queue_get(did_COUL, sizeof(T_command), &rxcmd_bms); // get new command
-	}
-
-	//When a new command was received
-	if (new_command)
-	{
+		ipc_queue_get(did_COUL, sizeof(T_command), &txcmd_bms); // get new command
 		//Evaluate semaphores
-		switch (rxcmd_bms.cmd)
+		switch (txcmd_bms.cmd)
 		{
 		case cmd_ipc_signal_finished:
 			//The called task is finished, decrease halt counter
-			task_bms.halt_task -= rxcmd_bms.did;
+			task_bms.halt_task -= txcmd_bms.did;
 			break;
 
 		case cmd_ipc_outta_time:
 			//decrease the halt counter and goto idle state
-			task_bms.halt_task -= rxcmd_bms.did;
+			task_bms.halt_task -= txcmd_bms.did;
 			arbiter_set_command(&task_bms,CMD_IDLE);
 
 			//The called command timed out, so set the corresponding sensor inactive since it is not responding
-			if (rxcmd_bms.data == did_BMS)
-				pBMS->charging_state &= ~STATUS_BMS_ACTIVE; //The BMS sensors is faulty
-			else if (rxcmd_bms.data == did_COUL)
-				pBMS->charging_state &= ~STATUS_GAUGE_ACTIVE; //The coulomb counter is faulty
+			pBMS->charging_state &= ~STATUS_GAUGE_ACTIVE; //The coulomb counter is faulty
 
 		default:
 			break;
@@ -222,10 +231,8 @@ void bms_check_semaphores(void)
  * It reads the ADC approx. every second and sets the
  * charging current when an input is present.
  * 
- * Attention:
- * As of now, commands which are received when this task is
- * halted are lost! Commands can only be received when the
- * task is in idle state!
+ * Commands which arrive when task is halted are pushed back
+ * into the queue until they are executed.
  * 
  * Argument:	none
  * Return:		none
@@ -234,15 +241,30 @@ void bms_check_semaphores(void)
  **********************************************************/
 void bms_idle(void)
 {
+	//When calling command was not the task itself
+	if (rxcmd_bms.did != did_BMS)
+	{
+		//Send finished signal
+		txcmd_bms.did = did_BMS;
+		txcmd_bms.cmd = cmd_ipc_signal_finished;
+		txcmd_bms.data = arbiter_get_return_value(&task_bms);
+		ipc_queue_push(&txcmd_bms, sizeof(T_command), rxcmd_bms.did); //Signal that command is finished to calling task
+
+		//Reset calling command
+		rxcmd_bms.did = did_BMS;
+	}
+
 	//Check commands, takes priority over the command action
-    if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command)) // look for new command in keypad queue
-    {
+	if (ipc_get_queue_bytes(did_BMS) >= sizeof(T_command)) // look for new command in keypad queue
+	{
 		//get new command
 		ipc_queue_get(did_BMS, sizeof(T_command), &rxcmd_bms); 
 		//the idle task assumes that all commands are finished, so reset all sequence states befor calling the new command
 		arbiter_reset_sequence(&task_bms);
-		//Call the command
-		arbiter_callbyreference(&task_bms, rxcmd_bms.cmd, &rxcmd_bms.data);
+		//Call the command (call-by-value, with nargs = 1)
+		pl_args = arbiter_allocate_arguments(&task_bms, 1);
+		*pl_args = rxcmd_bms.data;
+		arbiter_callbyvalue(&task_bms, rxcmd_bms.cmd);
 	}
 	else
 	{
@@ -250,7 +272,7 @@ void bms_idle(void)
 		switch (arbiter_get_sequence(&task_bms))
 		{
 		case SEQUENCE_ENTRY:
-			//The local counter is used to time the houskeeping action
+			//The local counter is used to time the housekeeping action
 			if (task_bms.local_counter)
 				task_bms.local_counter--; //Keep on waiting
 			else
@@ -1163,6 +1185,9 @@ void bms_init_peripherals(void)
 
 /**
  * @brief Call a other task via the ipc queue.
+ * @param cmd The command the called task should perform
+ * @param data The data for the command
+ * @param did_target The did of the ipc queue of the called task
  * @details Only forwards the call when the sensor is active. Otherwise it does nothing.
  * This means that, when the sensor is not active, the data in the bms struct will not be valid.
  */
@@ -1188,6 +1213,9 @@ void bms_call_task(unsigned char cmd, unsigned long data, unsigned char did_targ
 
 /**
  * @brief Call a other task via the ipc queue.
+ * @param cmd The command the called task should perform
+ * @param data The data for the command
+ * @param did_target The did of the ipc queue of the called task
  * @details Only forwards the call when the sensor is active. Otherwise it does nothing.
  * This means that, when the sensor is not active, the data in the bms struct will not be valid.
  */
