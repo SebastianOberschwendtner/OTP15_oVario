@@ -80,44 +80,27 @@ int main(void)
 	schedule(TASK_GROUP_BACKGROUND, SCHEDULE_100us);//run background task every 100us
 	schedule(TASK_GROUP_CORE, SCHEDULE_100ms); 		//run core task every 100ms
 	schedule(TASK_GROUP_AUX,  SCHEDULE_1ms);		//run aux task every systick for now
-	schedule(TASK_GROUP_1Hz,  SCHEDULE_1s);			//run every 1s
 
 	while(1)
 	{
 		//***** TASK_GROUP_AUX ******
 		if (run(TASK_GROUP_AUX))
 		{
-			// set_led_red(ON);
 			sdio_task();
 			igc_task();
-			// ms5611_task();
+			ms5611_task();
 			bms_task();
-			
-			// set_led_red(OFF);
 		}
 
 		//***** TASK_GROUP_CORE ******
 		if (run(TASK_GROUP_CORE))
 		{
-			// set_led_green(ON);
 			datafusion_task();
 			vario_task();
 			system_task();
 			// sound_task();
 			gui_task();
 			gps_task();
-			// set_led_green(OFF);
-		}
-
-		//***** TASK_GROUP_1Hz ******
-		if (run(TASK_GROUP_1Hz))
-		{
-			//Read the status of the bms once a second
-			txcmd_main.did = 0xFF;
-			txcmd_main.cmd = BMS_CMD_GET_ADC;
-			txcmd_main.data = 0;
-			txcmd_main.timestamp = 0;
-			// ipc_queue_push(&txcmd_main, sizeof(T_command), did_BMS);
 		}
 
 		//***** Background Tasks *****

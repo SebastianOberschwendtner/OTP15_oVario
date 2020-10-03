@@ -77,8 +77,7 @@
 //Define Tasks for scheduler
 #define TASK_GROUP_CORE         TASK0
 #define TASK_GROUP_AUX          TASK1
-#define TASK_GROUP_1Hz          TASK2
-#define TASK_GROUP_BACKGROUND   TASK3
+#define TASK_GROUP_BACKGROUND   TASK2
 
 //Define Schedule of task groups in us
 #define SCHEDULE_100us      100/SYSTICK
