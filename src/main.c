@@ -72,6 +72,7 @@ int main(void)
 
 	//***** initialize the scheduler *****
 	init_scheduler();
+	schedule(TASK_GROUP_BACKGROUND, SCHEDULE_100us);//run background task every 100us
 	schedule(TASK_GROUP_CORE, SCHEDULE_100ms); 		//run core task every 100ms
 	schedule(TASK_GROUP_AUX,  SCHEDULE_1ms);		//run aux task every systick for now
 	schedule(TASK_GROUP_1Hz,  SCHEDULE_1s);			//run every 1s
@@ -115,8 +116,13 @@ int main(void)
 		}
 
 		//***** Background Tasks *****
-		md5_task();
-		i2c_task();
+		if (run(TASK_GROUP_BACKGROUND))
+		{
+			set_led_red(ON);
+			md5_task();
+			i2c_task();
+			set_led_red(OFF);
+		}
 	}
 	return 0;
 };

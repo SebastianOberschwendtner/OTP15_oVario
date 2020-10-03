@@ -34,7 +34,7 @@ void i2c_register_ipc(void)
 	//Initialize task struct
 	arbiter_clear_task(&task_i2c);
 	arbiter_set_command(&task_i2c, I2C_CMD_INIT);
-	arbiter_set_timeout(&task_i2c, 10000); //Set the timeout to 10.000 task calls
+	arbiter_set_timeout(&task_i2c, MS2TASKTICK(500,LOOP_TIME_TASK_I2C)); //Set the timeout to 100ms task calls
 
 	//Intialize the received command struct
 	rxcmd_i2c.did			= did_I2C;
@@ -45,15 +45,6 @@ void i2c_register_ipc(void)
 	//Commands queue
 	ipc_register_queue(10 * sizeof(T_command), did_I2C);
 };
-
-/*
- * Get everything relevant for IPC
- */
-// void i2c_get_ipc(void)
-// {
-// 	// get the ipc pointer addresses for the needed data
-
-// };
 
 /**
  **********************************************************
