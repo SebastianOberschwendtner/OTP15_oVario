@@ -25,6 +25,7 @@ StdPeriph_Driver
 startup
 src/stm32f4xx_it.c
 inc/stm32f4xx_it.h
+src/syscalls.c
 
 # External tool builders
 .externalToolBuilders/
