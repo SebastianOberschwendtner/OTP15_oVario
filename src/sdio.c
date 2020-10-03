@@ -200,6 +200,9 @@ void sdio_task(void)
 		break;
 
 	case SDIO_CMD_NO_CARD:
+		//Disable peripheral and clock
+		SDIO->POWER = 0;
+		SDIO->CLKCR = 0;
 		break;
 
 	default:
@@ -677,7 +680,7 @@ void sdio_init_peripheral(void)
 	 * Configure sdio
 	 */
 	sdio_set_clock(400000);									   //set sdio clock
-	SDIO->CLKCR |= SDIO_CLKCR_CLKEN;						   //enable clock
+	SDIO->CLKCR |= SDIO_CLKCR_PWRSAV | SDIO_CLKCR_CLKEN;	   //enable clock
 	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0; //Enable SD_CLK
 	SDIO->DTIMER = 0xFFFFFFF;								   //Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
 	SDIO->DLEN = SDIO_BLOCKLEN;								   //Numbers of bytes per block
