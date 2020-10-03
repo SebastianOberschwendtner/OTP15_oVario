@@ -19,6 +19,13 @@ doc
 out
 LinkerScript.ld
 
+# STM32 libraries
+CMSIS
+StdPeriph_Driver
+startup
+src/stm32f4xx_it.c
+inc/stm32f4xx_it.h
+
 # External tool builders
 .externalToolBuilders/
 
