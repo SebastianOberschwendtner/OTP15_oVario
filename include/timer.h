@@ -13,8 +13,8 @@
 
 #include "oVario_Framework.h"
 
-void timer_init();
-void tic();
-uint32_t toc();
+void        timer_init  ();
+void        tic         ();
+uint32_t    toc         ();
 
 #endif /* TIMER_H_ */

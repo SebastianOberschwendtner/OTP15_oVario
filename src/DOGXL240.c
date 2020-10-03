@@ -35,8 +35,8 @@ extern const unsigned char battery12x8[5][16];
 extern const unsigned char number16x20[11][40];
 
 //****** Functions ******
-/*
- * Initialize necessary peripherals and display
+/**
+ * @brief Initialize necessary peripherals and display.
  */
 void init_lcd(void)
 {
@@ -111,9 +111,10 @@ void init_lcd(void)
 	DMA1_Stream4->FCR = 0;//DMA_SxFCR_DMDIS;							//Enable FIFO with 4 bytes
 
 	SPI2->CR2 |= SPI_CR2_TXDMAEN;								//Enable DMA request in SPI2
-}
-/*
- * Enable DMA transfer
+};
+
+/**
+ * @brief Enable DMA transfer
  */
 void lcd_dma_enable(void)
 {
@@ -126,9 +127,10 @@ void lcd_dma_enable(void)
 		DMA1_Stream4->NDTR = (LCD_PIXEL_X*LCD_PIXEL_Y/8);
 		DMA1_Stream4->CR |= DMA_SxCR_EN;
 	}
-}
-/*
- * Reset display
+};
+
+/**
+ * @brief Reset display
  */
 void lcd_reset(void)
 {
@@ -138,9 +140,11 @@ void lcd_reset(void)
 		spi_send_char(SYS_RESET);
 		wait_ms(5);
 	}
-}
-/*
- * Set C/D pin according to send data
+};
+
+/**
+ * @brief Set C/D pin according to send data
+ * @param ch_state New state of the pin
  */
 void lcd_set_cd(unsigned char ch_state)
 {
@@ -148,9 +152,11 @@ void lcd_set_cd(unsigned char ch_state)
 		GPIOB->BSRRL = GPIO_BSRR_BS_14;
 	else
 		GPIOB->BSRRH = (GPIO_BSRR_BR_14>>16);
-}
-/*
- * Set the column address of RAM
+};
+
+/**
+ * @brief Set the column address of RAM
+ * @param ch_col The new column address
  */
 void lcd_set_col_addr(unsigned char ch_col)
 {
@@ -160,10 +166,12 @@ void lcd_set_col_addr(unsigned char ch_col)
 		spi_send_char(SET_COL_LSB | (ch_col & 0b1111));
 		spi_send_char(SET_COL_MSB | (ch_col>>4));
 	}
-}
-/*
- * Set the page address of RAM
+};
+
+/**
+ * @brief Set the page address of RAM
  * note: ch_page must be smaller than 16!
+ * @param ch_page The new page address
  */
 void lcd_set_page_addr(unsigned char ch_page)
 {
@@ -173,10 +181,11 @@ void lcd_set_page_addr(unsigned char ch_page)
 		spi_send_char(SET_PAGE_LSB | (ch_page & 0b1111));
 		spi_send_char(SET_PAGE_MSB | (ch_page>>4));
 	}
-}
+};
 
-/*
- * Set the pattern number which is written into RAM
+/**
+ * @brief Set the pattern number which is written into RAM.
+ * @param ch_pat The pattern number
  */
 void lcd_set_write_pattern(unsigned char ch_pat)
 {
@@ -185,10 +194,12 @@ void lcd_set_write_pattern(unsigned char ch_pat)
 		lcd_set_cd(COMMAND);
 		spi_send_char(SET_PAGE_MSB | ch_pat);
 	}
-}
-/*
- * Set which pattern is displayed.
+};
+
+/**
+ * @brief Set which pattern is displayed.
  * Range of ch_pat: [0 3]!
+ * @param ch_pat The pattern number
  */
 void lcd_set_pattern(unsigned char ch_pat)
 {
@@ -197,9 +208,11 @@ void lcd_set_pattern(unsigned char ch_pat)
 		lcd_set_cd(COMMAND);
 		spi_send_char(SET_DISP_PAT | DISP_PAT_DC5 | (ch_pat<<1));
 	}
-}
-/*
- * Switch display on and off
+};
+
+/**
+ * @brief Switch display on and off.
+ * @param ch_state The new state of the display.
  */
 void lcd_set_enable(unsigned char ch_state)
 {
@@ -208,22 +221,26 @@ void lcd_set_enable(unsigned char ch_state)
 		lcd_set_cd(COMMAND);
 		spi_send_char(SET_DISP_EN | ch_state);
 	}
-}
+};
 
-/*
- * Set cursor in buffer
+/**
+ * @brief Set cursor in buffer
  * Range:	ch_x: [0 239]
  * 			ch_y: [0 127]
+ * @param ch_x New X-Position of cursor.
+ * @param ch_y New Y-Position of cursor.
  */
 void lcd_set_cursor(unsigned char ch_x, unsigned char ch_y)
 {
 	plcd_DOGXL->cursor_x = ch_x;
 	plcd_DOGXL->cursor_y = ch_y;
-}
+};
 
-/*
- * Shift the cursor according to ch_pos_x and ch_pos_y.
- * Both directions can be negativ.
+/**
+ * @brief Shift the cursor according to ch_pos_x and ch_pos_y.
+ * Both directions can be negative.
+ * @param ch_pos_x The shift length in X-direction.
+ * @param ch_pos_y The shift length in Y-direction.
  */
 void lcd_shift_cursor(signed char ch_pos_x, signed char ch_pos_y)
 {
@@ -234,27 +251,29 @@ void lcd_shift_cursor(signed char ch_pos_x, signed char ch_pos_y)
 		plcd_DOGXL->cursor_x = 0;
 	if(plcd_DOGXL->cursor_y > LCD_PIXEL_Y/8)
 		plcd_DOGXL->cursor_y = 0;
-}
+};
 
-/*
- * set the fontsize
+/**
+ * @brief set the fontsize
+ * @param ch_size New size
  */
 void lcd_set_fontsize(unsigned char ch_size)
 {
 	plcd_DOGXL->ch_fontsize = ch_size;
-}
+};
 
-/*
- * Set the invertion
+/**
+ * @brief Set the invertion state.
+ * @param ch_state New state
  */
-void lcd_set_inverted(unsigned char ch_stat)
+void lcd_set_inverted(unsigned char ch_state)
 {
-	plcd_DOGXL->ch_inverted = ch_stat;
-}
+	plcd_DOGXL->ch_inverted = ch_state;
+};
 
-/*
- * Send the lcd buffer to display
- * This function assumens that the RAM cursor is at the beginning of display RAM
+/**
+ * @brief Send the lcd buffer to display.
+ * This function assumes that the RAM cursor is at the beginning of display RAM!
  */
 void lcd_send_buffer(void)
 {
@@ -263,9 +282,13 @@ void lcd_send_buffer(void)
 	{
 		spi_send_char(plcd_DOGXL->buffer[l_count]);
 	}
-}
-/*
- * Write specific pixel to buffer. Also clears pixel
+};
+
+/**
+ * @brief Write specific pixel to buffer. Also clears pixel.
+ * @param ch_x X-Position of the pixel.
+ * @param ch_y Y-Position of the pixel.
+ * @param ch_val Value of the pixel.
  */
 void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_val)
 {
@@ -275,15 +298,17 @@ void lcd_pixel2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_v
 		plcd_DOGXL->buffer[ch_x*(LCD_PIXEL_Y/8)+(ch_y/8)] |= (1<<ch_shift);
 	else
 		plcd_DOGXL->buffer[ch_x*(LCD_PIXEL_Y/8)+(ch_y/8)] &= ~(1<<ch_shift);
-}
-/*
- * Write pixel data of a character to buffer at cursor position.
+};
+
+/**
+ * @brief Write pixel data of a character to buffer at cursor position.
  * Cursors are incremented after each access.
  * The cursor points to the bottom left corner of character.
  * The size is fixed to 12x16, when ch_fontsize is 0.
  * For other ch_fontsize the size is variable as a multiple of 6x8.
+ * @param ch_data Value to written
+ * @todo //TODO The function checks the maximum cursor size after writing to buffer => this can cause problem if cursor is manually increased to the maximum position
  */
-//TODO The function checks the maximum cursor size after writing to buffer => this can cause problem if cursor is manually increased to the maximum position
 void lcd_char2buffer(unsigned char ch_data)
 {
 	if(plcd_DOGXL->ch_fontsize){
@@ -336,10 +361,10 @@ void lcd_char2buffer(unsigned char ch_data)
 			}
 		}
 	}
-}
+};
 
-/*
- * Clear buffer
+/**
+ * @brief Clear buffer
  */
 void lcd_clear_buffer(void)
 {
@@ -347,10 +372,11 @@ void lcd_clear_buffer(void)
 	{
 		plcd_DOGXL->buffer[l_count]=0;
 	}
-}
+};
 
-/*
- * Write string to buffer
+/**
+ * @brief Write string to buffer
+ * @param pch_string Pointer to the string to be written.
  */
 void lcd_string2buffer(char* pch_string)
 {
@@ -359,13 +385,15 @@ void lcd_string2buffer(char* pch_string)
 		lcd_char2buffer(*pch_string);
 		pch_string++;
 	}
-}
+};
 
-/*
- * Write number to buffer using ascii font.
+/**
+ * @brief Write number to buffer using ascii font.
  * Enter data, the number of places to be displayed.
  * Because of the calculation of the digits (LSB first), the cursor has to be shifted to fit the MSB first.
-//TODO Discuss whether the cursor shifting is the best solution.
+ * @param l_number Value to be written.
+ * @param ch_predecimal The number of digits to be written.
+ * @todo Discuss whether the cursor shifting is the best solution.
  */
 void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 {
@@ -390,8 +418,9 @@ void lcd_num2buffer(unsigned long l_number,unsigned char ch_predecimal)
 		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
 }
 
-/*
- * Write number with special number font.
+/**
+ * @brief Write number with special number font.
+ * @param ch_data The value to be written.
  */
 void lcd_digit2buffer(unsigned char ch_data)
 {
@@ -423,11 +452,13 @@ void lcd_digit2buffer(unsigned char ch_data)
 			plcd_DOGXL->cursor_y = 0;
 		}
 	}
-}
+};
 
-
-/*
- * Write float number to buffer
+/**
+ * @brief Write float number to buffer.
+ * @param f_number The value to be written.
+ * @param ch_predecimal The leading significant digits.
+ * @param ch_dedecimal The trailing significant digits.
  */
 void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char ch_dedecimal)
 {
@@ -457,11 +488,11 @@ void lcd_float2buffer(float f_number, unsigned char ch_predecimal, unsigned char
 		lcd_num2buffer(dedec,ch_dedecimal);
 	}
 
-}
+};
 
-
-/*
- * Write battery symbol to buffer
+/**
+ * @brief Write battery symbol to buffer.
+ * @param ch_stat The new SOC of the battery.
  */
 void lcd_bat2buffer(unsigned char ch_stat)
 {
@@ -484,11 +515,15 @@ void lcd_bat2buffer(unsigned char ch_stat)
 			plcd_DOGXL->cursor_y = 0;
 		}
 	}
-}
+};
 
-/*
- * Write line into buffer
+/**
+ * @brief Write line into buffer
  * Start values must be smaller than end values!
+ * @param ch_x_start Start of line in X-direction.
+ * @param ch_y_start Start of line in Y-direction.
+ * @param ch_x_end End of line in X-direction.
+ * @param ch_y_end End of line in Y-direction.
  */
 void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned char ch_x_end,unsigned char ch_y_end)
 {
@@ -515,10 +550,13 @@ void lcd_line2buffer(unsigned char ch_x_start,unsigned char ch_y_start,unsigned 
 		}
 		lcd_pixel2buffer(ch_x_end,ch_y_end,1);
 	}
-}
+};
 
-/*
- * Write circle to buffer
+/**
+ * @brief Write circle to buffer.
+ * @param ch_x_center Center of circle in X-direction.
+ * @param ch_y_center Center of circle in Y-direction.
+ * @param ch_radius Radius of the circle.
  */
 void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius)
 {
@@ -535,11 +573,14 @@ void lcd_circle2buffer(unsigned char ch_x_center, unsigned char ch_y_center, uns
 		lcd_pixel2buffer(x + i, y - (uint8_t)pTemp,1);
 		lcd_pixel2buffer(x - i, y - (uint8_t)pTemp, 1);
 	}
-}
+};
 
-
-/*
- * Write Arrow to buffer
+/**
+ * @brief Write Arrow to buffer
+ * @param ch_x_center Center of circle in X-direction.
+ * @param ch_y_center Center of circle in Y-direction.
+ * @param ch_radius Radius of the circle.
+ * @param heading Direction where the arrow is pointing.
  */
 void lcd_arrow2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsigned char ch_radius, uint16_t heading)
 {
@@ -575,13 +616,14 @@ void lcd_arrow2buffer(unsigned char ch_x_center, unsigned char ch_y_center, unsi
 
 	lcd_circle2buffer((uint8_t)(ch_x_center + xt), (uint8_t)(ch_y_center - yt),1);
 	lcd_circle2buffer((uint8_t)(ch_x_center + xt), (uint8_t)(ch_y_center - yt),2);
+};
 
-}
-
-
-
-/*
- * Draw Block; Coordinates are bottom left corner
+/**
+ * @brief Draw Block; Coordinates are bottom left corner
+ * @param ch_x The X-Position of the bottom left corner of the block.
+ * @param ch_y The Y-Position of the bottom left corner of the block.
+ * @param ch_height The height of the block.
+ * @param ch_width The width of the block.
  */
 void lcd_block2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_height, unsigned char ch_width)
 {
@@ -595,13 +637,14 @@ void lcd_block2buffer(unsigned char ch_x, unsigned char ch_y, unsigned char ch_h
 			}
 		}
 	}
-}
+};
 
-
-/*
- * Write a signed number to buffer using ascii font.
+/**
+ * @brief Write a signed number to buffer using ascii font.
  * Enter data, the number of places to be displayed.
  * Because of the calculation of the digits (LSB first), the cursor has to be shifted to fit the MSB first.
+ * @param l_number The value to be written.
+ * @param ch_predecimal The number of significant digits.
  */
 void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
 {
@@ -632,9 +675,12 @@ void lcd_signed_num2buffer(signed long l_number,unsigned char ch_predecimal)
 		plcd_DOGXL->cursor_x += (ch_predecimal+1)*12;
 };
 
-/*
- * Write an empty box with a border in the buffer.
+/**
+ * @brief Write an empty box with a border in the buffer.
  * The box is centered in the middle of the screen.
+ * @param width The width of the box.
+ * @param height The height of the box.
+ * @param thickness The thickness of the border of the box.
  */
 void lcd_box2buffer(unsigned char width, unsigned char height, unsigned char thickness)
 {
@@ -667,5 +713,3 @@ void lcd_box2buffer(unsigned char width, unsigned char height, unsigned char thi
 		}
 	}
 };
-
-

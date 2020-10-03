@@ -15,7 +15,10 @@
 uint32_t timestamp;
 
 //****** Functions ******
-//Timer l�uft in 100 us Takt
+/**
+ * @brief Initialize the timer which is used for timestamps.
+ * Runs every 1 us.
+ */
 void timer_init(){
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5,ENABLE);
 
@@ -46,12 +49,21 @@ void timer_init(){
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 }
 
-void tic(){
+/**
+ * @brief Start time measurement
+ */
+void tic()
+{
 	timestamp = TIM5->CNT;
-}
+};
 
-uint32_t toc(){
+/**
+ * @brief Stop time measurement
+ * @return Result of measurement
+ */
+uint32_t toc()
+{
 	uint32_t time = TIM5->CNT - timestamp;
 	return time;
-}
+};
 

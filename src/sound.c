@@ -21,8 +21,8 @@ uint8_t beepcount = 0;
 
 // ***** Functions *****
 //********** register and get dummies for tasks ******
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC
  */
 void sound_register_ipc(void)
 {
@@ -30,7 +30,9 @@ void sound_register_ipc(void)
 	ipc_register_queue(5 * sizeof(T_command), did_SOUND);
 };
 
-
+/**
+ * @brief Initialize the sound task
+ */
 void sound_init()
 {
 	// Init Portx peripheral Clock
@@ -118,12 +120,14 @@ void sound_init()
 	sound_state.frequency 	= 1000;
 	sound_state.mode 		= sound_mode_beep;
 	sound_state.period 		= 200;
-}
+};
 
-
-// Set frequency and volume
-// Frequency [Hz]
-// Volume [%]; 0-100%
+/**
+ * @brief Set frequency and volume
+ * @param frequency Frequency in [Hz]
+ * @param volume Volume in [%]: 0-100%
+ * @param period Period of sound generation
+ */
 void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 {
 	// 105 = 0.01ms; 	1000Hz
@@ -145,8 +149,11 @@ void sound_set_frequ_vol(uint16_t frequency, uint8_t volume, uint8_t period)
 
 	if(TIM3->CNT > reload)
 		TIM3->CNT = 0;
-}
+};
 
+/**
+ * @brief the sound task
+ */
 void sound_task(void)
 {
 	while(ipc_get_queue_bytes(did_SOUND) > 9)
@@ -211,8 +218,12 @@ void sound_task(void)
 
 
 	sound_set_frequ_vol(sound_state.frequency, sound_state.volume * (sound_state.mute^1) * sound_state.beep, sound_state.period);
-}
+};
 
+/**
+ * @brief The interrupt handler to generate the sound
+ * @details interrupt handler
+ */
 void TIM3_IRQHandler (void)
 {
 	if(sound_state.mode == sound_mode_beep)
@@ -234,4 +245,4 @@ void TIM3_IRQHandler (void)
 	}
 
 	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
-}
+};

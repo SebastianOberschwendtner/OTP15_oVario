@@ -23,8 +23,8 @@ T_command rxcmd_sdio;	//Command struct for received commands from other tasks vi
 T_command txcmd_sdio;	//Command struct to transmit commands to other ipc tasks
 
 //****** Functions ******
-/*
- * Register the memory for the sdio task
+/**
+ * @brief Register the memory for the sdio task
  */
 void sdio_register_ipc(void)
 {
@@ -55,8 +55,8 @@ void sdio_register_ipc(void)
 	ipc_register_queue(5 * sizeof(T_command), did_SDIO);
 };
 
-/*
- * Get everything relevant for IPC
+/**
+ * @brief Get everything relevant for IPC
  */
 void sdio_get_ipc(void)
 {
@@ -64,16 +64,19 @@ void sdio_get_ipc(void)
 	sys = ipc_memory_get(did_SYS);
 };
 
-/**********************************************************
- * TASK SDIO
+/**
+ **********************************************************
+ * @brief TASK SDIO
  **********************************************************
  * sdio system task.
  * 
  **********************************************************
+ * @details
  * Execution:	Non-interruptable
  * Wait: 		No
  * Halt: 		No
- **********************************************************/
+ **********************************************************
+ */
 void sdio_task(void)
 {
 	//Perform action according to active state
@@ -212,14 +215,15 @@ void sdio_task(void)
 	sdio_check_error();
 };
 
-/***********************************************************
- * The idle state of the sd-card. 
+/**
+ ***********************************************************
+ * @brief The idle state of the sd-card. 
  ***********************************************************
  * The task checks the ipc-queue for commands and executes
  * them. The status flags inside the SD-struct are set 
  * according to the command.
  * 
- * This command can/should not be called by the arbiter.
+ * @details This command can/should not be called by the arbiter.
  ***********************************************************/
 void sdio_check_commands(void)
 {
@@ -263,16 +267,17 @@ void sdio_check_commands(void)
 	}
 };
 
-/***********************************************************
- * state for intializing the sdio and the sd-card.
+/**
  ***********************************************************
-
+ * @brief Command to initialize the sdio and the sd-card.
+ ***********************************************************
+ *
  * Argument:	none
- * Return:		none
+ * @return none
  * 
- * call-by-value, nargs = none
- * call-by-reference
- ***********************************************************/
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_init(void)
 {
 	// when the state wants to wait, decrease the counter. Otherwise perform the task
@@ -435,19 +440,19 @@ void sdio_init(void)
 	}
 };
 
-/***********************************************************
- * State for initializing the filesystem (FAT).
+/**
+ ***********************************************************
+ * @brief Command for initializing the filesystem (FAT).
  ***********************************************************
  *
  * Argument:	none
- * Return:		none
+ * @return none
  * 
- * call-by-value, nargs = none
- * call-by-reference
- ***********************************************************/
-
+ * @details call-by-reference
+ ***********************************************************
+ */
 // Variables needed for the initialization of the filesystem
-//TODO Allocate memory inside the function for these variables.
+///@todo Allocate memory inside the function for these variables.
 unsigned long l_temp = 0, l_LBABegin = 0, l_RootDirSectors = 0, l_TotSec = 0, l_DataSec = 0, l_CountofCluster = 0;
 
 void sdio_init_filesystem(void)
@@ -579,16 +584,17 @@ void sdio_init_filesystem(void)
 	}
 };
 
-/***********************************************************
- * Read the root directory of the sd-card.
+/**
+ ***********************************************************
+ * @brief Read the root directory of the sd-card.
  ***********************************************************
  * 
  * Argument:	none
- * Return:		none
+ * @return none
  * 
- * call-by-value, nargs = none
- * call-by-reference
- ***********************************************************/
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_read_root(void)
 {
 	switch (arbiter_get_sequence(&task_sdio))
@@ -646,562 +652,41 @@ void sdio_read_root(void)
 	}
 };
 
-/*
- * Initialize the peripherals for the sdio communication
- */
-void sdio_init_peripheral(void)
-{
-	//Activate Clocks
-	RCC->APB2ENR |= RCC_APB2ENR_SDIOEN; //Sdio adapter
-	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN; //DMA2
-	gpio_en(GPIO_C);
-	gpio_en(GPIO_D);
-
-	/*
-	 * Configure Pins:
-	 * PD2		SD_CMD	AF12	Open-drain	Pullup
-	 * PC8		DAT0	AF12	Open-drain	Pullup
-	 * PC9		DAT1	AF12	Open-drain	Pullup
-	 * PC10		DAT2	AF12	Open-drain	Pullup
-	 * PC11		DAT3	AF12	Open-drain	Pullup
-	 * PC12 	SD_CLK	AF12	Push-pull	No Pull
-	 */
-	GPIOC->MODER |= GPIO_MODER_MODER12_1 | GPIO_MODER_MODER11_1 | GPIO_MODER_MODER10_1 | GPIO_MODER_MODER9_1 | GPIO_MODER_MODER8_1;
-	//GPIOC->OTYPER	|= GPIO_OTYPER_OT_11 | GPIO_OTYPER_OT_10 | GPIO_OTYPER_OT_9 | GPIO_OTYPER_OT_8;
-	GPIOC->PUPDR |= GPIO_PUPDR_PUPDR11_0 | GPIO_PUPDR_PUPDR10_0 | GPIO_PUPDR_PUPDR9_0 | GPIO_PUPDR_PUPDR8_0;
-	GPIOC->AFR[1] |= (12 << 16) | (12 << 12) | (12 << 8) | (12 << 4) | (12 << 0);
-
-	GPIOD->MODER |= GPIO_MODER_MODER2_1;
-	//GPIOD->OTYPER	= GPIO_OTYPER_OT_2;
-	GPIOD->PUPDR = GPIO_PUPDR_PUPDR2_0;
-	GPIOD->AFR[0] |= (12 << 8);
-
-	/*
-	 * Configure sdio
-	 */
-	sdio_set_clock(400000);									   //set sdio clock
-	SDIO->CLKCR |= SDIO_CLKCR_PWRSAV | SDIO_CLKCR_CLKEN;	   //enable clock
-	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0; //Enable SD_CLK
-	SDIO->DTIMER = 0xFFFFFFF;								   //Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
-	SDIO->DLEN = SDIO_BLOCKLEN;								   //Numbers of bytes per block
-	NVIC_EnableIRQ(SDIO_IRQn);								   //Enable the global SDIO interrupt
-
-	//Clear DMA interrupts
-	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
-
-	/*
-	 * Configure DMA2 Stream 6 Channel 4:
-	 * -Memorysize:	32bit	incremented
-	 * -Peripheral:	32bit	fixed
-	 * -Peripheral flow control
-	 * -Peripheral Burst with 4 Beats
-	 */
-#define DMA_CONFIG_SDIO (DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL)
-
-	DMA2_Stream6->CR = DMA_CONFIG_SDIO;
-	//DMA2_Stream3->NDTR = 128;							//128*4bytes to transmit
-	DMA2_Stream6->PAR = (unsigned long)&SDIO->FIFO;		 //Peripheral address
-	DMA2_Stream6->M0AR = (unsigned long)&dir->buffer[0]; //Buffer start address
-	DMA2_Stream6->FCR = DMA_SxFCR_DMDIS;				 // | DMA_SxFCR_FTH_1 | DMA_SxFCR_FTH_0;
-};
-
-/*
- * set the clock speed to the sd card
- */
-void sdio_set_clock(unsigned long l_clock)
-{
-	//Enable Clock and set to desired speed [400kHz : 25 MHz] clock inactive when bus inactive
-	if (l_clock < 400000)
-		l_clock = 400000;
-	else if (l_clock > 25000000)
-		l_clock = 25000000;
-
-	//Save current CLKCR
-	unsigned long config = SDIO->CLKCR;
-
-	//Write new CLKDIV
-	SDIO->CLKCR = (config & (127 << 8)) | ((SDIOCLK / l_clock) - 2);
-};
-
-/*
- * Check SDIO task for errors
- */
-void sdio_check_error(void)
-{
-	// Any SDIO Error Occured?
-	if (SDIO->STA & (SDIO_STA_DTIMEOUT | SDIO_STA_CTIMEOUT))
-		SD->err = SDIO_ERROR_TRANSFER_ERROR;
-
-	// Any DMA Error Occurred?
-	//TODO Add DMA error check here!
-
-	// Any File Error Occurred?
-	//TODO Add File error Check here!
-
-	// Change command when an error occurrred
-	if (SD->err)
-		arbiter_set_command(&task_sdio, SDIO_CMD_NO_CARD);
-};
-
-/*
- * Send command to sd-card without expected response. Returns 1 when communication is finished.
- */
-unsigned char sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg)
-{
-	// Any transfer in progress?
-	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		// Finished Sending Command? (no response required)
-		if (!(SDIO->STA & SDIO_STA_CMDSENT))
-		{
-			//No Active Command, so new command can be sent
-			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | (ch_cmd & 0b111111);
-		}
-		else
-		{
-			// The command is finished, clear all flags
-			SDIO->ICR = SDIO_ICR_CMDSENTC;
-			return 1;
-		}
-	}
-	return 0;
-};
-
-/*
- * Send command to sd-card with expected R1 response. Returns 1 when communication is finished.
- */
-unsigned char sdio_send_cmd_R1(unsigned char ch_cmd, unsigned long l_arg)
-{
-	// Any transfer in progress?
-	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		// Finished Sending Command? (R1 response required)
-		if (!(SDIO->STA & SDIO_STA_CMDREND))
-		{
-			//No Active Command, so new command can be sent
-			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-		}
-		else
-		{
-			// The command is finished, clear all flags
-			SDIO->ICR = SDIO_ICR_CMDRENDC;
-			// Save response
-			SD->response = SDIO->RESP1;
-			return 1;
-		}
-	}
-	return 0;
-};
-
-/*
- * Send command to sd-card with expected R2 response (Only the first 48 bits of the response are checked). 
- * Returns 1 when communication is finished.
- */
-unsigned char sdio_send_cmd_R2(unsigned char ch_cmd, unsigned long l_arg)
-{
-	// Any transfer in progress?
-	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		// Finished Sending Command? (R2 response required)
-		if (!(SDIO->STA & SDIO_STA_CMDREND))
-		{
-			//No Active Command, so new command can be sent
-			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_1 | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-		}
-		else
-		{
-			// The command is finished, clear all flags
-			SDIO->ICR = SDIO_ICR_CMDRENDC;
-			// Save response
-			SD->response = SDIO->RESP1;
-			return 1;
-		}
-	}
-	return 0;
-};
-
-/*
- * Send command to sd-card with expected R3 response. Returns 1 when communication is finished.
- */
-unsigned char sdio_send_cmd_R3(unsigned char ch_cmd, unsigned long l_arg)
-{
-	// Any transfer in progress?
-	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		// Finished Sending Command? (R3 response required, without matching CCRC)
-		if (!(SDIO->STA & (SDIO_STA_CCRCFAIL | SDIO_STA_CMDREND)))
-		{
-			//No Active Command, so new command can be sent
-			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-		}
-		else
-		{
-			// The command is finished, clear all flags
-			SDIO->ICR = SDIO_ICR_CMDRENDC | SDIO_ICR_CCRCFAILC;
-			// Save response
-			SD->response = SDIO->RESP1;
-			return 1;
-		}
-	}
-	return 0;
-};
-
-/*
- * Send command to sd-card with expected R6 response. Returns 1 when communication is finished.
- */
-unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
-{
-	// Any transfer in progress?
-	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		// Finished Sending Command? (R6 response required)
-		if (!(SDIO->STA & SDIO_STA_CMDREND))
-		{
-			//No Active Command, so new command can be sent
-			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-		}
-		else
-		{
-			// The command is finished, clear all flags
-			SDIO->ICR = SDIO_ICR_CMDRENDC;
-			// Save response
-			SD->response = SDIO->RESP1;
-			return 1;
-		}
-	}
-	return 0;
-};
-
-/*
- * Send command to sd-card with expected R7 response. Returns 1 when communication is finished.
- */
-unsigned char sdio_send_cmd_R7(unsigned char ch_cmd, unsigned long l_arg)
-{
-	// Any transfer in progress?
-	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		// Finished Sending Command? (R7 response required)
-		if (!(SDIO->STA & SDIO_STA_CMDREND))
-		{
-			//No Active Command, so new command can be sent
-			SDIO->ARG = l_arg;
-			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
-		}
-		else
-		{
-			// The command is finished, clear all flags
-			SDIO->ICR = SDIO_ICR_CMDRENDC;
-			// Save response
-			SD->response = SDIO->RESP1;
-			return 1;
-		}
-	}
-	return 0;
-};
-
-/*
- * Set card inactive for save removal of card.
- * Returns 1 when card is ejected
- */
-unsigned char sdio_set_inactive(void)
-{
-	// Only eject card, when card is selected and detected
-	if (SD->status & (SD_CARD_DETECTED | SD_CARD_SELECTED))
-	{
-		//send command to go to inactive state
-		if (sdio_send_cmd(CMD15, (SD->RCA << 16)))
-		{
-			//Delete flags for selected card when command is sent
-			SD->status &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
-			return 1;
-		}
-	}
-	else
-		return 1;
-	return 0;
-};
-
-/*
- * Read block data from card at specific block address. Data is stored in buffer specified at function call.
- * The addressing uses block number and adapts to SDSC and SDHC cards. Returns 1 when block transfer is finished.
- */
-unsigned char sdio_read_block(unsigned long *databuffer, unsigned long l_block_address)
-{
-	//Data Transfer in Progress?
-	if (!(SDIO->STA & (SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		//Data Transfer finished?
-		if (SDIO->STA & SDIO_STA_DBCKEND)
-		{
-			//Block data was read
-			if (!(DMA2_Stream6->CR & DMA_SxCR_EN)) // Wait until DMA Stream is finished
-			{
-				DMA2->HIFCR |= DMA_HIFCR_CTCIF6;					//Clear DMA Transfer Finished flag
-				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC; //Clear SDIO block transfer finished flag
-				return 1;
-			}
-		}
-		else
-		{
-			//No block transfer in progress
-			if (!(DMA2_Stream6->CR & DMA_SxCR_EN))
-				sdio_dma_start_receive(databuffer); //When Stream is not yet enabled, enable it
-
-			//Get address of block data
-			if (!(SD->status & SD_SDHC)) //If SDSC card, byte addressing is used
-				l_block_address *= SDIO_BLOCKLEN;
-
-			/* Send command to start block transfer and start data transfer when command was sent.
-			 * The return value is not used, because in block transfer interrupts are used to manage the
-			 * command transfer. */
-			sdio_send_cmd_R1(CMD17, l_block_address);
-		}
-	}
-	return 0;
-};
-
-/*
- * Interrupt when command transfer is finished and data transfer should be enabled.
- */
-void SDIO_IRQHandler(void)
-{
-	// Clear Flags
-	SDIO->ICR |= SDIO_ICR_CMDRENDC;
-	// Disable interrupts
-	SDIO->MASK = 0;
-
-	//Check in which direction the data should be sent
-	if (DMA2_Stream6->CR & DMA_SxCR_DIR_0)
-		SDIO->DCTRL = (0b1001 << 4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data transmit
-	else
-		SDIO->DCTRL = (0b1001 << 4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data receive
-};
-
-/*
- * Write block data to card at specific block address. Data is read from buffer specified at function call.
- * The addressing uses block number and adapts to SDSC and SDHC cards.
- * Returns 1 when communication is finished.
- */
-unsigned char sdio_write_block(unsigned long *databuffer, unsigned long l_block_address)
-{
-	//Data Transfer in Progress?
-	if (!(SDIO->STA & (SDIO_STA_RXACT | SDIO_STA_TXACT)))
-	{
-		//Data Transfer finished?
-		if (SDIO->STA & SDIO_STA_DBCKEND)
-		{
-			//Block data was read
-			if (!(DMA2_Stream6->CR & DMA_SxCR_EN)) // Wait until DMA Stream is finished
-			{
-				DMA2->HIFCR |= DMA_HIFCR_CTCIF6;					//Clear DMA Transfer Finished flag
-				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC; //Clear SDIO block transfer finished flag
-				return 1;
-			}
-		}
-		else
-		{
-			//No block transfer in progress
-			if (!(DMA2_Stream6->CR & DMA_SxCR_EN))
-				sdio_dma_start_transmit(databuffer); //When Stream is not yet enabled, enable it
-
-			//Get address of block data
-			if (!(SD->status & SD_SDHC)) //If SDSC card, byte addressing is used
-				l_block_address *= SDIO_BLOCKLEN;
-
-			/* Send command to start block transfer and start data transfer when command was sent.
-			 * The return value is not used, because in block transfer interrupts are used to manage the
-			 * command transfer. */
-			sdio_send_cmd_R1(CMD24, l_block_address);
-		}
-	}
-	return 0;
-};
-
-/*
- * Enable the DMA for data receive and start the transfer. Data is stored in buffer specified at function call.
- * DMA must not be enabled when calling this function!
- */
-void sdio_dma_start_receive(unsigned long *databuffer)
-{
-	//Enable interrupt for SDIO -> CMDREND
-	SDIO->MASK = SDIO_MASK_CMDRENDIE;
-	//Clear DMA interrupts
-	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
-	//Buffer start address
-	DMA2_Stream6->M0AR = (unsigned long)databuffer;
-	//Start transfer
-	DMA2_Stream6->CR = DMA_CONFIG_SDIO | DMA_SxCR_EN;
-};
-
-/*
- * Enable the DMA for data transmit. Data is read from buffer specified at function call.
- * DMA must not be enabled when calling this function!
- */
-void sdio_dma_start_transmit(unsigned long *databuffer)
-{
-	//Enable interrupt for SDIO -> CMDREND
-	SDIO->MASK = SDIO_MASK_CMDRENDIE;
-	//Clear DMA interrupts
-	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
-	//Buffer start address
-	DMA2_Stream6->M0AR = (unsigned long)databuffer;
-	//Start transfer
-	DMA2_Stream6->CR = DMA_CONFIG_SDIO | DMA_SxCR_DIR_0 | DMA_SxCR_EN; //DMA Config + Dir: from memory to peripheral
-};
-
-/*
- * Compute the LBA begin address of a specific cluster
- * Cluster numbering begins at 2.
- */
-unsigned long sdio_get_lba(unsigned long l_cluster)
-{
-	if (l_cluster >= 2)
-		return SD->FirstDataSecNum + (l_cluster - 2) * (unsigned long)SD->SecPerClus;
-	else										  //if cluster number is zero, only the root directory of FAT16 can have this value
-		return SD->LBAFATBegin + (2 * SD->FATSz); //Root dir of FAT16
-};
-
-/*
- * Read the first sector of a specific cluster from sd-card.
- * Returns 1 when communication is finished
- */
-unsigned char sdio_read_cluster(FILE_T *filehandler, unsigned long l_cluster)
-{
-	//Set the current sector and cluster
-	filehandler->CurrentCluster = l_cluster;
-	filehandler->CurrentSector = 1;
-
-	//Get the LBA address of cluster and the read the corresponding first sector
-	return sdio_read_block(&filehandler->buffer[0], sdio_get_lba(l_cluster));
-};
-
-/***********************************************************
- * Write cluster with zeros to empty space.
+/**
+ ***********************************************************
+ * @brief Get the next sector of the current cluster
  ***********************************************************
  * 
- * Argument[0]:	unsigned long 	l_cluster
- * Argument[1]: unsigned long*	l_databuffer
- * Return:		none
+ * Get the next cluster of a current cluster, reading the FAT.
+ * The next cluster is written to the return-value-pointer.
  * 
- * call-by-value, nargs = 2
- ***********************************************************/
-void sdio_clear_cluster(void)
+ * @param l_current_cluster The number of the current cluster.
+ * @param l_databuffer The pointer to the data buffer.
+ * @return The next sector of the current cluster
+ * 
+ * @details call-by-value, nargs = 2
+ ***********************************************************
+ */
+void sdio_get_next_cluster(void)
 {
-	//Get arguments of command
-	unsigned long *l_cluster = arbiter_get_argument(&task_sdio);						 //Argument[0]
+	//Get the pointer to the argument data for the command
+	unsigned long *l_currentcluster = arbiter_get_argument(&task_sdio);					 //Argument[0]
 	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
-	//Initialize command variables
-	unsigned long current_block = 0;
 
+	//Perform the command sequences
 	switch (arbiter_get_sequence(&task_sdio))
 	{
 	case SEQUENCE_ENTRY:
-		//How many sectors should be cleared?
-		task_sdio.local_counter = SD->SecPerClus;
-
-		//Delete the current filebuffer
-		for (unsigned int i_count = 0; i_count < (SDIO_BLOCKLEN / 4); i_count++)
-			l_databuffer[i_count] = 0;
-
-		//Goto next sequence
-		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-		break;
-
-	case SEQUENCE_FINISHED:
-		//Get cluster address and calculate the block address
-		current_block = (*l_cluster) + (SD->SecPerClus - task_sdio.local_counter);
-
-		//Delete one sector
-		if (sdio_write_block(l_databuffer, current_block))
+		//Read the sector with the entry of the current cluster
+		if (sdio_read_block(l_databuffer, sdio_get_fat_sec(*l_currentcluster, 1)))
 		{
-			//When sector was deleted goto next sector
-			task_sdio.local_counter--;
-
-			//When all sectors of the cluster are deleted, exit the function
-			if (task_sdio.local_counter == 0)
-				arbiter_return(&task_sdio, 0);
-		}
-		break;
-
-	default:
-		break;
-	}
-};
-
-/***********************************************************
- * Set the state of a cluster, writing the FAT.
- ***********************************************************
- *  
- * Argument[0]:	unsigned long	l_cluster
- * Argument[1]:	unsigned long	l_state
- * Argument[2]: unsigned long*	l_databuffer
- * Return:		none
- * 
- * call-by-value, nargs = 3
- ***********************************************************/
-void sdio_set_cluster(void)
-{
-	//Get input arguments
-	unsigned long *l_cluster = arbiter_get_argument(&task_sdio);						 //Argument[0]
-	unsigned long *l_state = l_cluster + 1;												 //Argument[1]
-	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 2); //Argument[1]
-
-	//Allocate memory for command
-	unsigned long *l_lba = arbiter_malloc(&task_sdio, 1);
-
-	switch (arbiter_get_sequence(&task_sdio))
-	{
-	case SEQUENCE_ENTRY:
-		//Get the LBA address of the cluster in the 1st FAT
-		*l_lba = sdio_get_fat_sec(*l_cluster, 1);
-
-		//Read the sector with the entry of the current cluster in the 1st FAT
-		if (sdio_read_block(l_databuffer, *l_lba))
-		{
-			//Determine the FAT entry
-			sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster), *l_state);
-
-			//Goto next sequence
-			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FAT_1);
-		}
-		break;
-
-	case SDIO_SEQUENCE_SET_FAT_1:
-		//Write 1st FAT to sd-card
-		if (sdio_write_block(l_databuffer, *l_lba))
-		{
-			//Get the LBA address of the cluster in the 2nd FAT
-			*l_lba = sdio_get_fat_sec(*l_cluster, 2);
-
-			//Goto next sequence
-			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FAT_2);
-		}
-		break;
-
-	case SDIO_SEQUENCE_SET_FAT_2:
-		//Read the sector with the entry of the current cluster in the 2nd FAT
-		
-		if (sdio_read_block(l_databuffer, *l_lba))
-		{
-			//Determine the FAT entry
-			sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster), *l_state);
-			//Goto sequence FINISHED
+			//When block is read goto finished sequence
 			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 		}
 		break;
-
 	case SEQUENCE_FINISHED:
-		//Write 2nd FAT to sd-card
-		if (sdio_read_block(l_databuffer, *l_lba))
-		{
-			//Exit command
-			arbiter_return(&task_sdio, 0);
-		}
+		//Determine the FAT entry and return the function call
+		arbiter_return(&task_sdio, sdio_read_fat_pos(l_databuffer, sdio_get_fat_pos(*l_currentcluster)));
 		break;
 
 	default:
@@ -1209,166 +694,20 @@ void sdio_set_cluster(void)
 	}
 };
 
-/*
- * Read a byte from buffer with the corresponding location in the sd-card memory
- */
-unsigned char sdio_read_byte(unsigned long *databuffer, unsigned int i_address)
-{
-	unsigned char ch_address = (unsigned char)((i_address / 4)); //Get address of buffer
-	unsigned char ch_byte = (unsigned char)(i_address % 4);		 //Get number of byte in buffer
-
-	return (unsigned char)((databuffer[ch_address] >> (ch_byte * 8)) & 0xFF); //Write in buffer
-};
-
-/*
- * write a byte to buffer with the corresponding location in the sd-card memory
- */
-void sdio_write_byte(unsigned long *databuffer, unsigned int i_address, unsigned char ch_data)
-{
-	unsigned char ch_address = (unsigned char)((i_address / 4)); //Get adress of buffer
-	unsigned char ch_byte = (unsigned char)(i_address % 4);		 //Get number of byte in buffer
-
-	databuffer[ch_address] &= ~(((unsigned long)0xFF) << (ch_byte * 8));   //Delete old byte
-	databuffer[ch_address] |= (((unsigned long)ch_data) << (ch_byte * 8)); //Write new byte
-};
-
-/*
- * Read a int from buffer with the corresponding location in the sd-card memory
- */
-unsigned int sdio_read_int(unsigned long *databuffer, unsigned int i_address)
-{
-	unsigned int i_data = 0;
-	i_data = (sdio_read_byte(databuffer, i_address) << 0);
-	i_data |= (sdio_read_byte(databuffer, i_address + 1) << 8);
-	return i_data;
-};
-
-/*
- * Write a int to buffer with the corresponding location in the sd-card memory
- */
-void sdio_write_int(unsigned long *databuffer, unsigned int i_address, unsigned int i_data)
-{
-	sdio_write_byte(databuffer, i_address, (unsigned char)(i_data & 0xFF));
-	sdio_write_byte(databuffer, i_address + 1, (unsigned char)((i_data >> 8) & 0xFF));
-};
-
-/*
- * Read a word from buffer with the corresponding location in the sd-card memory
- */
-unsigned long sdio_read_long(unsigned long *databuffer, unsigned int i_address)
-{
-	unsigned long l_data = 0;
-	/*
-	for(unsigned char ch_count = 0; ch_count<4; ch_count++)
-		l_data |= (sdio_read_byte(i_adress+ch_count)<<(8*ch_count));
-	 */
-	l_data = (sdio_read_byte(databuffer, i_address) << 0);
-	l_data |= (sdio_read_byte(databuffer, i_address + 1) << 8);
-	l_data |= (sdio_read_byte(databuffer, i_address + 2) << 16);
-	l_data |= (sdio_read_byte(databuffer, i_address + 3) << 24);
-
-	return l_data;
-};
-
-/*
- * Write a word to buffer with the corresponding location in the sd-card memory
- */
-void sdio_write_long(unsigned long *databuffer, unsigned int i_address, unsigned long l_data)
-{
-	sdio_write_byte(databuffer, i_address, (unsigned char)(l_data & 0xFF));
-	sdio_write_byte(databuffer, i_address + 1, (unsigned char)((l_data >> 8) & 0xFF));
-	sdio_write_byte(databuffer, i_address + 2, (unsigned char)((l_data >> 16) & 0xFF));
-	sdio_write_byte(databuffer, i_address + 3, (unsigned char)((l_data >> 24) & 0xFF));
-};
-
-/***********************************************************
- * Read a file/directory with fileid.
+/**
  ***********************************************************
-
- * Argument[0]:	unsigned long	file_id
- * Argument[1]:	FILE_T*			filehandler
- * Return:		none
- * 
- * call-by-value, nargs = 2
- ***********************************************************/
-void sdio_get_file(void)
-{
-	// Get the argument for the command
-	unsigned long *file_id = arbiter_get_argument(&task_sdio);			  //Argument[0]
-	FILE_T *filehandler = (FILE_T *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
-
-	switch (arbiter_get_sequence(&task_sdio))
-	{
-	case SEQUENCE_ENTRY:
-		//Read start cluster of directory
-		if (sdio_read_cluster(dir, dir->StartCluster))
-		{
-			//Set local counter
-			task_sdio.local_counter = (*file_id / (SDIO_BLOCKLEN / 32));
-			//Goto next sequence
-			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
-		}
-		break;
-
-	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
-		//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
-		if (task_sdio.local_counter)
-		{
-			//Read the next sector of the cluster as often as local_count says
-			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
-			{
-				//Decrement call counter
-				task_sdio.local_counter--;
-				//See whether next sector was found
-				if (arbiter_get_return_value(&task_sdio) == 0)
-					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
-			}
-		}
-		else
-		{
-			//The current sector contains the fileid
-			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
-		}
-		break;
-
-	case SEQUENCE_FINISHED:
-		//Read the entry of the file
-		/*
-		 	 * The fileid is a consecutive number over all sectors of the directory. To get the specific entry within one sector,
-		 	 * the remainder of the entries per sector has to be used to access the information in the sd-buffer.
-		 	 */
-		filehandler->id = *file_id;
-		unsigned long l_fileid = *file_id % (SDIO_BLOCKLEN / 32);
-		sdio_get_name(filehandler);																				  //Name
-		filehandler->DirAttr = sdio_read_byte(dir->buffer, l_fileid * 32 + DIR_ATTR_pos);						  //Attribute Byte
-		filehandler->DirCluster = dir->CurrentCluster;															  //Cluster in which entry can be found
-		filehandler->StartCluster = (unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusLO_pos); //Cluster in which the file starts (FAT16)
-		if (!(SD->status & SD_IS_FAT16))
-			filehandler->StartCluster |= (((unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusHI_pos)) << 16); //Cluster in which the file starts (FAT32)
-		filehandler->size = sdio_read_long(dir->buffer, l_fileid * 32 + DIR_FILESIZE_pos);
-
-		//exit the command
-		arbiter_return(&task_sdio, 0);
-		break;
-
-	default:
-		break;
-	}
-};
-
-/***********************************************************
- * Read the next sector of the current file.
+ * @brief Read the next sector of the current file.
  ***********************************************************
  *
  * Read the next sectors of a file until the end of file is
  * reached.
- * Returns 1 when the next setor was found and could be read.
  * 
- * Argument:	FILE_T*			filehandler
- * Return:		unsigned long	file_found
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when the next sector was found and could be read.
  * 
- * call-by-reference
- ***********************************************************/
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_read_next_sector_of_cluster(void)
 {
 	//Get arguments
@@ -1462,39 +801,75 @@ void sdio_read_next_sector_of_cluster(void)
 	}
 };
 
-/***********************************************************
- * Get the next sector of the current cluster
+/**
  ***********************************************************
- * 
- * Get the next cluster of a current cluster, reading the FAT.
- * The next cluster is written to the return-value-pointer.
- * 
- * Argument[0]: unsigned long 	l_current_cluster
- * Argument[1]: unsigned long*	l_databuffer
- * Returns:		unsigned long	next_fat_sector
- * 
- * call-by-value, nargs = 2
- ***********************************************************/
-void sdio_get_next_cluster(void)
+ * @brief Read a file/directory with fileid.
+ ***********************************************************
+ *
+ * @param file_id The fileid of the file.
+ * @param filehandler The address of the current filehandler struct.
+ * @return none
+ * @details call-by-value, nargs = 2
+ ***********************************************************
+ */
+void sdio_get_file(void)
 {
-	//Get the pointer to the argument data for the command
-	unsigned long *l_currentcluster = arbiter_get_argument(&task_sdio);					 //Argument[0]
-	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
+	// Get the argument for the command
+	unsigned long *file_id = arbiter_get_argument(&task_sdio);			  //Argument[0]
+	FILE_T *filehandler = (FILE_T *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
 
-	//Perform the command sequences
 	switch (arbiter_get_sequence(&task_sdio))
 	{
 	case SEQUENCE_ENTRY:
-		//Read the sector with the entry of the current cluster
-		if (sdio_read_block(l_databuffer, sdio_get_fat_sec(*l_currentcluster, 1)))
+		//Read start cluster of directory
+		if (sdio_read_cluster(dir, dir->StartCluster))
 		{
-			//When block is read goto finished sequence
+			//Set local counter
+			task_sdio.local_counter = (*file_id / (SDIO_BLOCKLEN / 32));
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER);
+		}
+		break;
+
+	case SDIO_SEQUENCE_READ_NEXT_SECTOR_OF_CLUSTER:
+		//Get the cluster sector which corresponds to the given file id (one sector can contain SDIO_BLOCKLEN/32 entries, one entry is 32bytes)
+		if (task_sdio.local_counter)
+		{
+			//Read the next sector of the cluster as often as local_count says
+			if (arbiter_callbyreference(&task_sdio, SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER, dir))
+			{
+				//Decrement call counter
+				task_sdio.local_counter--;
+				//See whether next sector was found
+				if (arbiter_get_return_value(&task_sdio) == 0)
+					SD->err = SDIO_ERROR_NO_SUCH_FILEID;
+			}
+		}
+		else
+		{
+			//The current sector contains the fileid
 			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
 		}
 		break;
+
 	case SEQUENCE_FINISHED:
-		//Determine the FAT entry and return the function call
-		arbiter_return(&task_sdio, sdio_read_fat_pos(l_databuffer, sdio_get_fat_pos(*l_currentcluster)));
+		//Read the entry of the file
+		/*
+		 	 * The fileid is a consecutive number over all sectors of the directory. To get the specific entry within one sector,
+		 	 * the remainder of the entries per sector has to be used to access the information in the sd-buffer.
+		 	 */
+		filehandler->id = *file_id;
+		unsigned long l_fileid = *file_id % (SDIO_BLOCKLEN / 32);
+		sdio_get_name(filehandler);																				  //Name
+		filehandler->DirAttr = sdio_read_byte(dir->buffer, l_fileid * 32 + DIR_ATTR_pos);						  //Attribute Byte
+		filehandler->DirCluster = dir->CurrentCluster;															  //Cluster in which entry can be found
+		filehandler->StartCluster = (unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusLO_pos); //Cluster in which the file starts (FAT16)
+		if (!(SD->status & SD_IS_FAT16))
+			filehandler->StartCluster |= (((unsigned long)sdio_read_int(dir->buffer, l_fileid * 32 + DIR_FstClusHI_pos)) << 16); //Cluster in which the file starts (FAT32)
+		filehandler->size = sdio_read_long(dir->buffer, l_fileid * 32 + DIR_FILESIZE_pos);
+
+		//exit the command
+		arbiter_return(&task_sdio, 0);
 		break;
 
 	default:
@@ -1502,135 +877,152 @@ void sdio_get_next_cluster(void)
 	}
 };
 
-/*
- * Write the current sector of the current cluster to sd-card.
- * Returns 1 when the communication is finished
+/**
+ ***********************************************************
+ * @brief Write cluster with zeros to empty space.
+ ***********************************************************
+ * 
+ * @param l_cluster Number of cluster which should be cleared.
+ * @param l_databuffer Buffer for data.
+ * @return none
+ * 
+ * @details call-by-value, nargs = 2
+ ***********************************************************
  */
-unsigned char sdio_write_current_sector(FILE_T *filehandler)
+void sdio_clear_cluster(void)
 {
-	//Write sector to LBA sector address. The current sector is decremented by 1, because the sector count starts counting at 1.
-	return sdio_write_block(filehandler->buffer, sdio_get_lba(filehandler->CurrentCluster) + (filehandler->CurrentSector - 1));
-};
+	//Get arguments of command
+	unsigned long *l_cluster = arbiter_get_argument(&task_sdio);						 //Argument[0]
+	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 1); //Argument[1]
+	//Initialize command variables
+	unsigned long current_block = 0;
 
-/*
- * Get the FAT sector for a specific cluster
- */
-unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum)
-{
-	unsigned long l_FATOffset = 0;
-
-	if (SD->status & SD_IS_FAT16)
-		l_FATOffset = l_cluster * 2;
-	else
-		l_FATOffset = l_cluster * 4;
-
-	return SD->LBAFATBegin + (l_FATOffset / SDIO_BLOCKLEN) + (SD->FATSz * (ch_FATNum - 1));
-};
-
-/*
- * Get the byte position of a cluster withing a FAT sector
- */
-unsigned long sdio_get_fat_pos(unsigned long l_cluster)
-{
-	unsigned long l_FATOffset = 0;
-
-	if (SD->status & SD_IS_FAT16)
-		l_FATOffset = l_cluster * 2;
-	else
-		l_FATOffset = l_cluster * 4;
-
-	return l_FATOffset % SDIO_BLOCKLEN;
-};
-
-/*
- * Read the FAT entry of the loaded Sector and return the content
- */
-unsigned long sdio_read_fat_pos(unsigned long *databuffer, unsigned long l_pos)
-{
-	if (SD->status & SD_IS_FAT16)
-		return (unsigned long)sdio_read_int(databuffer, l_pos);
-	else
-		return sdio_read_long(databuffer, l_pos);
-};
-
-/*
- * Read the name of a file or directory. The sector of the file id has to be loaded.
- */
-void sdio_get_name(FILE_T *filehandler)
-{
-	unsigned long l_id = filehandler->id % (SDIO_BLOCKLEN / 32); //one sector can contain 16 files or directories
-	//Read the name string
-	for (unsigned char ch_count = 0; ch_count < 11; ch_count++)
-		filehandler->name[ch_count] = sdio_read_byte(dir->buffer, l_id * 32 + ch_count);
-};
-
-/*
- * Write the FAT entry of the loaded Sector
- */
-void sdio_write_fat_pos(unsigned long *databuffer, unsigned long l_pos, unsigned long l_data)
-{
-	if (SD->status & SD_IS_FAT16)
-		sdio_write_int(databuffer, (unsigned int)l_pos, (unsigned int)l_data);
-	else
-		sdio_write_long(databuffer, (unsigned int)l_pos, l_data);
-};
-
-/*
- * Compare two strings. The first string sets the compare length.
- */
-unsigned char sdio_strcmp(char *pch_string1, char *pch_string2)
-{
-	while (*pch_string1 != 0)
+	switch (arbiter_get_sequence(&task_sdio))
 	{
-		if (*pch_string1++ != *pch_string2++)
-			return 0;
+	case SEQUENCE_ENTRY:
+		//How many sectors should be cleared?
+		task_sdio.local_counter = SD->SecPerClus;
+
+		//Delete the current filebuffer
+		for (unsigned int i_count = 0; i_count < (SDIO_BLOCKLEN / 4); i_count++)
+			l_databuffer[i_count] = 0;
+
+		//Goto next sequence
+		arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Get cluster address and calculate the block address
+		current_block = (*l_cluster) + (SD->SecPerClus - task_sdio.local_counter);
+
+		//Delete one sector
+		if (sdio_write_block(l_databuffer, current_block))
+		{
+			//When sector was deleted goto next sector
+			task_sdio.local_counter--;
+
+			//When all sectors of the cluster are deleted, exit the function
+			if (task_sdio.local_counter == 0)
+				arbiter_return(&task_sdio, 0);
+		}
+		break;
+
+	default:
+		break;
 	}
-	return 1;
 };
 
-/*
- * check the file type of the current file
+/**
+ ***********************************************************
+ * @brief Set the state of a cluster, writing the FAT.
+ ***********************************************************
+ *  
+ * @param l_cluster Number of cluster which should be updated.
+ * @param l_state New state of the cluster
+ * @param l_databuffer Buffer for data.
+ * @return none
+ * 
+ * @details call-by-value, nargs = 3
+ ***********************************************************
  */
-unsigned char sdio_check_filetype(FILE_T *filehandler, char *pch_type)
+void sdio_set_cluster(void)
 {
-	for (unsigned char ch_count = 0; ch_count < 3; ch_count++)
+	//Get input arguments
+	unsigned long *l_cluster = arbiter_get_argument(&task_sdio);						 //Argument[0]
+	unsigned long *l_state = l_cluster + 1;												 //Argument[1]
+	unsigned long *l_databuffer = (unsigned long *)arbiter_get_reference(&task_sdio, 2); //Argument[1]
+
+	//Allocate memory for command
+	unsigned long *l_lba = arbiter_malloc(&task_sdio, 1);
+
+	switch (arbiter_get_sequence(&task_sdio))
 	{
-		if (filehandler->name[8 + ch_count] != *pch_type++)
-			return 0;
+	case SEQUENCE_ENTRY:
+		//Get the LBA address of the cluster in the 1st FAT
+		*l_lba = sdio_get_fat_sec(*l_cluster, 1);
+
+		//Read the sector with the entry of the current cluster in the 1st FAT
+		if (sdio_read_block(l_databuffer, *l_lba))
+		{
+			//Determine the FAT entry
+			sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster), *l_state);
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FAT_1);
+		}
+		break;
+
+	case SDIO_SEQUENCE_SET_FAT_1:
+		//Write 1st FAT to sd-card
+		if (sdio_write_block(l_databuffer, *l_lba))
+		{
+			//Get the LBA address of the cluster in the 2nd FAT
+			*l_lba = sdio_get_fat_sec(*l_cluster, 2);
+
+			//Goto next sequence
+			arbiter_set_sequence(&task_sdio, SDIO_SEQUENCE_SET_FAT_2);
+		}
+		break;
+
+	case SDIO_SEQUENCE_SET_FAT_2:
+		//Read the sector with the entry of the current cluster in the 2nd FAT
+		
+		if (sdio_read_block(l_databuffer, *l_lba))
+		{
+			//Determine the FAT entry
+			sdio_write_fat_pos(l_databuffer, sdio_get_fat_pos(*l_cluster), *l_state);
+			//Goto sequence FINISHED
+			arbiter_set_sequence(&task_sdio, SEQUENCE_FINISHED);
+		}
+		break;
+
+	case SEQUENCE_FINISHED:
+		//Write 2nd FAT to sd-card
+		if (sdio_read_block(l_databuffer, *l_lba))
+		{
+			//Exit command
+			arbiter_return(&task_sdio, 0);
+		}
+		break;
+
+	default:
+		break;
 	}
-	return 1;
 };
 
-/*
- * Get date in FAT format
- */
-unsigned int sdio_get_date(void)
-{
-	return sys->date;
-};
-
-/*
- * Get time in FAT format
- */
-unsigned int sdio_get_time(void)
-{
-	//In FAT the time is only stored with a resolution of 2 seconds. Bit shifting the current time by 1 (dividing by 2) converts to this format.
-	return (unsigned int)(sys->time >> 1);
-};
-
-/***********************************************************
- * Get fileid of an empty file entry.
+/**
+ ***********************************************************
+ * @brief Get fileid of an empty file entry.
  ***********************************************************
  * 
  * The directory cluster of the file/directory has to be 
  * loaded in the buffer!
  * 
  * Argument:	none
- * return:		unsigned long l_empty_id
- * 
- * call-by-value, nargs = none
- * call-by-reference
- ***********************************************************/
+ * @return The fileid of the next empty file.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_get_empty_id(void)
 {
 	//Allocate memory
@@ -1691,18 +1083,19 @@ void sdio_get_empty_id(void)
 	}
 };
 
-/***********************************************************
- * Set fileid of an empty file entry.
+/**
+ ***********************************************************
+ * @brief Set fileid of an empty file entry.
  ***********************************************************
  * 
  * The directory cluster of the file/directory has to be 
  * loaded in the buffer!
  * 
- * Argument:	unsigned long l_id
- * Return:		none
- * 
- * call-by-value, nargs = 1
- ***********************************************************/
+ * @param l_id The id of the file.
+ * @return none
+ * @details call-by-value, nargs = 1
+ ***********************************************************
+ */
 void sdio_set_empty_id(void)
 {
 	//Allocate memory
@@ -1761,15 +1154,16 @@ void sdio_set_empty_id(void)
 	}
 };
 
-/***********************************************************
- * Get the next empty cluster.
+/**
+ ***********************************************************
+ * @brief Get the next empty cluster.
  ***********************************************************
  * 
- * Argument:	FILE_T*			filehandler
- * Return:		unsigned long 	l_empty_cluster
- * 
- * call-by-reference
- ***********************************************************/
+ * @param filehandler The address of the current filehandler struct.
+ * @return The number of the next empty cluster.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_get_empty_cluster(void)
 {
 	//Get arguments
@@ -1820,8 +1214,9 @@ void sdio_get_empty_cluster(void)
 	}
 };
 
-/***********************************************************
- * Get fileid of specific file or directory. 
+/**
+ ***********************************************************
+ * @brief Get fileid of specific file or directory. 
  ***********************************************************
  * The fileid is automatically saved in the active file handler.
  * The directory cluster of the file/directory has to be loaded
@@ -1830,12 +1225,12 @@ void sdio_get_empty_cluster(void)
  * When the file does not exist, SD->err is set 
  * with SDIO_ERROR_NO_SUCH_FILEID.
  * 
- * Argument[0]:	FILE_T*			filehandler
- * Argument[1]:	char* 			ch_namestring
- * return:		unsigned long 	l_fileid
- * 
- * call-by-value, nargs = 2
- ***********************************************************/
+ * @param filehandler The address of the active filehandler struct.
+ * @param ch_namestring The pointer to the name string of the file.
+ * @return The fileid of the desired file.
+ * @details call-by-value, nargs = 2
+ ***********************************************************
+ */
 void sdio_get_fileid(void)
 {
 	//allocate memory
@@ -1905,22 +1300,21 @@ void sdio_get_fileid(void)
 	}
 };
 
-/***********************************************************
- * Check whether a filename is existing or not.
+/**
+ ***********************************************************
+ * @brief Check whether a filename is existing or not.
  ***********************************************************
  * 
  * This is a robust function to determine whether a file 
  * exists or not. The other function throw an error when the
  * file does not exist, this functions simply return 0 or 1.
  * 
- * Returns 1 when the filename exists.
- * 
- * Argument[0]:	FILE_T*			filehandler
- * Argument[1]:	char*			ch_namestring
- * Return:		unsigned long	l_filefound
- * 
- * call-by-value, nargs = 2
- ***********************************************************/
+ * @param filehandler The address of the current active filehandler struct.
+ * @param ch_namestring The pointer to the name string of the file.
+ * @return Returns 1 when the filename exists.
+ * @details call-by-value, nargs = 2
+ ***********************************************************
+ */
 void sdio_fsearch(void)
 {
 	//allocate memory
@@ -1991,19 +1385,19 @@ void sdio_fsearch(void)
 	}
 };
 
-/***********************************************************
- * Change the current directory within one directory.
+/**
+ ***********************************************************
+ * @brief Change the current directory within one directory.
  ***********************************************************
  *
  * The filehandler for directories is automatically used.
  * For longer paths the function has to be called repeatedly.
- * Returns 1 when the directory was found and could be opened.
  * 
- * Argument:	char* ch_dirname
- * Return:		unsigned long l_dir_opened
- * 
- * call-by-reference
- ***********************************************************/
+ * @param ch_dirname The pointer to the name string of the directory.
+ * @return Returns 1 when the directory was found and could be opened. 
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_cd(void)
 {
 	//Get the argument of the command
@@ -2079,19 +1473,19 @@ void sdio_cd(void)
 	}
 };
 
-/***********************************************************
- * Open file in the current directory. 
+/**
+ ***********************************************************
+ * @brief Open file in the current directory. 
  ***********************************************************
  *
  * The filehandler for the active file is automatically used.
  * The input name string has to include the filename + file extension!
- * Returns 1 when file was found and could be read.
  * 
- * Argument:	char* filename
- * Return:		unsigned long file_opened
- * 
- * call-by-reference
- ***********************************************************/
+ * @param ch_filename The pointer to the namestring of the file.
+ * @return Returns 1 when file was found and could be read.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_fopen(void)
 {
 	//Get arguments
@@ -2146,16 +1540,17 @@ void sdio_fopen(void)
 	}
 };
 
-/***********************************************************
- * Close the current file in the active filehandler.
+/**
+ ***********************************************************
+ * @brief Close the current file in the active filehandler.
  ***********************************************************
  * 
  * Argument:	none
  * Return:		none
  * 
- * call-by-value, nargs = none
- * call-by-reference
- ***********************************************************/
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_fclose(void)
 {
 	//perform the command action
@@ -2189,18 +1584,19 @@ void sdio_fclose(void)
 	}
 };
 
-/***********************************************************
- * Create a new entry in the current cluster.
+/**
+ ***********************************************************
+ * @brief Create a new entry in the current cluster.
  ***********************************************************
  * 
- * Argument[0]:	unsigned long 	l_empty_id
- * Argument[1]: char*			ch_filename
- * Argument[2]:	unsigned long	l_empty_cluster
- * Argument[3]: unsigned char 	ch_attribute
- * Return:		none
- * 
- * call-by-value, nargs = 4
- ***********************************************************/
+ * @param l_empty_id The fileid of the empty space.
+ * @param ch_filename The pointer to the name string of the file.
+ * @param l_empty_cluster The number of the next empty cluster.
+ * @param ch_attribute The file attributes for the FAT.
+ * @return none
+ * @details call-by-value, nargs = 4
+ ***********************************************************
+ */
 void sdio_make_entry(void)
 {
 	//Get Arguments
@@ -2267,17 +1663,16 @@ void sdio_make_entry(void)
 	}
 };
 
-/***********************************************************
- * Create new file in current directory.
+/**
  ***********************************************************
- *
- * Return 1 when file could be created.
+ * @brief Create new file in current directory.
+ ***********************************************************
  * 
- * Argument:	char*			ch_filename
- * Return:		unsigned long	l_file_created
- * 
- * call-by-reference
- ***********************************************************/
+ * @param ch_filename The pointer to the name string of the file.
+ * @return Return 1 when file could be created. 
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_mkfile(void)
 {
 	//Get arguments
@@ -2405,17 +1800,16 @@ void sdio_mkfile(void)
 	}
 };
 
-/***********************************************************
- * Create new directory in current directory.
+/**
+ ***********************************************************
+ * @brief Create new directory in current directory.
  ***********************************************************
  * 
- * Returns 1 when directory could be created.
- * 
- * Argument:	char*			ch_dirname
- * Return:		unsigned long	l_dir_created
- * 
- * call-by-reference
- ***********************************************************/
+ * @param ch_dirname The pointer to the name string of the directory.
+ * @return Returns 1 when directory could be created. 
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_mkdir(void)
 {
 	//get arguments
@@ -2599,18 +1993,18 @@ void sdio_mkdir(void)
 	}
 };
 
-/***********************************************************
- * Remove file or directory.
+/**
+ ***********************************************************
+ * @brief Remove file or directory.
  ***********************************************************
  * 
  * The content of a directory isn't checked!
- * Returns 1 when file is removed.
  * 
- * Argument:	FILE_T*			filehandler
- * Return:		unsigned long	l_file_removed
- * 
- * call-by-reference
- ***********************************************************/
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when file is removed. 
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_rm(void)
 {
 	//Get argument
@@ -2721,17 +2115,16 @@ void sdio_rm(void)
 	}
 };
 
-/***********************************************************
- * Set file size of file.
+/**
+ ***********************************************************
+ * @brief Set file size of file.
  ***********************************************************
  * 
- * Returns 1 when filesize is set.
- * 
- * Argument:	FILE_T*			filehandler
- * Return:		unsigned long	l_size_set
- * 
- * call-by-reference
- ***********************************************************/
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when filesize is set. 
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_set_filesize(void)
 {
 	//Get arguments
@@ -2792,17 +2185,16 @@ void sdio_set_filesize(void)
 	}
 };
 
-/***********************************************************
- * Set current file as empty.
+/**
+ ***********************************************************
+ * @brief Set current file as empty.
  ***********************************************************
  * 
- * Returns one when file is cleared
- * 
- * Argument:	FILE_T*			filehandler
- * Return:		unsigned long	l_file_cleared
- * 
- * call-by-reference
- ***********************************************************/
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when file is cleared.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_fclear(void)
 {
 	//Get arguments
@@ -2902,19 +2294,19 @@ void sdio_fclear(void)
 	}
 };
 
-/***********************************************************
- * Write current file content onto sd-card. 
+/**
+ ***********************************************************
+ * @brief Write current file content onto sd-card. 
  ***********************************************************
  *
  * If cluster or sector is full, the memory is extended.
  * Filesize has to be current!
- * Returns 1 when the file is written.
  * 
- * Argument: 	FILE_T*			filehandler
- * Return:		unsigned long 	l_file_written
- * 
- * call-by-reference
- ***********************************************************/
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when the file is written. 
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_write_file(void)
 {
 	//Get arguments
@@ -3042,21 +2434,21 @@ void sdio_write_file(void)
 	}
 };
 
-/***********************************************************
- * Read the end sector of the opened file.
+/**
+ ***********************************************************
+ * @brief Read the end sector of the opened file.
  ***********************************************************
  * 
  * Read the sector of a file which contains the current end
  * of file using the stored filesize. Works only after 
  * sdio_fopen() or when only the first sector of the file 
  * has been read from sd-card!
- * Returns 1 when sector could be read.
  * 
- * Argument:	FILE_T*			filehandler
- * Return:		unsigned long	l_sector_read
- * 
- * call-by-reference
- ***********************************************************/
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when sector could be read.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_read_end_sector_of_file(void)
 {
 	//Get argument
@@ -3129,18 +2521,18 @@ void sdio_read_end_sector_of_file(void)
 	}
 };
 
-/***********************************************************
- * Write byte to file.
+/**
+ ***********************************************************
+ * @brief Write byte to file.
  ***********************************************************
  * 
  * Write byte to currently opened file at current byte position.
- * Returns 1 when byte is written to file.
  * 
- * Argument:	unsigned char	ch_byte
- * Return:		unsigned long	l_byte_written
- * 
- * call-by-value, nargs = 1
- ***********************************************************/
+ * @param ch_byte The value to be written.
+ * @return Returns 1 when byte is written to file.
+ * @details call-by-value, nargs = 1
+ ***********************************************************
+ */
 void sdio_byte2file(void)
 {
 	//Get arguments
@@ -3178,18 +2570,18 @@ void sdio_byte2file(void)
 	}
 };
 
-/***********************************************************
- * Write integer to file
+/**
+ ***********************************************************
+ * @brief Write integer to file
  ***********************************************************
  *
  * Write integer to currently opened file at current byte position.
- * Returns 1 when integer is written to file.
  * 
- * Argument:	unsigned int	i_data
- * Return:		unsigned long	l_integer_written
- * 
- * call-by-value, nargs = 1
- ***********************************************************/
+ * @param i_data The value to be written.
+ * @return Returns 1 when integer is written to file. 
+ * @details call-by-value, nargs = 1
+ ***********************************************************
+ */
 void sdio_int2file(void)
 {
 	//Get argument
@@ -3230,18 +2622,18 @@ void sdio_int2file(void)
 	}
 };
 
-/***********************************************************
- * Write 32-bit to the file.
+/**
+ ***********************************************************
+ * @brief Write 32-bit to the file.
  ***********************************************************
  * 
  * Write long to currently opened file at current byte position.
- * Returns 1 when long is written to file.
  * 
- * Argument:	unsigned long	l_data
- * Return:		unsigned long	l_long_written
- * 
- * call-by-value, nargs = 1
- ***********************************************************/
+ * @param l_data The value to be written.
+ * @return Returns 1 when long is written to file.
+ * @details call-by-value, nargs = 1
+ ***********************************************************
+ */
 void sdio_long2file(void)
 {
 	//Get argument
@@ -3282,18 +2674,18 @@ void sdio_long2file(void)
 	}
 };
 
-/***********************************************************
- * Write a string to the file.
+/**
+ ***********************************************************
+ * @brief Write a string to the file.
  ***********************************************************
  *
  * Write string to currently opened file at current byte position.
- * Returns 1 when string is written to file.
  * 
- * Argument:	char*			ch_string
- * Return:		unsigned long	l_string_written
- * 
- * call-by-reference
- ***********************************************************/
+ * @param ch_string The pointer to string to be written.
+ * @return Returns 1 when string is written to file.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void sdio_string2file(void)
 {
 	//Get argument
@@ -3335,20 +2727,20 @@ void sdio_string2file(void)
 	}
 };
 
-/***********************************************************
- * Write a number to the file.
+/**
+ ***********************************************************
+ * @brief Write a number to the file.
  ***********************************************************
  *
  * Write number as string to currently opened file at 
  * current byte position.
- * Returns 1 when number is written to file.
  * 
- * Argument[0]:	unsigned long	l_number
- * Argument[1]:	unsigned long	l_decimal_places
- * Return:		unsigned long	l_number_written
- * 
- * call-by-value, nargs = 2;
- ***********************************************************/
+ * @param l_number The value to be written.
+ * @param l_decimal_places The number of digits to be written.
+ * @return Returns 1 when number is written to file.
+ * @details call-by-value, nargs = 2;
+ ***********************************************************
+ */
 void sdio_num2file(void)
 {
 	//Get arguments
@@ -3396,3 +2788,695 @@ void sdio_num2file(void)
 		break;
 	}
 };
+
+/**
+ * @brief Initialize the peripherals for the sdio communication
+ */
+void sdio_init_peripheral(void)
+{
+	//Activate Clocks
+	RCC->APB2ENR |= RCC_APB2ENR_SDIOEN; //Sdio adapter
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN; //DMA2
+	gpio_en(GPIO_C);
+	gpio_en(GPIO_D);
+
+	/*
+	 * Configure Pins:
+	 * PD2		SD_CMD	AF12	Open-drain	Pullup
+	 * PC8		DAT0	AF12	Open-drain	Pullup
+	 * PC9		DAT1	AF12	Open-drain	Pullup
+	 * PC10		DAT2	AF12	Open-drain	Pullup
+	 * PC11		DAT3	AF12	Open-drain	Pullup
+	 * PC12 	SD_CLK	AF12	Push-pull	No Pull
+	 */
+	GPIOC->MODER |= GPIO_MODER_MODER12_1 | GPIO_MODER_MODER11_1 | GPIO_MODER_MODER10_1 | GPIO_MODER_MODER9_1 | GPIO_MODER_MODER8_1;
+	//GPIOC->OTYPER	|= GPIO_OTYPER_OT_11 | GPIO_OTYPER_OT_10 | GPIO_OTYPER_OT_9 | GPIO_OTYPER_OT_8;
+	GPIOC->PUPDR |= GPIO_PUPDR_PUPDR11_0 | GPIO_PUPDR_PUPDR10_0 | GPIO_PUPDR_PUPDR9_0 | GPIO_PUPDR_PUPDR8_0;
+	GPIOC->AFR[1] |= (12 << 16) | (12 << 12) | (12 << 8) | (12 << 4) | (12 << 0);
+
+	GPIOD->MODER |= GPIO_MODER_MODER2_1;
+	//GPIOD->OTYPER	= GPIO_OTYPER_OT_2;
+	GPIOD->PUPDR = GPIO_PUPDR_PUPDR2_0;
+	GPIOD->AFR[0] |= (12 << 8);
+
+	/*
+	 * Configure sdio
+	 */
+	sdio_set_clock(400000);									   //set sdio clock
+	SDIO->CLKCR |= SDIO_CLKCR_PWRSAV | SDIO_CLKCR_CLKEN;	   //enable clock
+	SDIO->POWER = SDIO_POWER_PWRCTRL_1 | SDIO_POWER_PWRCTRL_0; //Enable SD_CLK
+	SDIO->DTIMER = 0xFFFFFFF;								   //Data timeout during data transfer, includes the program time of the sd-card memory -> adjust for slow cards
+	SDIO->DLEN = SDIO_BLOCKLEN;								   //Numbers of bytes per block
+	NVIC_EnableIRQ(SDIO_IRQn);								   //Enable the global SDIO interrupt
+
+	//Clear DMA interrupts
+	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
+
+	/*
+	 * Configure DMA2 Stream 6 Channel 4:
+	 * -Memorysize:	32bit	incremented
+	 * -Peripheral:	32bit	fixed
+	 * -Peripheral flow control
+	 * -Peripheral Burst with 4 Beats
+	 */
+#define DMA_CONFIG_SDIO (DMA_SxCR_CHSEL_2 | DMA_SxCR_PBURST_0 | DMA_SxCR_PSIZE_1 | DMA_SxCR_MINC | DMA_SxCR_PFCTRL)
+
+	DMA2_Stream6->CR = DMA_CONFIG_SDIO;
+	//DMA2_Stream3->NDTR = 128;							//128*4bytes to transmit
+	DMA2_Stream6->PAR = (unsigned long)&SDIO->FIFO;		 //Peripheral address
+	DMA2_Stream6->M0AR = (unsigned long)&dir->buffer[0]; //Buffer start address
+	DMA2_Stream6->FCR = DMA_SxFCR_DMDIS;				 // | DMA_SxFCR_FTH_1 | DMA_SxFCR_FTH_0;
+};
+
+/**
+ * @brief Set the clock speed to the sd card.
+ * @param l_clock New clock speed in Hz
+ */
+void sdio_set_clock(unsigned long l_clock)
+{
+	//Enable Clock and set to desired speed [400kHz : 25 MHz] clock inactive when bus inactive
+	if (l_clock < 400000)
+		l_clock = 400000;
+	else if (l_clock > 25000000)
+		l_clock = 25000000;
+
+	//Save current CLKCR
+	unsigned long config = SDIO->CLKCR;
+
+	//Write new CLKDIV
+	SDIO->CLKCR = (config & (127 << 8)) | ((SDIOCLK / l_clock) - 2);
+};
+
+/**
+ * @brief Check SDIO task for errors
+ */
+void sdio_check_error(void)
+{
+	// Any SDIO Error Occured?
+	if (SDIO->STA & (SDIO_STA_DTIMEOUT | SDIO_STA_CTIMEOUT))
+		SD->err = SDIO_ERROR_TRANSFER_ERROR;
+
+	// Any DMA Error Occurred?
+	//TODO Add DMA error check here!
+
+	// Any File Error Occurred?
+	//TODO Add File error Check here!
+
+	// Change command when an error occurrred
+	if (SD->err)
+		arbiter_set_command(&task_sdio, SDIO_CMD_NO_CARD);
+};
+
+/**
+ * @brief Send command to sd-card without expected response. 
+ * @param ch_cmd The new active command.
+ * @param l_arg The arguments for the command.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_send_cmd(unsigned char ch_cmd, unsigned long l_arg)
+{
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		// Finished Sending Command? (no response required)
+		if (!(SDIO->STA & SDIO_STA_CMDSENT))
+		{
+			//No Active Command, so new command can be sent
+			SDIO->ARG = l_arg;
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | (ch_cmd & 0b111111);
+		}
+		else
+		{
+			// The command is finished, clear all flags
+			SDIO->ICR = SDIO_ICR_CMDSENTC;
+			return 1;
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Send command to sd-card with expected R1 response.
+ * @param ch_cmd The new active command.
+ * @param l_arg The arguments for the command.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_send_cmd_R1(unsigned char ch_cmd, unsigned long l_arg)
+{
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		// Finished Sending Command? (R1 response required)
+		if (!(SDIO->STA & SDIO_STA_CMDREND))
+		{
+			//No Active Command, so new command can be sent
+			SDIO->ARG = l_arg;
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
+		}
+		else
+		{
+			// The command is finished, clear all flags
+			SDIO->ICR = SDIO_ICR_CMDRENDC;
+			// Save response
+			SD->response = SDIO->RESP1;
+			return 1;
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Send command to sd-card with expected R2 response (Only the first 48 bits of the response are checked). 
+ * @param ch_cmd The new active command.
+ * @param l_arg The arguments for the command.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_send_cmd_R2(unsigned char ch_cmd, unsigned long l_arg)
+{
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		// Finished Sending Command? (R2 response required)
+		if (!(SDIO->STA & SDIO_STA_CMDREND))
+		{
+			//No Active Command, so new command can be sent
+			SDIO->ARG = l_arg;
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_1 | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
+		}
+		else
+		{
+			// The command is finished, clear all flags
+			SDIO->ICR = SDIO_ICR_CMDRENDC;
+			// Save response
+			SD->response = SDIO->RESP1;
+			return 1;
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Send command to sd-card with expected R3 response. 
+ * @param ch_cmd The new active command.
+ * @param l_arg The arguments for the command.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_send_cmd_R3(unsigned char ch_cmd, unsigned long l_arg)
+{
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		// Finished Sending Command? (R3 response required, without matching CCRC)
+		if (!(SDIO->STA & (SDIO_STA_CCRCFAIL | SDIO_STA_CMDREND)))
+		{
+			//No Active Command, so new command can be sent
+			SDIO->ARG = l_arg;
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
+		}
+		else
+		{
+			// The command is finished, clear all flags
+			SDIO->ICR = SDIO_ICR_CMDRENDC | SDIO_ICR_CCRCFAILC;
+			// Save response
+			SD->response = SDIO->RESP1;
+			return 1;
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Send command to sd-card with expected R6 response. 
+ * @param ch_cmd The new active command.
+ * @param l_arg The arguments for the command.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_send_cmd_R6(unsigned char ch_cmd, unsigned long l_arg)
+{
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		// Finished Sending Command? (R6 response required)
+		if (!(SDIO->STA & SDIO_STA_CMDREND))
+		{
+			//No Active Command, so new command can be sent
+			SDIO->ARG = l_arg;
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
+		}
+		else
+		{
+			// The command is finished, clear all flags
+			SDIO->ICR = SDIO_ICR_CMDRENDC;
+			// Save response
+			SD->response = SDIO->RESP1;
+			return 1;
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Send command to sd-card with expected R7 response. 
+ * @param ch_cmd The new active command.
+ * @param l_arg The arguments for the command.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_send_cmd_R7(unsigned char ch_cmd, unsigned long l_arg)
+{
+	// Any transfer in progress?
+	if (!(SDIO->STA & (SDIO_STA_CMDACT | SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		// Finished Sending Command? (R7 response required)
+		if (!(SDIO->STA & SDIO_STA_CMDREND))
+		{
+			//No Active Command, so new command can be sent
+			SDIO->ARG = l_arg;
+			SDIO->CMD = SDIO_CMD_CPSMEN | SDIO_CMD_ENCMDCOMPL | SDIO_CMD_WAITRESP_0 | (ch_cmd & 0b111111);
+		}
+		else
+		{
+			// The command is finished, clear all flags
+			SDIO->ICR = SDIO_ICR_CMDRENDC;
+			// Save response
+			SD->response = SDIO->RESP1;
+			return 1;
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Set card inactive for save removal of card.
+ * @return Returns 1 when card is ejected
+ */
+unsigned char sdio_set_inactive(void)
+{
+	// Only eject card, when card is selected and detected
+	if (SD->status & (SD_CARD_DETECTED | SD_CARD_SELECTED))
+	{
+		//send command to go to inactive state
+		if (sdio_send_cmd(CMD15, (SD->RCA << 16)))
+		{
+			//Delete flags for selected card when command is sent
+			SD->status &= ~(SD_CARD_SELECTED | SD_CARD_DETECTED);
+			return 1;
+		}
+	}
+	else
+		return 1;
+	return 0;
+};
+
+/**
+ * @brief Read block data from card at specific block address. Data is stored in buffer specified at function call.
+ * The addressing uses block number and adapts to SDSC and SDHC cards. 
+ * @param databuffer Pointer where data is stored.
+ * @param l_block_address The block address within the sd-card where to read the data.
+ * @return Returns 1 when block transfer is finished.
+ */
+unsigned char sdio_read_block(unsigned long *databuffer, unsigned long l_block_address)
+{
+	//Data Transfer in Progress?
+	if (!(SDIO->STA & (SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		//Data Transfer finished?
+		if (SDIO->STA & SDIO_STA_DBCKEND)
+		{
+			//Block data was read
+			if (!(DMA2_Stream6->CR & DMA_SxCR_EN)) // Wait until DMA Stream is finished
+			{
+				DMA2->HIFCR |= DMA_HIFCR_CTCIF6;					//Clear DMA Transfer Finished flag
+				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC; //Clear SDIO block transfer finished flag
+				return 1;
+			}
+		}
+		else
+		{
+			//No block transfer in progress
+			if (!(DMA2_Stream6->CR & DMA_SxCR_EN))
+				sdio_dma_start_receive(databuffer); //When Stream is not yet enabled, enable it
+
+			//Get address of block data
+			if (!(SD->status & SD_SDHC)) //If SDSC card, byte addressing is used
+				l_block_address *= SDIO_BLOCKLEN;
+
+			/* Send command to start block transfer and start data transfer when command was sent.
+			 * The return value is not used, because in block transfer interrupts are used to manage the
+			 * command transfer. */
+			sdio_send_cmd_R1(CMD17, l_block_address);
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Interrupt when command transfer is finished and data transfer should be enabled.
+ * @details interrupt handler
+ */
+void SDIO_IRQHandler(void)
+{
+	// Clear Flags
+	SDIO->ICR |= SDIO_ICR_CMDRENDC;
+	// Disable interrupts
+	SDIO->MASK = 0;
+
+	//Check in which direction the data should be sent
+	if (DMA2_Stream6->CR & DMA_SxCR_DIR_0)
+		SDIO->DCTRL = (0b1001 << 4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data transmit
+	else
+		SDIO->DCTRL = (0b1001 << 4) | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN; //Start data receive
+};
+
+/**
+ * @brief Write block data to card at specific block address. Data is read from buffer specified at function call.
+ * The addressing uses block number and adapts to SDSC and SDHC cards.
+ * @param databuffer Pointer where data is stored.
+ * @param l_block_address The block address within the sd-card where to write the data.
+ * @return Returns 1 when communication is finished.
+ */
+unsigned char sdio_write_block(unsigned long *databuffer, unsigned long l_block_address)
+{
+	//Data Transfer in Progress?
+	if (!(SDIO->STA & (SDIO_STA_RXACT | SDIO_STA_TXACT)))
+	{
+		//Data Transfer finished?
+		if (SDIO->STA & SDIO_STA_DBCKEND)
+		{
+			//Block data was read
+			if (!(DMA2_Stream6->CR & DMA_SxCR_EN)) // Wait until DMA Stream is finished
+			{
+				DMA2->HIFCR |= DMA_HIFCR_CTCIF6;					//Clear DMA Transfer Finished flag
+				SDIO->ICR |= SDIO_ICR_DBCKENDC | SDIO_ICR_DATAENDC; //Clear SDIO block transfer finished flag
+				return 1;
+			}
+		}
+		else
+		{
+			//No block transfer in progress
+			if (!(DMA2_Stream6->CR & DMA_SxCR_EN))
+				sdio_dma_start_transmit(databuffer); //When Stream is not yet enabled, enable it
+
+			//Get address of block data
+			if (!(SD->status & SD_SDHC)) //If SDSC card, byte addressing is used
+				l_block_address *= SDIO_BLOCKLEN;
+
+			/* Send command to start block transfer and start data transfer when command was sent.
+			 * The return value is not used, because in block transfer interrupts are used to manage the
+			 * command transfer. */
+			sdio_send_cmd_R1(CMD24, l_block_address);
+		}
+	}
+	return 0;
+};
+
+/**
+ * @brief Enable the DMA for data receive and start the transfer. Data is stored in buffer specified at function call.
+ * DMA must not be enabled when calling this function!
+ * @param databuffer Pointer where data is stored.
+ */
+void sdio_dma_start_receive(unsigned long *databuffer)
+{
+	//Enable interrupt for SDIO -> CMDREND
+	SDIO->MASK = SDIO_MASK_CMDRENDIE;
+	//Clear DMA interrupts
+	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
+	//Buffer start address
+	DMA2_Stream6->M0AR = (unsigned long)databuffer;
+	//Start transfer
+	DMA2_Stream6->CR = DMA_CONFIG_SDIO | DMA_SxCR_EN;
+};
+
+/**
+ * @brief Enable the DMA for data transmit. Data is read from buffer specified at function call.
+ * DMA must not be enabled when calling this function!
+ * @param databuffer Pointer where data is stored.
+ */
+void sdio_dma_start_transmit(unsigned long *databuffer)
+{
+	//Enable interrupt for SDIO -> CMDREND
+	SDIO->MASK = SDIO_MASK_CMDRENDIE;
+	//Clear DMA interrupts
+	DMA2->HIFCR = DMA_HIFCR_CTCIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6 | DMA_HIFCR_CFEIF6;
+	//Buffer start address
+	DMA2_Stream6->M0AR = (unsigned long)databuffer;
+	//Start transfer
+	DMA2_Stream6->CR = DMA_CONFIG_SDIO | DMA_SxCR_DIR_0 | DMA_SxCR_EN; //DMA Config + Dir: from memory to peripheral
+};
+
+/**
+ * @brief Compute the LBA begin address of a specific cluster
+ * Cluster numbering begins at 2.
+ * @param l_cluster The cluster of which the address should be computed.
+ * @return LBA begin address of cluster.
+ */
+unsigned long sdio_get_lba(unsigned long l_cluster)
+{
+	if (l_cluster >= 2)
+		return SD->FirstDataSecNum + (l_cluster - 2) * (unsigned long)SD->SecPerClus;
+	else										  //if cluster number is zero, only the root directory of FAT16 can have this value
+		return SD->LBAFATBegin + (2 * SD->FATSz); //Root dir of FAT16
+};
+
+/**
+ * @brief Read the first sector of a specific cluster from sd-card.
+ * @param filehandler The address of the active filehandler struct.
+ * @param l_cluster The cluster number to be read.
+ * @return Returns 1 when communication is finished
+ */
+unsigned char sdio_read_cluster(FILE_T *filehandler, unsigned long l_cluster)
+{
+	//Set the current sector and cluster
+	filehandler->CurrentCluster = l_cluster;
+	filehandler->CurrentSector = 1;
+
+	//Get the LBA address of cluster and the read the corresponding first sector
+	return sdio_read_block(&filehandler->buffer[0], sdio_get_lba(l_cluster));
+};
+
+/**
+ * @brief Read a byte from buffer with the corresponding location in the sd-card memory.
+ * @param databuffer The pointer to the stored data.
+ * @param i_address The address within the stored data.
+ * @return The desired value.
+ */
+unsigned char sdio_read_byte(unsigned long *databuffer, unsigned int i_address)
+{
+	unsigned char ch_address = (unsigned char)((i_address / 4)); //Get address of buffer
+	unsigned char ch_byte = (unsigned char)(i_address % 4);		 //Get number of byte in buffer
+
+	return (unsigned char)((databuffer[ch_address] >> (ch_byte * 8)) & 0xFF); //Write in buffer
+};
+
+/**
+ * @brief write a byte to buffer with the corresponding location in the sd-card memory.
+ * @param databuffer The pointer to the stored data.
+ * @param i_address The address within the stored data.
+ * @param ch_data The new data to be written.
+ */
+void sdio_write_byte(unsigned long *databuffer, unsigned int i_address, unsigned char ch_data)
+{
+	unsigned char ch_address = (unsigned char)((i_address / 4)); //Get adress of buffer
+	unsigned char ch_byte = (unsigned char)(i_address % 4);		 //Get number of byte in buffer
+
+	databuffer[ch_address] &= ~(((unsigned long)0xFF) << (ch_byte * 8));   //Delete old byte
+	databuffer[ch_address] |= (((unsigned long)ch_data) << (ch_byte * 8)); //Write new byte
+};
+
+/**
+ * @brief Read a int from buffer with the corresponding location in the sd-card memory.
+ * @param databuffer The pointer to the stored data.
+ * @param i_address The address within the stored data.
+ * @return The desired value.
+ */
+unsigned int sdio_read_int(unsigned long *databuffer, unsigned int i_address)
+{
+	unsigned int i_data = 0;
+	i_data = (sdio_read_byte(databuffer, i_address) << 0);
+	i_data |= (sdio_read_byte(databuffer, i_address + 1) << 8);
+	return i_data;
+};
+
+/**
+ * @brief Write a int to buffer with the corresponding location in the sd-card memory.
+ * @param databuffer The pointer to the stored data.
+ * @param i_address The address within the stored data.
+ * @param i_data The new value to be written.
+ */
+void sdio_write_int(unsigned long *databuffer, unsigned int i_address, unsigned int i_data)
+{
+	sdio_write_byte(databuffer, i_address, (unsigned char)(i_data & 0xFF));
+	sdio_write_byte(databuffer, i_address + 1, (unsigned char)((i_data >> 8) & 0xFF));
+};
+
+/**
+ * @brief Read a word from buffer with the corresponding location in the sd-card memory.
+ * @param databuffer The pointer to the stored data.
+ * @param i_address The address within the stored data.
+ * @return The desired value.
+ */
+unsigned long sdio_read_long(unsigned long *databuffer, unsigned int i_address)
+{
+	unsigned long l_data = 0;
+	/*
+	for(unsigned char ch_count = 0; ch_count<4; ch_count++)
+		l_data |= (sdio_read_byte(i_adress+ch_count)<<(8*ch_count));
+	 */
+	l_data = (sdio_read_byte(databuffer, i_address) << 0);
+	l_data |= (sdio_read_byte(databuffer, i_address + 1) << 8);
+	l_data |= (sdio_read_byte(databuffer, i_address + 2) << 16);
+	l_data |= (sdio_read_byte(databuffer, i_address + 3) << 24);
+
+	return l_data;
+};
+
+/**
+ * @brief Write a word to buffer with the corresponding location in the sd-card memory.
+ * @param databuffer The pointer to the stored data.
+ * @param i_address The address within the stored data.
+ * @param l_data The new value to be written.
+ */
+void sdio_write_long(unsigned long *databuffer, unsigned int i_address, unsigned long l_data)
+{
+	sdio_write_byte(databuffer, i_address, (unsigned char)(l_data & 0xFF));
+	sdio_write_byte(databuffer, i_address + 1, (unsigned char)((l_data >> 8) & 0xFF));
+	sdio_write_byte(databuffer, i_address + 2, (unsigned char)((l_data >> 16) & 0xFF));
+	sdio_write_byte(databuffer, i_address + 3, (unsigned char)((l_data >> 24) & 0xFF));
+};
+
+/**
+ * @brief Write the current sector of the current cluster to sd-card.
+ * @param filehandler The address of the current filehandler struct.
+ * @return Returns 1 when the communication is finished.
+ */
+unsigned char sdio_write_current_sector(FILE_T *filehandler)
+{
+	//Write sector to LBA sector address. The current sector is decremented by 1, because the sector count starts counting at 1.
+	return sdio_write_block(filehandler->buffer, sdio_get_lba(filehandler->CurrentCluster) + (filehandler->CurrentSector - 1));
+};
+
+/**
+ * @brief Get the FAT sector for a specific cluster.
+ * @param l_cluster The number of the current cluster.
+ * @param ch_FATBNum The current number of the FAT.
+ * @return The sector of the cluster according to the FAT.
+ */
+unsigned long sdio_get_fat_sec(unsigned long l_cluster, unsigned char ch_FATNum)
+{
+	unsigned long l_FATOffset = 0;
+
+	if (SD->status & SD_IS_FAT16)
+		l_FATOffset = l_cluster * 2;
+	else
+		l_FATOffset = l_cluster * 4;
+
+	return SD->LBAFATBegin + (l_FATOffset / SDIO_BLOCKLEN) + (SD->FATSz * (ch_FATNum - 1));
+};
+
+/**
+ * @brief Get the byte position of a cluster withing a FAT sector.
+ * @param l_cluster The number of the current cluster.
+ * @return The byte position of the cluster.
+ */
+unsigned long sdio_get_fat_pos(unsigned long l_cluster)
+{
+	unsigned long l_FATOffset = 0;
+
+	if (SD->status & SD_IS_FAT16)
+		l_FATOffset = l_cluster * 2;
+	else
+		l_FATOffset = l_cluster * 4;
+
+	return l_FATOffset % SDIO_BLOCKLEN;
+};
+
+/**
+ * @brief Read the FAT entry of the loaded Sector and return the content.
+ * @param databuffer Pointer to the data buffer.
+ * @param l_pos The position inside the FAT.
+ * @return The content of the FAT at the given position.
+ */
+unsigned long sdio_read_fat_pos(unsigned long *databuffer, unsigned long l_pos)
+{
+	if (SD->status & SD_IS_FAT16)
+		return (unsigned long)sdio_read_int(databuffer, l_pos);
+	else
+		return sdio_read_long(databuffer, l_pos);
+};
+
+/**
+ * @brief Read the name of a file or directory. The sector of the file id has to be loaded.
+ * @param filehandler The address of the current filehandler struct
+ */
+void sdio_get_name(FILE_T *filehandler)
+{
+	unsigned long l_id = filehandler->id % (SDIO_BLOCKLEN / 32); //one sector can contain 16 files or directories
+	//Read the name string
+	for (unsigned char ch_count = 0; ch_count < 11; ch_count++)
+		filehandler->name[ch_count] = sdio_read_byte(dir->buffer, l_id * 32 + ch_count);
+};
+
+/**
+ * @brief Write the FAT entry of the loaded Sector.
+ * @param databuffer The pointer to the data buffer.
+ * @param l_pos The position inside the FAT.
+ * @param l_data The new value of the entry in the FAT.
+ */
+void sdio_write_fat_pos(unsigned long *databuffer, unsigned long l_pos, unsigned long l_data)
+{
+	if (SD->status & SD_IS_FAT16)
+		sdio_write_int(databuffer, (unsigned int)l_pos, (unsigned int)l_data);
+	else
+		sdio_write_long(databuffer, (unsigned int)l_pos, l_data);
+};
+
+/**
+ * @brief Compare two strings. The first string sets the compare length.
+ * @param pch_string1 First input string. Sets the compare length
+ * @param pch_string2 Second input string.
+ * @return Returns 1 when the strings match upon the length of the first string.
+ */
+unsigned char sdio_strcmp(char *pch_string1, char *pch_string2)
+{
+	while (*pch_string1 != 0)
+	{
+		if (*pch_string1++ != *pch_string2++)
+			return 0;
+	}
+	return 1;
+};
+
+/**
+ * @brief Check the file type of the current file
+ * @param filehandler The address of the current filehandler struct.
+ * @param pch_type The pointer to the string with the filetype.
+ * @return Whether the file has the desired filetype.
+ */
+unsigned char sdio_check_filetype(FILE_T *filehandler, char *pch_type)
+{
+	for (unsigned char ch_count = 0; ch_count < 3; ch_count++)
+	{
+		if (filehandler->name[8 + ch_count] != *pch_type++)
+			return 0;
+	}
+	return 1;
+};
+
+/**
+ * @brief Get date in FAT format
+ * @return The current date
+ */
+unsigned int sdio_get_date(void)
+{
+	return sys->date;
+};
+
+/**
+ * @brief Get time in FAT format
+ * @return The current time
+ */
+unsigned int sdio_get_time(void)
+{
+	//In FAT the time is only stored with a resolution of 2 seconds. Bit shifting the current time by 1 (dividing by 2) converts to this format.
+	return (unsigned int)(sys->time >> 1);
+};
+

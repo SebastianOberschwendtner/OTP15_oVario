@@ -104,16 +104,6 @@ void ms5611_register_ipc(void)
     rxcmd_ms5611.timestamp     = 0;
 };
 
-// /*
-//  * Get everything relevant for IPC
-//  */
-// void ms5611_get_ipc(void)
-// {
-// 	// get the ipc pointer addresses for the needed data
-// 	p_ipc_sys_sd_data = ipc_memory_get(did_SDIO);
-// 	p_ipc_sys_bms_data = ipc_memory_get(did_BMS);
-// };
-
 /**
  ***********************************************************
  * @brief TASK MS5611

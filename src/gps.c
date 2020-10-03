@@ -119,8 +119,8 @@ SYS_T* sys;
 
 //****** Functions ******
 
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC
  */
 void gps_register_ipc(void)
 {
@@ -130,8 +130,8 @@ void gps_register_ipc(void)
 	p_GPS_data 	= ipc_memory_register(sizeof(GPS_T), did_GPS);
 };
 
-/*
- * Get everything relevant for IPC
+/**
+ * @brief Get everything relevant for IPC
  */
 void gps_get_ipc(void)
 {
@@ -139,6 +139,9 @@ void gps_get_ipc(void)
 	sys = ipc_memory_get(did_SYS);
 };
 
+/**
+ * @brief initialize the gps
+ */
 void gps_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -240,7 +243,7 @@ void gps_init(void)
 	// char log_spd[] = {"SPD"};
 	// log_include(&p_GPS_data->heading_deg, 4 ,1, &log_hdg[0]);
 	// log_include(&p_GPS_data->speed_kmh, 4 ,1, &log_spd[0]);
-}
+};
 
 uint8_t cnt 		= 0;
 uint8_t decflag 	= 1;
@@ -260,6 +263,9 @@ uint8_t buff[50];
 
 void* ptr = 0;
 
+/**
+ * @brief The gps task
+ */
 void gps_task(void)
 {
 	// Something else
@@ -330,11 +336,11 @@ void gps_task(void)
 	if(p_GPS_data->msl > p_GPS_data->alt_max) 		p_GPS_data->alt_max 	= p_GPS_data->msl;
 	if(p_GPS_data->msl < p_GPS_data->alt_min) 		p_GPS_data->alt_min 	= p_GPS_data->msl;
 	if(p_GPS_data->speed_kmh < p_GPS_data->v_max) 	p_GPS_data->v_max 		= p_GPS_data->speed_kmh;
-}
+};
 
-
-
-// Handle GPS NAV
+/**
+ * @brief Handle GPS NAV
+ */
 void gps_handle_nav(void)
 {
 	T_UBX_VELNED* pVN;
@@ -375,9 +381,11 @@ void gps_handle_nav(void)
 	default:
 		;
 	}
-}
+};
 
-
+/**
+ * @brief Configure the gps
+ */
 void gps_config(void)
 {
 	// Set new baudrate
@@ -438,10 +446,14 @@ void gps_config(void)
 
 	//	gps_set_msg_rate(mon, hw, 1);
 	//	wait_ms(60);
-}
+};
 
-
-
+/**
+ * @brief Set the message rate of the gps.
+ * @param msg_class The class of the message.
+ * @param msg_id The id of the message.
+ * @param rate The new message rate.
+ */
 void gps_set_msg_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate)
 {
 
@@ -474,9 +486,13 @@ void gps_set_msg_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate)
 	buff[10] = CK_B;
 
 	gps_send_bytes(buff, 11);
-}
+};
 
-
+/**
+ * @brief Send data to the gps.
+ * @param ptr The pointer to the data to be sent.
+ * @param no_bytes The number of bytes to be sent.
+ */
 void gps_send_bytes(void* ptr, uint8_t no_bytes)
 {
 	for(uint8_t i = 0; i < no_bytes; i++)
@@ -484,13 +500,12 @@ void gps_send_bytes(void* ptr, uint8_t no_bytes)
 		while(USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);	// wait for TX Data empty
 		USART_SendData(USART3, *(uint8_t*)(ptr + i));					// send data
 	}
-}
+};
 
-
-
-
-
-//***** DMAInterrupt Handling *****
+/**
+ * @brief DMAInterrupt Handling
+ * @details interrupt handler
+ */
 void DMA1_Stream1_IRQHandler(void) // USART3_RX
 {
 	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_FEIF1))
@@ -513,9 +528,12 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
 	}
-}
+};
 
-
+/**
+ * @brief Set the baudrate of the gps.
+ * @param baud The new baudrate
+ */
 void gps_set_baud(unsigned int baud)
 {
 	USART_Cmd(USART3, DISABLE);
@@ -533,8 +551,8 @@ void gps_set_baud(unsigned int baud)
 	USART_Cmd(USART3, ENABLE);
 };
 
-/*
- * This function sets the system time according to the gps time.
+/**
+ * @brief This function sets the system time according to the gps time.
  * Timezone is UTC.
  */
 void gps_SetSysTime(void)
@@ -548,6 +566,9 @@ void gps_SetSysTime(void)
 	set_time(ch_hour, ch_minute, ch_second);
 };
 
+/**
+ * @brief This function sets the system date according to the gps date.
+ */
 void gps_SetSysDate(void)
 {
 	//Year

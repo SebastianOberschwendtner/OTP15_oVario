@@ -44,8 +44,9 @@ unsigned long const g_key[16] = {
     0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476,
     0xc8e899e8, 0x9321c28a, 0x438eba12, 0x8cbe0aee};
 
-/*
- * Get the return value of the last finished ipc task which was called.
+/**
+ * @brief Get the return value of the last finished ipc task which was called.
+ * @details inline function
  */
 inline unsigned long igc_get_call_return(void)
 {
@@ -53,8 +54,8 @@ inline unsigned long igc_get_call_return(void)
 };
 
 //****** Functions ******
-/*
- * register memory for igc
+/**
+ * @brief register memory for igc
  */
 void igc_register_ipc(void)
 {
@@ -75,8 +76,8 @@ void igc_register_ipc(void)
     ipc_register_queue(5 * sizeof(T_command), did_IGC);
 };
 
-/*
- * Get everything relevant for IPC
+/**
+ * @brief Get everything relevant for IPC
  */
 void igc_get_ipc(void)
 {
@@ -89,16 +90,19 @@ void igc_get_ipc(void)
     BaroData = ipc_memory_get(did_DATAFUSION);
 };
 
-/***********************************************************
- * TASK IGC
+/**
+ ***********************************************************
+ * @brief TASK IGC
  ***********************************************************
  * Systime has to be up to date!
  * 
  ***********************************************************
+ * @details
  * Execution:	interruptable
  * Wait: 		Yes
  * Halt: 		Yes
- **********************************************************/
+ **********************************************************
+ */
 void igc_task(void)
 {
     //Check commands in queue
@@ -144,8 +148,8 @@ void igc_task(void)
     // igc_check_error();
 };
 
-/*
- * Check the commands in the igc queue and call the corresponding command
+/**
+ * @brief Check the commands in the igc queue and call the corresponding command.
  */
 void igc_check_commands(void)
 {
@@ -181,19 +185,20 @@ void igc_check_commands(void)
     }
 };
 
-/***********************************************************
- * The idle state of the task.
+/**
+ ***********************************************************
+ * @brief The idle state of the task.
  ***********************************************************
  *
  * It checks whether the logging state can be entered or not.
  * After a log file is created, the task automatically
- *  starts logging.
+ * starts logging.
  * 
  * Argument:    none
  * Return:      none
- * 
- * call-by-reference
- ***********************************************************/
+ * @details call-by-reference
+ ***********************************************************
+ */
 void igc_idle(void)
 {
     //When the log file is created, start logging
@@ -224,130 +229,14 @@ void igc_idle(void)
 
 /**
  ***********************************************************
- * @brief Log the gs track
+ * @brief Create new IGC log.
  ***********************************************************
  * 
- * Argument:    none
- * Return:      none
- * 
+ * Arguments:   none
+ * @return Return 1 when the log is created
  * @details call-by-reference
  ***********************************************************
  */
-void igc_write_log(void)
-{
-    //perform the command action
-    switch (arbiter_get_sequence(&task_igc))
-    {
-    case SEQUENCE_ENTRY:
-        set_led_green(ON);
-        //Log is now logging
-        IgcInfo.open = IGC_LOGGING;
-
-        //Write B-Record
-        igc_BRecord();
-
-        //Reset wait counter and wait for 1000ms or 1s
-        /**
-         * The actual value has to be tweaked because the scheduler timing
-         * is not too precise and it has some jitter.
-         * @todo make timing here more precise
-         */
-        task_igc.local_counter = MS2TASKTICK(780, LOOP_TIME_TASK_IGC);
-
-        //goto wait sequence
-        arbiter_set_sequence(&task_igc, SEQUENCE_FINISHED);
-        break;
-
-    case SEQUENCE_FINISHED:
-        set_led_green(OFF);
-        //decrease the wait counter, when it is not 0
-        if (task_igc.local_counter)
-            task_igc.local_counter--;
-        else
-            arbiter_set_sequence(&task_igc, SEQUENCE_ENTRY);
-        break;
-
-    default:
-        break;
-    }
-};
-
-/*
- * Check if current character is a valid igc character and therefore included in the grecord
- */
-unsigned char igc_IsValidCharacter(unsigned char character)
-{
-    unsigned char valid = 0;
-
-    //check for character range, the character 0x7E is excluded because it is a reserved character
-    if ((character < 0x7E) && (character >= 0x20))
-        valid = 1;
-
-    //check for reserved characters
-    if (character == '$' || character == '*' || character == '!' || character == '\\' || character == '^')
-        valid = 0;
-
-    return valid;
-};
-
-/*
- * Check whether current record should be included in grecord or not
- */
-unsigned char igc_IncludeInGrecord(char *in)
-{
-    unsigned char valid = false;
-
-    switch (in[0])
-    {
-    case 'L':
-        if (sys_strcmp(IGC_MANUF_ID, &in[1]))
-            // only include L records made by XCS
-            valid = true;
-        break;
-
-    case 'G':
-        break;
-
-    case 'H':
-        if ((in[1] != 'O') && (in[1] != 'P'))
-            valid = true;
-        break;
-
-    default:
-        valid = true;
-    }
-
-    return valid;
-};
-
-/*
- * Call a other task via the ipc queue
- */
-void igc_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
-{
-    //Set the command and data for the target task
-    txcmd_igc.did = did_IGC;
-    txcmd_igc.cmd = cmd;
-    txcmd_igc.data = data;
-
-    //Push the command
-    ipc_queue_push(&txcmd_igc, sizeof(T_command), did_target);
-
-    //Set wait counter to wait for called task to finish
-    task_igc.halt_task += did_target;
-};
-
-/***********************************************************
- * Create new IGC log.
- ***********************************************************
- * 
- * Return 1 when the log is created
- * 
- * Arguments:   none
- * Return:      unsigned long l_log_created
- * 
- * call-by-reference
- ***********************************************************/
 void igc_create_log(void)
 {
     //Allocate memory
@@ -422,19 +311,19 @@ void igc_create_log(void)
     }
 };
 
-/***********************************************************
- * Create the header of the igc file. 
+/**
+ ***********************************************************
+ * @brief Create the header of the igc file. 
  ***********************************************************
  * 
  * The local counter variable is used to determine the 
  * flight number.
- * Returns 1 when header is created.
  * 
  * Argument:    none
- * Return:      unsigned long   l_header_created
- * 
- * call-by-reference
- ***********************************************************/
+ * @return Returns 1 when header is created.
+ * @details call-by-reference
+ ***********************************************************
+ */
 void igc_create_header(void)
 {
     //Perform Command action
@@ -608,8 +497,234 @@ void igc_create_header(void)
     }
 };
 
-/*
- * Commit char to hash
+/**
+ ***********************************************************
+ * @brief Log the gs track
+ ***********************************************************
+ * 
+ * Argument:    none
+ * Return:      none
+ * 
+ * @details call-by-reference
+ ***********************************************************
+ */
+void igc_write_log(void)
+{
+    //perform the command action
+    switch (arbiter_get_sequence(&task_igc))
+    {
+    case SEQUENCE_ENTRY:
+        set_led_green(ON);
+        //Log is now logging
+        IgcInfo.open = IGC_LOGGING;
+
+        //Write B-Record
+        igc_BRecord();
+
+        //Reset wait counter and wait for 1000ms or 1s
+        /**
+         * The actual value has to be tweaked because the scheduler timing
+         * is not too precise and it has some jitter.
+         * @todo make timing here more precise
+         */
+        task_igc.local_counter = MS2TASKTICK(780, LOOP_TIME_TASK_IGC);
+
+        //goto wait sequence
+        arbiter_set_sequence(&task_igc, SEQUENCE_FINISHED);
+        break;
+
+    case SEQUENCE_FINISHED:
+        set_led_green(OFF);
+        //decrease the wait counter, when it is not 0
+        if (task_igc.local_counter)
+            task_igc.local_counter--;
+        else
+            arbiter_set_sequence(&task_igc, SEQUENCE_ENTRY);
+        break;
+
+    default:
+        break;
+    }
+};
+
+/**
+ **********************************************************
+ * @brief Close IGC log, sign it and write to sd-card.
+ **********************************************************
+ * Also sets the log status entry.
+ * 
+ * Argument:    none
+ * @return Returns 1 when the file is closed.
+ * @details call-by-reference
+ **********************************************************
+ */
+void igc_close(void)
+{
+    //Log is not yet closed
+    IgcInfo.open = IGC_LOG_BUSY;
+
+    //Allocate memory
+    unsigned long* l_count      = arbiter_malloc(&task_igc,2);
+    unsigned long* l_LineCount  = l_count + 1;
+    
+    //Perform the command action
+    switch (arbiter_get_sequence(&task_igc))
+    {
+        case SEQUENCE_ENTRY:
+            //Tell the md5 task to finalize the hashes
+            for (unsigned char i = 0; i < IGC_HASH_NUMBER; i++)
+                igc_call_task(MD5_CMD_FINALIZE, (unsigned long)&IgcInfo.md5[i], did_MD5);
+            
+            //Reset Hash counter
+            *l_count     = 0;
+
+            //Goto next sequence
+            arbiter_set_sequence(&task_igc,IGC_SEQUENCE_GET_DIGEST);
+            // arbiter_set_sequence(&task_igc, IGC_SEQUENCE_WRITE_FILE);
+            break;
+
+        case IGC_SEQUENCE_GET_DIGEST:
+            //Save digest to hashbuffer
+            md5_GetDigest(&IgcInfo.md5[*l_count], IgcInfo.hashbuffer);
+
+            //Reset line counter
+            *l_LineCount = 0;
+
+            //Goto directly to next sequence
+            arbiter_set_sequence(&task_igc, IGC_SEQUENCE_WRITE_DIGEST);
+
+        case IGC_SEQUENCE_WRITE_DIGEST:
+            //Create G-Record
+            igc_NewRecord('G');
+            //Write one junk of the digest
+            for (unsigned char character = 0; character < IGC_DIGEST_CHARPERLINE; character++)
+                IgcInfo.linebuffer[character + 1] = IgcInfo.hashbuffer[character + *l_LineCount * IGC_DIGEST_CHARPERLINE];
+
+            //Terminate string with LF and zero afterwards
+            IgcInfo.linebuffer[IGC_DIGEST_CHARPERLINE + 1] = '\n';
+            IgcInfo.linebuffer[IGC_DIGEST_CHARPERLINE + 2] = 0x00;
+
+            //Tell sdio task to write the new string
+            igc_call_task(SDIO_CMD_STRING2FILE, (unsigned long)IgcInfo.linebuffer, did_SDIO);
+
+            //Increase line counter
+            *l_LineCount += 1;
+
+            //check whether all hashes are written
+            if (*l_LineCount == (32/IGC_DIGEST_CHARPERLINE))
+            {
+                //Current hash is written, goto next hash
+                *l_count += 1;
+
+                //Check whether all hashes are written
+                if (*l_count == IGC_HASH_NUMBER)
+                    arbiter_set_sequence(&task_igc, IGC_SEQUENCE_WRITE_FILE);
+                else
+                    arbiter_set_sequence(&task_igc, IGC_SEQUENCE_GET_DIGEST);
+            }
+            break;
+
+        case IGC_SEQUENCE_WRITE_FILE:
+            //Write file to sd-card
+            igc_call_task(SDIO_CMD_FCLOSE, 0, did_SDIO);
+
+            //Goto next sequence
+            arbiter_set_sequence(&task_igc, SEQUENCE_FINISHED);
+            break;
+
+        case SEQUENCE_FINISHED:
+            //Send infobox
+            txcmd_igc.did = did_IGC;
+            txcmd_igc.cmd = cmd_gui_set_std_message;
+            txcmd_igc.data = data_info_logging_stopped;
+            txcmd_igc.timestamp = TIM5->CNT;
+            ipc_queue_push(&txcmd_igc, sizeof(T_command), did_GUI);
+
+            //Log is closed
+            IgcInfo.open = IGC_LOG_FINISHED;
+
+            //Exit command
+            arbiter_return(&task_igc,1);
+            break;
+    }
+
+};
+
+/**
+ * @brief Check if current character is a valid igc character and therefore included in the g-record.
+ * @param character The character which should be checked.
+ * @return Whether the character is a valid character.
+ */
+unsigned char igc_IsValidCharacter(unsigned char character)
+{
+    unsigned char valid = 0;
+
+    //check for character range, the character 0x7E is excluded because it is a reserved character
+    if ((character < 0x7E) && (character >= 0x20))
+        valid = 1;
+
+    //check for reserved characters
+    if (character == '$' || character == '*' || character == '!' || character == '\\' || character == '^')
+        valid = 0;
+
+    return valid;
+};
+
+/**
+ * @brief Check whether current record should be included in g-record or not.
+ * @param in Pointer to the current record.
+ * @return Whether record should be included in hash.
+ */
+unsigned char igc_IncludeInGrecord(char *in)
+{
+    unsigned char valid = false;
+
+    switch (in[0])
+    {
+    case 'L':
+        if (sys_strcmp(IGC_MANUF_ID, &in[1]))
+            // only include L records made by XCS
+            valid = true;
+        break;
+
+    case 'G':
+        break;
+
+    case 'H':
+        if ((in[1] != 'O') && (in[1] != 'P'))
+            valid = true;
+        break;
+
+    default:
+        valid = true;
+    }
+
+    return valid;
+};
+
+/**
+ * @brief Call a other task via the ipc queue.
+ * @param cmd The command which should be called
+ * @param data The data for the command.
+ * @param did_target The did of the target task.
+ */
+void igc_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
+{
+    //Set the command and data for the target task
+    txcmd_igc.did = did_IGC;
+    txcmd_igc.cmd = cmd;
+    txcmd_igc.data = data;
+
+    //Push the command
+    ipc_queue_push(&txcmd_igc, sizeof(T_command), did_target);
+
+    //Set wait counter to wait for called task to finish
+    task_igc.halt_task += did_target;
+};
+
+/**
+ * @brief Commit char to hash
+ * @param character The character to be committed
  */
 void igc_CommitCharacter(unsigned char character)
 {
@@ -621,9 +736,10 @@ void igc_CommitCharacter(unsigned char character)
     }
 };
 
-/*
- * Commit line of log to hash.
+/**
+ * @brief Commit line of log to hash.
  * String has to be terminated with a LF (0x0A).
+ * @param line The pointer to the current record string to be committed
  */
 void igc_CommitLine(char *line)
 {
@@ -652,8 +768,8 @@ void igc_CommitLine(char *line)
     }
 };
 
-/*
- * Write line to file and commit to hash.
+/**
+ * @brief Write line to file and commit to hash.
  * The LF at the end of the line is added automatically using the linepointer.
  */
 void igc_WriteLine(void)
@@ -674,18 +790,21 @@ void igc_WriteLine(void)
     igc_CommitLine(IgcInfo.linebuffer);
 };
 
-/*
- * Add new record line to log.
+/**
+ * @brief Add new record line to log.
  * The old line has to be finished with a LF.
+ * @param type The type of the new record
  */
 void igc_NewRecord(unsigned char type)
 {
     IgcInfo.linebuffer[0] = type;
     IgcInfo.linepointer = 1;
     IgcInfo.hashpointer = 0;
-}
-/*
- * Append string to linebuffer and current record
+};
+
+/**
+ * @brief Append string to linebuffer and current record.
+ * @param string The pointer to current string to be appended.
  */
 void igc_AppendString(char *string)
 {
@@ -706,9 +825,11 @@ void igc_AppendString(char *string)
     }
 };
 
-/*
- * Append a number with a specific number of digits to the current record.
+/**
+ * @brief Append a number with a specific number of digits to the current record.
  * The sys_num2str function is used to save RAM and increase speed.
+ * @param number The value to be appended
+ * @param digits The number of significant digits
  */
 void igc_AppendNumber(unsigned long number, unsigned char digits)
 {
@@ -721,9 +842,9 @@ void igc_AppendNumber(unsigned long number, unsigned char digits)
     }
 };
 
-/*
- * Write F-record. This records contains the current count of satellites used and their id.
- * TODO Add id support
+/**
+ * @brief Write F-record. This records contains the current count of satellites used and their id.
+ * @todo Add id support
  */
 void igc_FRecord(void)
 {
@@ -737,8 +858,8 @@ void igc_FRecord(void)
     igc_WriteLine();
 };
 
-/*
- * Write B-record. This records the gps fixes.
+/**
+ * @brief Write B-record. This records the gps fixes.
  */
 void igc_BRecord(void)
 {
@@ -832,140 +953,14 @@ void igc_BRecord(void)
     igc_WriteLine();
 };
 
-
-/**********************************************************
- * Close IGC log, sign it and write to sd-card.
- **********************************************************
- * Returns 1 when the file is closed. Also sets the log
- * status entry.
- * 
- * Argument:    none
- * Return:      unsigned long l_log_closed
- * 
- * call-by-reference
- **********************************************************/
-void igc_close(void)
-{
-    //Log is not yet closed
-    IgcInfo.open = IGC_LOG_BUSY;
-
-    //Allocate memory
-    unsigned long* l_count      = arbiter_malloc(&task_igc,2);
-    unsigned long* l_LineCount  = l_count + 1;
-    
-    //Perform the command action
-    switch (arbiter_get_sequence(&task_igc))
-    {
-        case SEQUENCE_ENTRY:
-            //Tell the md5 task to finalize the hashes
-            for (unsigned char i = 0; i < IGC_HASH_NUMBER; i++)
-                igc_call_task(MD5_CMD_FINALIZE, (unsigned long)&IgcInfo.md5[i], did_MD5);
-            
-            //Reset Hash counter
-            *l_count     = 0;
-
-            //Goto next sequence
-            arbiter_set_sequence(&task_igc,IGC_SEQUENCE_GET_DIGEST);
-            // arbiter_set_sequence(&task_igc, IGC_SEQUENCE_WRITE_FILE);
-            break;
-
-        case IGC_SEQUENCE_GET_DIGEST:
-            //Save digest to hashbuffer
-            md5_GetDigest(&IgcInfo.md5[*l_count], IgcInfo.hashbuffer);
-
-            //Reset line counter
-            *l_LineCount = 0;
-
-            //Goto directly to next sequence
-            arbiter_set_sequence(&task_igc, IGC_SEQUENCE_WRITE_DIGEST);
-
-        case IGC_SEQUENCE_WRITE_DIGEST:
-            //Create G-Record
-            igc_NewRecord('G');
-            //Write one junk of the digest
-            for (unsigned char character = 0; character < IGC_DIGEST_CHARPERLINE; character++)
-                IgcInfo.linebuffer[character + 1] = IgcInfo.hashbuffer[character + *l_LineCount * IGC_DIGEST_CHARPERLINE];
-
-            //Terminate string with LF and zero afterwards
-            IgcInfo.linebuffer[IGC_DIGEST_CHARPERLINE + 1] = '\n';
-            IgcInfo.linebuffer[IGC_DIGEST_CHARPERLINE + 2] = 0x00;
-
-            //Tell sdio task to write the new string
-            igc_call_task(SDIO_CMD_STRING2FILE, (unsigned long)IgcInfo.linebuffer, did_SDIO);
-
-            //Increase line counter
-            *l_LineCount += 1;
-
-            //check whether all hashes are written
-            if (*l_LineCount == (32/IGC_DIGEST_CHARPERLINE))
-            {
-                //Current hash is written, goto next hash
-                *l_count += 1;
-
-                //Check whether all hashes are written
-                if (*l_count == IGC_HASH_NUMBER)
-                    arbiter_set_sequence(&task_igc, IGC_SEQUENCE_WRITE_FILE);
-                else
-                    arbiter_set_sequence(&task_igc, IGC_SEQUENCE_GET_DIGEST);
-            }
-            break;
-
-        case IGC_SEQUENCE_WRITE_FILE:
-            //Write file to sd-card
-            igc_call_task(SDIO_CMD_FCLOSE, 0, did_SDIO);
-
-            //Goto next sequence
-            arbiter_set_sequence(&task_igc, SEQUENCE_FINISHED);
-            break;
-
-        case SEQUENCE_FINISHED:
-            //Send infobox
-            txcmd_igc.did = did_IGC;
-            txcmd_igc.cmd = cmd_gui_set_std_message;
-            txcmd_igc.data = data_info_logging_stopped;
-            txcmd_igc.timestamp = TIM5->CNT;
-            ipc_queue_push(&txcmd_igc, sizeof(T_command), did_GUI);
-
-            //Log is closed
-            IgcInfo.open = IGC_LOG_FINISHED;
-
-            //Exit command
-            arbiter_return(&task_igc,1);
-            break;
-    }
-
-};
-
-/*
- * Return the current state of the IGC Logging.
+/**
+ * @brief Return the current state of the IGC Logging.
  * This is done, because only for the state it seems not to be necessary
  * to register the 2.8kB of the whole IGC struct in the ipc memory.
  * Maybe it is also good, that the state is read-only this way...
+ * @return The current state of teh IGC log.
  */
 unsigned char igc_get_state(void)
 {
     return IgcInfo.open;
-}
-/*
- * Plot current line in display for debugging
- */
-//#include "DOGXL240.h"
-//unsigned char linecount = 1;
-//void igc_PlotLine(void)
-//{
-//	if(linecount == 17)
-//	{
-//		lcd_clear_buffer();
-//		linecount = 1;
-//	}
-//	lcd_set_cursor(0, linecount*8);
-//	for(unsigned char count= 0; count < IgcInfo.linepointer; count++)
-//	{
-//		if(count>39)
-//			break;
-//		lcd_char2buffer(IgcInfo.linebuffer[count]);
-//	}
-//	linecount++;
-//	lcd_send_buffer();
-//	wait_systick(5);
-//};
+};

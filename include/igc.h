@@ -38,10 +38,10 @@
 #define IGC_ERROR			    255
 
 //Commands of the igc task
-#define IGC_CMD_CREATE_LOG      1
-#define IGC_CMD_CREATE_HEADER   2
+#define IGC_CMD_CREATE_LOG      1   // call-by-reference
+#define IGC_CMD_CREATE_HEADER   2   // call-by-reference
 #define IGC_CMD_WRITE_LOG       3   // call-by-reference
-#define IGC_CMD_FINISH_LOG      4
+#define IGC_CMD_FINISH_LOG      4   // call-by-reference
 
 //Sequences for igc commands
 //Command CREATE_LOG

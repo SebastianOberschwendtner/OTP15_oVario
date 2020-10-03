@@ -12,8 +12,8 @@
 #include "spi.h"
 
 //****** Functions ******
-/*
- * Initialize necessary peripherals
+/**
+ * @brief Initialize necessary peripherals
  */
 void init_spi(void)
 {
@@ -41,8 +41,9 @@ void init_spi(void)
 	//TODO Setup DMA (maybe in display framework?)
 }
 
-/*
- * send char with wait state until transfer complete
+/**
+ * @brief Send char with wait state until transfer complete.
+ * @param ch_data The data to be sent
  */
 void spi_send_char(unsigned char ch_data)
 {

@@ -95,12 +95,14 @@ int main(void)
 		//***** TASK_GROUP_CORE ******
 		if (run(TASK_GROUP_CORE))
 		{
+			set_led_red(ON);
 			datafusion_task();
 			vario_task();
 			system_task();
 			// sound_task();
 			gui_task();
 			gps_task();
+			set_led_red(OFF);
 		}
 
 		//***** Background Tasks *****

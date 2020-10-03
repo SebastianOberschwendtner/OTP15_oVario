@@ -52,8 +52,8 @@ uint8_t tcnt = 0;
 
 // ***** Functions *****
 float debug = 0;
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC.
  */
 void datafusion_register_ipc(void)
 {
@@ -61,8 +61,8 @@ void datafusion_register_ipc(void)
 	df_data = ipc_memory_register(sizeof(datafusion_T),did_DATAFUSION);
 };
 
-/*
- * Get everything relevant for IPC
+/**
+ * @brief Get everything relevant for IPC.
  */
 void datafusion_get_ipc(void)
 {
@@ -75,6 +75,10 @@ void datafusion_get_ipc(void)
 	debug = -1;
 };
 
+/**
+ * @brief Initialize the datafusion.
+ * @deprecated Is now done with ipc get and register functions.
+ */
 void datafusion_init(void)
 {
 	ipc_df_data 	= ipc_memory_get(did_MS5611);
@@ -85,9 +89,11 @@ void datafusion_init(void)
 	// char log_baro[] = {"bar"};
 	//log_include(&df_data->climbrate_filt, 4 ,1, &log_baro[0]);
 	debug = -1;
-}
+};
 
-
+/**
+ * @brief Task for datafusion.
+ */
 void datafusion_task(void)
 {
 
@@ -194,6 +200,9 @@ int8_t 		dir_last = 0;			// turning direction of last data point
 float 		hdg_last = 0;           // heading of last data point
 float 		hdg = 0; 				// heading of actual data point
 
+/**
+ * @brief Estimates the strength and direction of the wind when flying.
+ */
 void wind_estimator ()
 {
 //	for (uint8_t cnta = 0; cnta < 60; cnta++)
@@ -205,13 +214,12 @@ void wind_estimator ()
 
 	wind_collect_samples();
 	wind_grad();
-}
+};
 
-
-
-
-// nur wenn v > 10kmh?
-
+/**
+ * @brief Collect the samples for the wind estimation.
+ * @todo nur wenn v > 10kmh?
+ */
 void wind_collect_samples(void)
 {
 	if(ipc_df_gps_data->fix == 3)
@@ -247,9 +255,14 @@ void wind_collect_samples(void)
 		}
 	}
 	df_data->Wind.cnt = data_cnt;
-}
+};
 
-
+/**
+ * @brief Calculate the turning direction for the wind estimation.
+ * @param hdg_last The last heading
+ * @param hdg The current heading
+ * @return The turning direction
+ */
 int8_t wind_turn_dir (float hdg_last, float hdg)	// calc turning direction
 {
 	float df_temp = hdg_last - hdg;
@@ -268,12 +281,15 @@ int8_t wind_turn_dir (float hdg_last, float hdg)	// calc turning direction
 		dir_temp = -1;
 
 	return dir_temp;
-}
+};
 
+
+/**
+ * @brief Get the wind gradient?
+ */
 float wgx0 = 0;
 float wgy0 = 0;
 float R0 = 8;
-
 void wind_grad(void)	// calc
 {
 	if(data_cnt > 10) // Only calc if more than 10 datapoints
@@ -385,25 +401,41 @@ void wind_grad(void)	// calc
 		df_data->Wind.W_Va 			= R0;
 		df_data->Wind.iterations 	= itcnt;
 	}
-}
+};
 
+/**
+ * @brief Get the square of a value.
+ * @param x Input value
+ * @return Squared input value.
+ */
 float df_sqr(float x)
 {
 	return x * x;
-}
+};
 
+/**
+ * @brief Get the absolute value.
+ * @param x Input value
+ * @return The absolute value of the input value.
+ */
 float df_abs(float x)
 {
 	if(x > 0)
 		return x;
 	else
 		return -x;
-}
+};
 
+/**
+ * @brief Get the minimum among the input values.
+ * @param x Input value 1
+ * @param y Input value 2
+ * @return Minimum value of input values.
+ */
 float df_min(float x, float y)
 {
 	if(x > y)
 		return y;
 	else
 		return x;
-}
+};

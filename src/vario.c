@@ -32,8 +32,8 @@ void vario_tone_sink(float climb);
 void vario_tone_mute();
 
 // ***** Functions *****
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC
  */
 void vario_register_ipc(void)
 {
@@ -41,8 +41,8 @@ void vario_register_ipc(void)
 	ipc_register_queue(20 * sizeof(T_command), did_VARIO);
 };
 
-/*
- * Get everything relevant for IPC
+/**
+ * @brief Get everything relevant for IPC
  */
 void vario_get_ipc(void)
 {
@@ -50,7 +50,9 @@ void vario_get_ipc(void)
 	p_ipc_v_df_data = ipc_memory_get(did_DATAFUSION);
 };
 
-
+/**
+ * @brief The vario task.
+ */
 void vario_task(void)
 {
 
@@ -118,8 +120,12 @@ sound = 500;
 	{
 		vario_tone_mute();
 	}
-}
+};
 
+/**
+ * @brief Set the sound when climbing.
+ * @param climb The current climbrate
+ */
 void vario_tone_climb(float climb)
 {
 	// Set Unmute
@@ -154,9 +160,12 @@ void vario_tone_climb(float climb)
 	vario_command.data	= (uint32_t)peri;
 
 	ipc_queue_push(&vario_command, 10, did_SOUND);
-}
+};
 
-
+/**
+ * @brief Set the sound when staying at the same hight.
+ * @param climb Current climbrate
+ */
 void vario_tone_0climb(float climb)
 {
 	// Set Unmute
@@ -191,8 +200,12 @@ void vario_tone_0climb(float climb)
 	vario_command.data	= (uint32_t)peri;
 
 	ipc_queue_push(&vario_command, 10, did_SOUND);
-}
+};
 
+/**
+ * @brief Set the sound when sinking.
+ * @param climb Current climbrate
+ */
 void vario_tone_sink(float climb)
 {
 	// Set Unmute
@@ -216,17 +229,26 @@ void vario_tone_sink(float climb)
 	vario_command.data	= (uint32_t)freque;
 
 	ipc_queue_push(&vario_command, 10, did_SOUND);
-}
+};
 
+/**
+ * @brief Mute the sound generation
+ */
 void vario_tone_mute()
 {
 	vario_command.cmd 	= cmd_sound_set_mute;
 	vario_command.data	= 0;
 	ipc_queue_push(&vario_command, 10, did_SOUND);
-}
+};
 
-
-// Function to calculate an estimate for the distance between two points
+/**
+ * @brief Function to calculate an estimate for the distance between two points.
+ * @param lat1 Latitude of first point
+ * @param lon1 Longitude of first point
+ * @param lat2 Latitude of second point
+ * @param lon2 Longitude of second point
+ * @return The distance between the two points
+ */
 float vario_wgs84_distance(float lat1, float lon1, float lat2, float lon2)
 {
 	float dist = 0;
@@ -241,5 +263,5 @@ float vario_wgs84_distance(float lat1, float lon1, float lat2, float lon2)
 	arm_sqrt_f32((d_lon_12 * d_lon_12 + d_lat_12 * d_lat_12),&dist);	// pythagoras between these distances
 
 	return dist; //[m]
-}
+};
 

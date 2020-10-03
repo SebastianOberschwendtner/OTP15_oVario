@@ -18,8 +18,8 @@
 volatile schedule_t os;
 
 //****** Functions *******
-/*
- * initialize the os struct
+/**
+ * @brief Initialize the os struct
  */
 void init_scheduler(void)
 {
@@ -37,8 +37,10 @@ void init_scheduler(void)
 	os.loop_ovf = 0; //No loop overflow occurred
 };
 
-/*
- * schedule one task, the task is automatically set active!
+/**
+ * @brief schedule one task, the task is automatically set active!
+ * @param task The number of the task
+ * @param schedule The new schedule of the task.
  */
 void schedule(unsigned char task, unsigned int schedule)
 {
@@ -47,24 +49,29 @@ void schedule(unsigned char task, unsigned int schedule)
 	os.timer[task]	  = schedule - 1; //Reload the timer
 };
 
-/*
- * Set a task active or inactive
+/**
+ * @brief Set a task active or inactive
+ * @param task The number of the task
+ * @param state The new state of the task
  */
 void set_task(unsigned char task, unsigned char state)
 {
 	os.active[task] = state;
 };
 
-/*
- * get the state of a task
+/**
+ * @brief Get the state of a task
+ * @param task The number of the task
+ * @return The current state of the task
  */
 unsigned char get_task(unsigned char task)
 {
 	return os.active[task];
 };
 
-/*
- * Calculate the run flag for one task
+/**
+ * @brief Calculate the run flag for one task
+ * @param task The number of the task
  */
 void count_task(unsigned char task)
 {
@@ -85,8 +92,9 @@ void count_task(unsigned char task)
 		os.flag[task] = 0;	//Do not set the flag
 };
 
-/*
- * calculate the scheduling
+/**
+ * @brief Calculate the scheduling
+ * @details This function should be placed in the SysTick interrupt for best performance.
  */
 void run_scheduler(void)
 {
@@ -94,8 +102,10 @@ void run_scheduler(void)
 		count_task(task);
 };
 
-/*
- * Perform the scheduling and decide whether to run the specified task
+/**
+ * @brief Perform the scheduling and decide whether to run the specified task.
+ * @param task The number of the task
+ * @return Returns 1 when the task wants to run.
  */
 unsigned char run(unsigned char task)
 {
@@ -109,8 +119,9 @@ unsigned char run(unsigned char task)
 		return 0;			//Task does not want to run
 };
 
-/*
- * indicate whether a loop overflow occurred
+/**
+ * @brief indicate whether a loop overflow occurred
+ * @return Return 1 when an overflow occurred.
  */
 unsigned char schedule_overflow(void)
 {

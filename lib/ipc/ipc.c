@@ -31,8 +31,12 @@ void* memory_queue_did[did_size];
 //extern uint8_t error;
 
 //*********** Functions **************
-
-// register Data Memory and return pointer
+/**
+ * @brief register Data Memory and return pointer
+ * @param no_bytes The number of bytes of the memory to be registered.
+ * @param did The did of the memory.
+ * @return The pointer address of the memory.
+ */
 void* ipc_memory_register(uint32_t no_bytes, uint8_t did)
 {
 	uint16_t temp 	= memory_data_idx;
@@ -48,17 +52,23 @@ void* ipc_memory_register(uint32_t no_bytes, uint8_t did)
 	//	error = err_no_memory_left;
 		return 0;
 	}
-}
+};
 
-
-// get pointer of registered Memory
+/**
+ * @brief Get pointer of registered Memory.
+ * @param did The did of the memory
+ * @return The pointer address of the memory.
+ */
 void* ipc_memory_get(uint8_t did)
 {
 	return memory_data_did[did];
-}
+};
 
-
-// register queue memory
+/**
+ * @brief Register queue memory
+ * @param size_queue The size of the queue to be registered
+ * @param did The did of the queue.
+ */
 void ipc_register_queue(uint16_t size_queue, uint8_t did)
 {
 	queues[did].did 	= did;
@@ -76,10 +86,15 @@ void ipc_register_queue(uint16_t size_queue, uint8_t did)
 	{
 		;//error = err_no_memory_left;
 	}
-}
+};
 
-
-// push data into queue
+/**
+ * @brief Push data into queue
+ * @param p_data The pointer to the data
+ * @param no_bytes The number of bytes to be pushed into the queue
+ * @param did The did of the queue to be pushed into
+ * @return Returns 0 when no error occurred or an error code.
+ */
 uint8_t ipc_queue_push(void* p_data, uint8_t no_bytes, uint8_t did)
 {
 	uint8_t temp;
@@ -101,9 +116,15 @@ uint8_t ipc_queue_push(void* p_data, uint8_t no_bytes, uint8_t did)
 
 	queues[did].queue_wr_idx = (queues[did].queue_wr_idx + no_bytes) % queues[did].size;
 	return queue_error;
-}
+};
 
-// fetch data from queue
+/**
+ * @brief Fetch data from queue. Deletes the element from the queue!
+ * @param did The did of the queue
+ * @param no_bytes The number of bytes to be fetched
+ * @param pData The pointer where the data is pushed to.
+ * @return Returns 0 when no error occurred or an error code.
+ */
 uint8_t ipc_queue_get(uint8_t did, uint8_t no_bytes, void* pData)
 {
 	if(queues[did].cnt >= no_bytes)
@@ -123,18 +144,24 @@ uint8_t ipc_queue_get(uint8_t did, uint8_t no_bytes, void* pData)
 	{
 		return 0;
 	}
-}
+};
 
-
-// look into queue
+/**
+ * @brief Look into queue and do not delete the data in the queue.
+ * @param did The did of the queue
+ * @return The pointer to the current queue element.
+ */
 void* ipc_queue_look(uint8_t did)
 {
 	return (queues[did].p_memory + queues[did].queue_rd_idx);
-}
+};
 
-
-// return no bytes in queue
+/**
+ * @brief Get the number of bytes in the queue.
+ * @param did The did of the queue.
+ * @return The number of bytes which are currently in the queue.
+ */
 uint16_t ipc_get_queue_bytes(uint8_t did)
 {
 	return queues[did].cnt;
-}
+};

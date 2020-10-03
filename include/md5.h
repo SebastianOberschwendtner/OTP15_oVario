@@ -15,9 +15,9 @@
 
 //*********** defines for task **************
 //Commands
-#define MD5_CMD_APPEND_CHAR         1
-#define MD5_CMD_APPEND_STRING       2
-#define MD5_CMD_FINALIZE            3
+#define MD5_CMD_APPEND_CHAR         1 // call-by-value, nargs = 2
+#define MD5_CMD_APPEND_STRING       2 // call-by-value, nargs = 2
+#define MD5_CMD_FINALIZE            3 // called via ipc
 
 //Sequences for commands
 

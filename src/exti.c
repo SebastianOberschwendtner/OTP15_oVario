@@ -13,9 +13,12 @@
 
 // ***** Variables *****
 volatile uint8_t testvar = 0;
+T_command ExtiCmd;
 
 // ***** Functions *****
-
+/**
+ * @brief Initialize the interrupts
+ */
 void exti_init(void)
 {
 	EXTI_InitTypeDef EXTI_InitStructure;
@@ -65,13 +68,12 @@ void exti_init(void)
 	// Config EXTI3 NVIC
 	NVIC_InitStructure.NVIC_IRQChannel 						= EXTI3_IRQn;
 	NVIC_Init(&NVIC_InitStructure);
+};
 
-}
-
-
-T_command ExtiCmd;
-
-
+/**
+ * @brief Interrupthandler for EXTI0
+ * @details interrupt handler
+ */
 void EXTI0_IRQHandler (void)
 {
 	T_command temp;
@@ -89,8 +91,12 @@ void EXTI0_IRQHandler (void)
 //	ExtiCmd.data 		= data_info_keypad_0;
 //	ExtiCmd.timestamp 	= TIM5->CNT;
 //	ipc_queue_push(&ExtiCmd, 10, did_GUI);
-}
+};
 
+/**
+ * @brief Interrupthandler for EXTI1
+ * @details interrupt handler
+ */
 void EXTI1_IRQHandler (void)
 {
 	T_command temp;
@@ -107,8 +113,12 @@ void EXTI1_IRQHandler (void)
 //	ExtiCmd.data 		= data_info_keypad_1;
 //	ExtiCmd.timestamp 	= TIM5->CNT;
 //	ipc_queue_push(&ExtiCmd, 10, did_GUI);
-}
+};
 
+/**
+ * @brief Interrupthandler for EXTI2
+ * @details interrupt handler
+ */
 void EXTI2_IRQHandler (void)
 {
 	T_command temp;
@@ -125,8 +135,12 @@ void EXTI2_IRQHandler (void)
 //	ExtiCmd.data 		= data_info_keypad_2;
 //	ExtiCmd.timestamp 	= TIM5->CNT;
 //	ipc_queue_push(&ExtiCmd, 10, did_GUI);
-}
+};
 
+/**
+ * @brief Interrupthandler for EXTI3
+ * @details interrupt handler
+ */
 void EXTI3_IRQHandler (void)
 {
 	T_command temp;
@@ -143,4 +157,4 @@ void EXTI3_IRQHandler (void)
 //	ExtiCmd.data 		= data_info_keypad_3;
 //	ExtiCmd.timestamp 	= TIM5->CNT;
 //	ipc_queue_push(&ExtiCmd, 10, did_GUI);
-}
+};

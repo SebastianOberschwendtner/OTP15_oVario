@@ -28,8 +28,8 @@ extern uint8_t state_sinktone;
 extern unsigned long error_var;
 
 //*********** Functions **************
-/*
- * Register everything relevant for IPC
+/**
+ * @brief Register everything relevant for IPC
  */
 void gui_register_ipc(void)
 {
@@ -37,8 +37,8 @@ void gui_register_ipc(void)
 	ipc_register_queue(20 * sizeof(T_command), did_GUI);
 };
 
-/*
- * Get everything relevant for IPC
+/**
+ * @brief Get everything relevant for IPC
  */
 void gui_get_ipc(void)
 {
@@ -50,6 +50,9 @@ void gui_get_ipc(void)
 	p_ipc_gui_sd_data		= ipc_memory_get(did_SDIO);
 };
 
+/**
+ * @brief Initialize the gui
+ */
 void gui_init (void)
 {
 	// intialize the key struct
@@ -64,10 +67,11 @@ void gui_init (void)
 	Main_Keys.func_name[17] = 0;
 	Main_Keys.func_name[26] = 0;
 	Main_Keys.func_name[35] = 0;
-}
+};
 
-
-//*********** Task **************
+/**
+ * @brief the gui task
+ */
 void gui_task (void)
 {
 	lcd_clear_buffer();
@@ -128,8 +132,12 @@ void gui_task (void)
 	// draw screen
 	//	lcd_send_buffer();
 	lcd_dma_enable();
-}
+};
 
+/**
+ * @brief Display the infobar at the top of the screen.
+ * @deprecated I think this is not used anymore.
+ */
 void fkt_Initscreen (void)
 {
 	lcd_set_cursor(0, 12);
@@ -168,9 +176,13 @@ void fkt_Initscreen (void)
 	lcd_float2buffer(p_ipc_gui_df_data->climbrate_filt,2,2);
 
 	gui_gauge(p_ipc_gui_df_data->climbrate_filt, -2, 5);
-}
+};
 
 uint16_t tempo = 0;
+/**
+ * @brief Display the vario screen.
+ * @details This is the main screen of the vario.
+ */
 void fkt_Vario (void)
 {
 
@@ -290,8 +302,11 @@ void fkt_Vario (void)
 	lcd_string2buffer(" ms");
 
 	draw_graph(138, 57);
-}
+};
 
+/**
+ * @brief Display the bms screen
+ */
 void fkt_BMS(void)
 {
 	uint8_t y 	= 9;
@@ -391,8 +406,11 @@ void fkt_BMS(void)
 	lcd_char2buffer(' ');
 	lcd_char2buffer(248); // degree symbol
 	lcd_char2buffer('C');
-}
+};
 
+/**
+ * @brief Display the gps screen
+ */
 void fkt_GPS(void)
 {
 	uint8_t y 	= 9;
@@ -498,8 +516,11 @@ void fkt_GPS(void)
 	lcd_string2buffer("MSG current DMA:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);*/
-}
+};
 
+/**
+ * @brief Display the baro screen
+ */
 void fkt_MS5611 (void)
 {
 
@@ -546,8 +567,11 @@ void fkt_MS5611 (void)
 	lcd_string2buffer("Off2: ");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(((float)p_ipc_gui_ms5611_data->Off2),11,0);
-}
+};
 
+/**
+ * @brief Display the datafusion screen
+ */
 void fkt_Datafusion	(void)
 {
 
@@ -607,24 +631,32 @@ void fkt_Datafusion	(void)
 
 		lcd_pixel2buffer(tempxx, tempyy, 1);
 	}
-}
+};
 
+/**
+ * @brief Display the menu screen
+ * @details Not active yet...
+ */
 void fkt_Menu (void)
 {
 	lcd_set_cursor(0, 12);
 	lcd_set_fontsize(1);
 	lcd_float2buffer(2.0f,4,1);
-}
+};
 
+/**
+ * @brief Display the settings screen
+ * @details Not active yet...
+ */
 void fkt_Settings(void)
 {
 	lcd_set_cursor(0, 12);
 	lcd_set_fontsize(1);
 	lcd_float2buffer(3.0f,4,1);
-}
+};
 
-/*
- * Evaluate the ipc commands for the gui
+/**
+ * @brief Evaluate the ipc commands for the gui.
  */
 void fkt_eval_ipc(void)
 {
@@ -652,8 +684,8 @@ void fkt_eval_ipc(void)
 	}
 };
 
-/*
- * Assign the function the keys based on the current menu page
+/**
+ * @brief Assign the function the keys based on the current menu page
  */
 void fkt_assign_key_function(void)
 {
@@ -721,8 +753,8 @@ void fkt_assign_key_function(void)
 	sys_strcpy(Main_Keys.func_name+27,fkt_get_cmd_string(Main_Keys.function[data_KEYPAD_pad_RIGHT]));
 };
 
-/*
- * Evaluate the pressed keys and determine the action to perform basesd on the current menu page
+/**
+ * @brief Evaluate the pressed keys and determine the action to perform basesd on the current menu page
  */
 void fkt_eval_keys(void)
 {
@@ -736,8 +768,9 @@ void fkt_eval_keys(void)
 	}
 };
 
-/*
- * Send ipc command based on the desired action
+/**
+ * @brief Send ipc command based on the desired action.
+ * @param command_number The desired action.
  */
 void fkt_set_ipc_command(uint8_t command_number)
 {
@@ -801,10 +834,12 @@ void fkt_set_ipc_command(uint8_t command_number)
 	default:
 		break;
 	}
-}
+};
 
-/*
- * Get the function name string for a command number
+/**
+ * @brief Get the function name string for a command number
+ * @param command_number The desired action.
+ * @return The name string of the desired action.
  */
 char* fkt_get_cmd_string(uint8_t command_number)
 {
@@ -848,10 +883,10 @@ char* fkt_get_cmd_string(uint8_t command_number)
 		return "        ";
 		break;
 	}
-}
+};
 
-/*
- * Display the current key functions at the bottom of the screen
+/**
+ * @brief Display the current key functions at the bottom of the screen.
  */
 void fkt_display_key_functions(void)
 {
@@ -891,9 +926,10 @@ void fkt_display_key_functions(void)
 		lcd_set_cursor(190, 128);
 		lcd_string2buffer(Main_Keys.func_name+27);
 	}
-}
-/*
- * Check for runtime errors and displayes the error as infobox
+};
+
+/**
+ * @brief Check for runtime errors and displays the error as infobox.
  */
 void fkt_runtime_errors(void)
 {
@@ -942,11 +978,11 @@ void fkt_runtime_errors(void)
 	}
 };
 
-/*
- * This function displays an infobox on the screen with an expiration time.
+/**
+ * @brief This function displays an infobox on the screen with an expiration time.
  * The expiration time is fixed to 5 seconds for now.
+ * @todo Add adjustable lifetime.
  */
-//TODO Add adjustable lifetime.
 void fkt_infobox(void)
 {
 	//Check if infobox is expired
@@ -1050,6 +1086,12 @@ void fkt_infobox(void)
 	}
 };
 
+/**
+ * @brief Display a gauge indicator on the screen.
+ * @param value The current value of the indicator.
+ * @param min The minimum range of the indicator.
+ * @param max The maximum range of the indicator.
+ */
 void gui_gauge(float value, float min, float max)
 {
 	// 128 Pixel hoch
@@ -1093,8 +1135,13 @@ void gui_gauge(float value, float min, float max)
 		lcd_block2buffer(229,(122-8)/total*max+7,value/max*(122-6)/total*max,10);
 	else if(value < 0)
 		lcd_block2buffer(229,zeroline + value_min,value_min,10);
-}
+};
 
+/**
+ * @brief Draw a graph on the screen.
+ * @param x The new x-value
+ * @param y The new y-value
+ */
 void draw_graph(uint8_t x, uint8_t y)
 {
 	float min 		= -1;
@@ -1148,11 +1195,9 @@ void draw_graph(uint8_t x, uint8_t y)
 	lcd_string2buffer("ms");
 };
 
-/*
- * Draws the bootlogo of the vario.
+/**
+ * @brief Draws the bootlogo of the vario.
  */
-
-
 void gui_bootlogo(void)
 {
 
@@ -1179,8 +1224,8 @@ void gui_bootlogo(void)
 	lcd_send_buffer();
 };
 
-/*
- * Draws the status bar of the vario
+/**
+ * @brief Draws the status bar of the vario
  */
 unsigned char ch_status_counter = 0;
 

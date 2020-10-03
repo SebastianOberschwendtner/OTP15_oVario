@@ -75,35 +75,35 @@
 #define SD_FILE_CREATED     (1<<6)  //File was created with MKDIR MKFILE
 
 //Commands of sdio_task
-#define SDIO_CMD_INIT                               1
-#define SDIO_CMD_INIT_FILESYSTEM                    2
-#define SDIO_CMD_READ_ROOT                          3
-#define SDIO_CMD_GET_NEXT_CLUSTER                   4
-#define SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER        5
-#define SDIO_CMD_GET_FILE                           6
-#define SDIO_CMD_CLEAR_CLUSTER                      7
-#define SDIO_CMD_SET_CLUSTER                        8
-#define SDIO_CMD_GET_EMPTY_ID                       9
-#define SDIO_CMD_SET_EMPTY_ID                       10
-#define SDIO_CMD_GET_EMPTY_CLUSTER                  11
-#define SDIO_CMD_GET_FILEID                         12
-#define SDIO_CMD_FSEARCH                            13
-#define SDIO_CMD_CD                                 14
-#define SDIO_CMD_FOPEN                              15
-#define SDIO_CMD_FCLOSE                             16
-#define SDIO_CMD_SET_FILESIZE                       17
-#define SDIO_CMD_MAKE_ENTRY                         18
-#define SDIO_CMD_MKFILE                             19
-#define SDIO_CMD_MKDIR                              20
-#define SDIO_CMD_RM                                 21
-#define SDIO_CMD_FCLEAR                             22
-#define SDIO_CMD_WRITE_FILE                         23
-#define SDIO_CMD_READ_ENDSECTOR_OF_FILE             24
-#define SDIO_CMD_BYTE2FILE                          25
-#define SDIO_CMD_INT2FILE                           26
-#define SDIO_CMD_LONG2FILE                          27
-#define SDIO_CMD_STRING2FILE                        28
-#define SDIO_CMD_NUM2FILE                           29
+#define SDIO_CMD_INIT                               1 // call-by-reference
+#define SDIO_CMD_INIT_FILESYSTEM                    2 // call-by-reference
+#define SDIO_CMD_READ_ROOT                          3 // call-by-reference
+#define SDIO_CMD_GET_NEXT_CLUSTER                   4 // call-by-value, nargs = 2
+#define SDIO_CMD_READ_NEXT_SECTOR_OF_CLUSTER        5 // call-by-reference
+#define SDIO_CMD_GET_FILE                           6 // call-by-value, nargs = 2
+#define SDIO_CMD_CLEAR_CLUSTER                      7 // call-by-value, nargs = 2
+#define SDIO_CMD_SET_CLUSTER                        8 // call-by-value, nargs = 3
+#define SDIO_CMD_GET_EMPTY_ID                       9 // call-by-reference
+#define SDIO_CMD_SET_EMPTY_ID                       10// call-by-value, nargs = 1
+#define SDIO_CMD_GET_EMPTY_CLUSTER                  11// call-by-reference
+#define SDIO_CMD_GET_FILEID                         12// call-by-value, nargs = 2
+#define SDIO_CMD_FSEARCH                            13// call-by-value, nargs = 2
+#define SDIO_CMD_CD                                 14// call-by-reference
+#define SDIO_CMD_FOPEN                              15// call-by-reference
+#define SDIO_CMD_FCLOSE                             16// call-by-reference
+#define SDIO_CMD_SET_FILESIZE                       17// call-by-reference
+#define SDIO_CMD_MAKE_ENTRY                         18// call-by-value, nargs = 4
+#define SDIO_CMD_MKFILE                             19// call-by-reference
+#define SDIO_CMD_MKDIR                              20// call-by-reference
+#define SDIO_CMD_RM                                 21// call-by-reference
+#define SDIO_CMD_FCLEAR                             22// call-by-reference
+#define SDIO_CMD_WRITE_FILE                         23// call-by-reference
+#define SDIO_CMD_READ_ENDSECTOR_OF_FILE             24// call-by-reference
+#define SDIO_CMD_BYTE2FILE                          25// call-by-value, nargs = 1
+#define SDIO_CMD_INT2FILE                           26// call-by-value, nargs = 1
+#define SDIO_CMD_LONG2FILE                          27// call-by-value, nargs = 1
+#define SDIO_CMD_STRING2FILE                        28// call-by-reference
+#define SDIO_CMD_NUM2FILE                           29// call-by-value, nargs = 2;
 #define SDIO_CMD_NO_CARD                            99
 
 //Sequences of each command, the are in sequential number, so different commands can share the same sequence

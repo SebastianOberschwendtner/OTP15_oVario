@@ -98,8 +98,8 @@ unsigned long const r[64] = {
 };
 
 //****** Functions ******
-/*
- * Register memory for hash calculation.
+/**
+ * @brief Register memory for hash calculation.
  */
 void md5_register_ipc(void)
 {
@@ -117,16 +117,19 @@ void md5_register_ipc(void)
 	rxcmd_md5.timestamp 	= 0;
 };
 
-/***********************************************************
- * TASK MD5
+/**
+ ***********************************************************
+ * @brief TASK MD5
  ***********************************************************
  * Task to calculate the hash.
  * 
  ***********************************************************
+ * @details
  * Execution:	Non-interruptable
  * Wait: 		Yes
  * Halt: 		Yes
- **********************************************************/
+ **********************************************************
+ */
 void md5_task(void)
 {
 	 //When the task wants to wait
@@ -159,13 +162,14 @@ void md5_task(void)
 	 }
 };
 
-/**********************************************************
- * Idle command of the task.
+/**
+ **********************************************************
+ * @brief Idle command of the task.
  **********************************************************
  * Checks the ipc command queue for new commands and 
  * handles them.
  * 
- * This task can/should not be called via the arbiter.
+ * @details This task can/should not be called via the arbiter.
  **********************************************************/
 void md5_check_commands(void)
 {
@@ -219,39 +223,17 @@ void md5_check_commands(void)
 	}
 };
 
-/*
- * initialize md5 hash with custom key
- */
-void md5_initialize(MD5_T* hash, unsigned long* key)
-{
-	//Set initial message length to 0
-	hash->message_length = 0;
-	//Copy the input keys to the state of the hash
-	sys_memcpy(hash->state,key,16);
-	//Initialize the buffer with all 0s
-	for(unsigned char count = 0; count<64; count++)
-		hash->buff512[count] = 0;
-};
-
-/*
- * leftrotate input bits.
- */
-unsigned long md5_leftrotate(unsigned long x, unsigned long c)
-{
-	return (x << c) | (x >> (32 - c));
-};
-
-/**********************************************************
- * Append character to hash.
+/**
  **********************************************************
- * Returns 1 when character is appended to hash.
+ * @brief Append character to hash.
+ **********************************************************
  * 
- * Argument[0]:		unsigned char	ch_character
- * Argument[1]:		MD5_T*			hash
- * Return:			unsigned long	l_character_appended
- * 
- * call-by-value, nargs = 2
- **********************************************************/
+ * @param ch_character The character to appended to the hash.
+ * @param hash The pointer to the current hash.
+ * @return Returns 1 when character is appended to hash.
+ * @details call-by-value, nargs = 2
+ **********************************************************
+ */
 void md5_append_char(void)
 {
 	//Get arguments
@@ -287,17 +269,17 @@ void md5_append_char(void)
 	}
 };
 
-/**********************************************************
- * Append string to hash.
+/**
  **********************************************************
- * Returns 1 when string is appended to hash.
+ * @brief Append string to hash.
+ **********************************************************
  * 
- * Argument[0]:	char*			ch_string
- * Argument[1]:	MD5_T*			hash
- * Return:		unsigned long 	l_string_appended
- * 
- * call-by-value, nargs = 2
- *********************************************************/
+ * @param ch_string The pointer of the string to be appended.
+ * @param hash The pointer to the current hash.
+ * @return Returns 1 when string is appended to hash. 
+ * @details call-by-value, nargs = 2
+ *********************************************************
+ */
 void md5_append_string(void)
 {
 	//Get arguments
@@ -331,13 +313,41 @@ void md5_append_string(void)
 		default:
 			break;
 	}
-}
+};
 
-/*
- * Calculate hash.
- * Code adapted from XCSOAR project.
+/**
+ * @brief initialize md5 hash with custom key
+ * @param hash Pointer to current hash struct
+ * @param key The custom key
+ */
+void md5_initialize(MD5_T* hash, unsigned long* key)
+{
+	//Set initial message length to 0
+	hash->message_length = 0;
+	//Copy the input keys to the state of the hash
+	sys_memcpy(hash->state,key,16);
+	//Initialize the buffer with all 0s
+	for(unsigned char count = 0; count<64; count++)
+		hash->buff512[count] = 0;
+};
+
+/**
+ * @brief leftrotate input bits.
+ * @param x Input value
+ * @param c The position where the bits are rotated around.
+ * @return The value with the rotated bits.
+ */
+unsigned long md5_leftrotate(unsigned long x, unsigned long c)
+{
+	return (x << c) | (x >> (32 - c));
+};
+
+/**
+ * @brief Calculate hash.
  * Only works on little endian MCUs!
  * (STM32 is little endian)
+ * @param hash The pointer to the current hash.
+ * @details Code adapted from XCSOAR project.
  */
 void md5_process512(MD5_T* hash)
 {
@@ -389,8 +399,9 @@ void md5_process512(MD5_T* hash)
 	hash->state[3] += d;
 };
 
-/*
- * Write message length in bits to the last 8 bytes of buffer
+/**
+ * @brief Write message length in bits to the last 8 bytes of buffer
+ * @param hash The pointer to the current hash.
  */
 void md5_WriteLength(MD5_T* hash)
 {
@@ -402,8 +413,9 @@ void md5_WriteLength(MD5_T* hash)
 	*pointer = BitLength;
 };
 
-/*
- * Finalize buffer for hash computation
+/**
+ * @brief Finalize buffer for hash computation
+ * @param hash The pointer to the current hash
  */
 void md5_finalize(MD5_T* hash)
 {
@@ -436,9 +448,11 @@ void md5_finalize(MD5_T* hash)
 	md5_process512(hash);
 };
 
-/*
- * Get digest of hash after finalization of buffer.
+/**
+ * @brief Get digest of hash after finalization of buffer.
  * Digest is saved to digest string of input. The string has to be 32 characters long.
+ * @param hash The pointer to the current hash.
+ * @param digest The pointer of the string where the diggest should be written to.
  */
 void md5_GetDigest(MD5_T* hash, char* digest)
 {
