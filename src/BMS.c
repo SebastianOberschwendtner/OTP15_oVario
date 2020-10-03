@@ -148,6 +148,10 @@ void bms_task(void)
 				coulomb_get_adc();
 				break;
 
+			case BMS_CMD_SAVE_SOC:
+				coulomb_save_soc();
+				break;
+
 			default:
 				break;
 			}
@@ -506,13 +510,13 @@ void coulomb_init(void)
 			{
 				//Check whether the current settings match the desired settings
 				if (arbiter_get_return_value(&task_bms) == 0)
-					arbiter_return(&task_bms, 1); //Settings did match, finish command
+					arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED); //Settings did match, finish command
 				else
-					arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED); //Settings did not match, so update them
+					arbiter_set_sequence(&task_bms, BMS_SEQUENCE_GET_OLD_C); //Settings did not match, so update them
 			}
 			break;
 
-		case SEQUENCE_FINISHED:
+		case BMS_SEQUENCE_GET_OLD_C:
 			//Settings for CONFIG_A did not match
 			//Allocate Arguments to update the settings
 			pl_args = arbiter_allocate_arguments(&task_bms, 2);
@@ -521,7 +525,24 @@ void coulomb_init(void)
 
 			//Write settings and exit command afterwards
 			if (arbiter_callbyvalue(&task_bms, BMS_CMD_WRITE_INT_FLASH))
+				arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			break;
+
+		case SEQUENCE_FINISHED:
+			//Read the old discharged capacity
+			//Allocate Arguments to update the settings
+			pl_args = arbiter_allocate_arguments(&task_bms, 1);
+			pl_args[0] = MAC_INFO_BLOCK_addr;
+
+			//call command
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_READ_INT_FLASH))
+			{
+				//Read the return value, the read flash command already swaps for correct endianess
+				pBMS->old_capacity = (signed int)arbiter_get_return_value(&task_bms);
+				
+				//Exit the command
 				arbiter_return(&task_bms, 1);
+			}
 			break;
 		
 		default:
@@ -1056,7 +1077,7 @@ void coulomb_write_int_flash(void)
 		//Set the new data in the received buffer
 		pch_array[2] = (unsigned char)(*pi_data & 0xFF); //Set new MSB
 		pch_array[1] = (unsigned char)(*pi_data >> 8);	 //SET new LSB
-		pch_array[0] = 32;								 //Length of array
+		pch_array[0] = 34;								 //Length of array
 
 		//calculate the new checksum
 		for (unsigned char count = 1; count <= 32; count++)
@@ -1064,13 +1085,15 @@ void coulomb_write_int_flash(void)
 		pBMS->crc += (*pi_register_address & 0xFF);
 		pBMS->crc += (*pi_register_address >> 8);
 
+		//Add CRC and LEN to the array to write, this is done because the coulomb counter
+		//auto-increments the address value after each byte write.
+		pch_array[33] = ~pBMS->crc;
+		pch_array[34] = 0x24;
+
 		// write the command to set the new flash data and write the data
 		*pl_command = bms_create_payload(MAC_addr, (unsigned long)*pi_register_address);
 		coulomb_call_task(I2C_CMD_SEND_24BIT, *pl_command, did_I2C);
 		coulomb_call_task(I2C_CMD_SEND_ARRAY, (unsigned long)pch_array, did_I2C);
-
-		//set the new checksum and length to intiate the flash write
-		coulomb_call_task(I2C_CMD_SEND_INT, ((~pBMS->crc) << 8) + 0x24, did_I2C);
 
 		//Command is finished
 		arbiter_return(&task_bms, 1);
@@ -1166,6 +1189,48 @@ void coulomb_get_adc(void)
 	}
 };
 
+/**********************************************************
+ * @brief Save the current SOC to the Coulomb Counter
+ **********************************************************
+ * 
+ * Argument:	none
+ * @return SOC was saved successfully.
+ * 
+ * @details call-by-reference
+ **********************************************************/
+void coulomb_save_soc(void)
+{
+	//perform the command action
+	switch (arbiter_get_sequence(&task_bms))
+	{
+		case SEQUENCE_ENTRY:
+			//allocate arguments
+			pl_args = arbiter_allocate_arguments(&task_bms, 2);
+			pl_args[0] = MAC_INFO_BLOCK_addr;
+			pl_args[1] = (unsigned long)(pBMS->discharged_capacity + pBMS->old_capacity);
+
+			//call the command to write to flash
+			if (arbiter_callbyvalue(&task_bms, BMS_CMD_WRITE_INT_FLASH))
+			{
+				//read MAC and LEN to initiate flash write
+				coulomb_call_task(I2C_CMD_READ_CHAR, MAC_SUM_addr, did_I2C);
+				coulomb_call_task(I2C_CMD_READ_CHAR, MAC_LEN_addr, did_I2C);
+
+				//goto next sequence
+				arbiter_set_sequence(&task_bms, SEQUENCE_FINISHED);
+			}
+			break;
+
+		case SEQUENCE_FINISHED:
+			//command is finished
+			arbiter_return(&task_bms, 1);
+			break;
+
+		default:
+			break;
+	}
+}
+
 /**
  * @brief Initalize the peripherals needed for the bms
  */
@@ -1238,97 +1303,6 @@ void coulomb_call_task(unsigned char cmd, unsigned long data, unsigned char did_
 	else
 		rxcmd_bms.data = 0; //Only "receive" zeros
 };
-
-/**
- * @brief Checks whether battery is present or not
- */
-// void bms_check_battery(void)
-// {
-
-// 	// When already in charging mode, check whether a battery is present via the actual chargin current
-// 	if (pBMS->charging_state & STATUS_FAST_CHARGE)
-// 	{
-// 		// When the charging current is bigger than 10 mA the battery should be present, otherwise decrease the
-// 		// battery health
-// 		if ((pBMS->current < 10) && (pBMS->current > -10))
-// 			bat_health--;
-// 	}
-// 	// When no battery should be present, but the Battery Gauge can measure a voltage, reset the battery presence
-// 	// When not in fast charge mode. In charge mode the battery voltage is present regardless whether there is
-// 	// a battery present.
-// 	else
-// 	{
-// 		if ((pBMS->charging_state & STATUS_GAUGE_ACTIVE) && (pBMS->battery_voltage > 2880) && !(pBMS->charging_state & STATUS_BAT_PRESENT))
-// 			bat_health++;
-// 	}
-
-// 	// check the bat health whether the battery is present or not. The variable is used as a counter, because the
-// 	// voltage response of the battery removal takes some time.
-// 	if (bat_health > 250)
-// 	{
-// 		pBMS->charging_state |= STATUS_BAT_PRESENT;
-// 		bat_health = 100;
-// 	}
-// 	else if (bat_health < 80)
-// 	{
-// 		// when the charging current is to small, disable the charging
-// 		BMS_set_charge_current(0);
-// 		pBMS->charging_state &= ~STATUS_BAT_PRESENT;
-// 		bat_health = 100;
-// 	}
-// };
-
-// /*
-//  * Task
-//  */
-// void BMS_task(void)
-// {
-// 	// Read Values
-// 	BMS_get_adc();
-// 	BMS_gauge_get_adc();
-// 	BMS_get_status();
-// 	BMS_check_battery();
-
-// 	// set charge current when input source is present
-// 	if (pBMS->charging_state & STATUS_INPUT_PRESENT)
-// 		BMS_set_charge_current(800);
-
-// 	// Handle Commands
-// 	uint8_t ipc_no_bytes = ipc_get_queue_bytes(did_BMS);
-// 	T_command IPC_cmd;
-
-// 	while(ipc_no_bytes > 9)
-// 	{
-// 		ipc_queue_get(did_BMS,10,&IPC_cmd); 	// get new command
-// 		ipc_no_bytes = ipc_get_queue_bytes(did_BMS);
-
-// 		switch(IPC_cmd.cmd)					// switch for pad number
-// 		{
-// 		case cmd_BMS_OTG_ON:
-// 			BMS_set_otg(ON);
-// 			BMS_get_status();
-// 			//Check whether otg was really enabled
-// 			if(!(pBMS->charging_state & STATUS_OTG_EN))
-// 			{
-// 				//Send infobox
-// 				IPC_cmd.did 		= did_BMS;
-// 				IPC_cmd.cmd			= cmd_gui_set_std_message;
-// 				IPC_cmd.data 		= data_info_otg_on_failure;
-// 				IPC_cmd.timestamp 	= TIM5->CNT;
-// 				ipc_queue_push(&IPC_cmd, 10, did_GUI);
-// 			}
-// 			break;
-// 		case cmd_BMS_OTG_OFF:
-// 			BMS_set_otg(OFF);
-// 			break;
-// 		case cmd_BMS_ResetCapacity:
-// 			pBMS->old_capacity = 0;
-// 			pBMS->discharged_capacity = 0;
-// 		default:
-// 			break;
-// 		}
-// 	}
-// }
 
 // /*
 //  * Solar Panel Charge Controller

@@ -19,6 +19,17 @@ T_command rxcmd_system;			//IPC command struct for received commands
 T_command txcmd_system;			//IPC command struct for commands to transmit
 TASK_T task_system;				//Task struct for arbiter
 
+//****** Inline Functions ******
+/**
+ * @brief Get the return value of the last finished ipc task which was called.
+ * @return Return value of command.
+ * @details inline function
+ */
+inline unsigned long system_get_call_return(void)
+{
+    return txcmd_system.data;
+};
+
 //****** Functions ******
 /**
  * @brief Register everything relevant for IPC
@@ -64,7 +75,7 @@ void sys_get_ipc(void)
  * @details
  * Execution:	non-interruptable
  * Wait: 		Yes
- * Halt: 		No
+ * Halt: 		Yes
  **********************************************************
  */
 void system_task(void)
@@ -74,30 +85,63 @@ void system_task(void)
 		task_system.wait_counter--; //Decrease the wait counter
 	else							//Execute task when wait is over
 	{
-		//Perform action according to active state
-		switch (arbiter_get_command(&task_system))
+		if (task_system.halt_task == 0)
 		{
-		case CMD_IDLE:
-			//When in idle this task does and will do nothing
-			break;
+			//Perform action according to active state
+			switch (arbiter_get_command(&task_system))
+			{
+			case CMD_IDLE:
+				//When in idle this task does and will do nothing
+				break;
 
-		case SYS_CMD_INIT:
-			system_init();
-			break;
+			case SYS_CMD_INIT:
+				system_init();
+				break;
 
-		case SYS_CMD_RUN:
-			system_run();
-			break;
+			case SYS_CMD_RUN:
+				system_run();
+				break;
 
-		case SYS_CMD_SHUTDOWN:
-			system_shutdown();
+			case SYS_CMD_SHUTDOWN:
+				system_shutdown();
+				break;
+
+			default:
+				break;
+			}
+		}
+		else
+			system_check_semaphores();
+	}
+	///@todo Check for errors here
+};
+
+/**
+ * @brief Check the semaphores in the ipc queue.
+ * 
+ * This command is called before the command action. Since the system is non-
+ * interruptable, this command checks only for semaphores.
+ * 
+ * @details Other commands are checked in the idle command.
+ */
+void system_check_semaphores(void)
+{
+    //Check semaphores for BMS
+    if (ipc_get_queue_bytes(did_SYS) >= sizeof(T_command))      // look for new command in keypad queue
+	{
+		ipc_queue_get(did_SYS, sizeof(T_command), &txcmd_system);  // get new command
+		//Evaluate semaphores
+		switch (txcmd_system.cmd)
+		{
+		case cmd_ipc_signal_finished:
+			//The called task is finished, decrease halt counter
+			task_system.halt_task -= txcmd_system.did;
 			break;
 
 		default:
 			break;
 		}
 	}
-	///@todo Check for errors here
 };
 
 /**
@@ -113,15 +157,31 @@ void system_task(void)
  */
 void system_init(void)
 {
-	// to prevent unwanted behaviour engage the watchdog
-	sys_watchdog(ON);
+	//perform the command action
+	switch (arbiter_get_sequence(&task_system))
+	{
+	case SEQUENCE_ENTRY:
+		// to prevent unwanted behaviour engage the watchdog
+		sys_watchdog(ON);
 
-	// when battery gauge is active, read the old capacity from the gauge flash
-	// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
-	// 	p_ipc_sys_bms_data->old_capacity = (signed int)BMS_gauge_read_flash_int(MAC_INFO_BLOCK_addr);
+		//goto next sequence
+		arbiter_set_sequence(&task_system, SEQUENCE_FINISHED);
+		break;
 
-	// goto run state
-	arbiter_set_command(&task_system, SYS_CMD_RUN);
+	case SEQUENCE_FINISHED:
+		// Pet the watchdog
+		sys_watchdog(PET);
+
+		//reset sequence
+		arbiter_reset_sequence(&task_system);
+
+		// goto run state
+		arbiter_set_command(&task_system, SYS_CMD_RUN);
+		break;
+
+	default:
+		break;
+	}
 };
 
 /**
@@ -138,25 +198,24 @@ void system_init(void)
 void system_run(void)
 {
 	// Pet the watchdog
-		sys_watchdog(PET);
-		// Keep the system on
-		GPIOC->BSRRL = GPIO_BSRR_BS_6;
+	sys_watchdog(PET);
+	// Keep the system on
+	GPIOC->BSRRL = GPIO_BSRR_BS_6;
 
-		// When no log is going on and a sd-card is inserted, start logging
-		if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & SD_CMD_FINISHED) && (p_ipc_sys_sd_data->status & SD_CARD_SELECTED))
-		{
-			txcmd_system.did = did_SYS;
-			txcmd_system.cmd = cmd_igc_start_logging;
-			txcmd_system.data = 0;
-			txcmd_system.timestamp = TIM5->CNT;
-			ipc_queue_push(&txcmd_system, sizeof(T_command), did_IGC);
-		}
+	// When no log is going on and a sd-card is inserted, start logging
+	if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & SD_CMD_FINISHED) && (p_ipc_sys_sd_data->status & SD_CARD_SELECTED))
+	{
+		txcmd_system.did = did_SYS;
+		txcmd_system.cmd = cmd_igc_start_logging;
+		txcmd_system.data = 0;
+		txcmd_system.timestamp = TIM5->CNT;
+		ipc_queue_push(&txcmd_system, sizeof(T_command), did_IGC);
+	}
 
-		
-		// When power switch is off, initiate shutdown procedure
-		// Unless there is input power present or no battery is present
-		if((!SHUTDOWN_SENSE)&&!(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT)&&(p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
-				arbiter_callbyreference(&task_system, SYS_CMD_SHUTDOWN, 0);
+	// When power switch is off, initiate shutdown procedure
+	// Unless there is input power present or no battery is present
+	if ((!SHUTDOWN_SENSE) && !(p_ipc_sys_bms_data->charging_state & STATUS_INPUT_PRESENT) && (p_ipc_sys_bms_data->charging_state & STATUS_BAT_PRESENT))
+		arbiter_callbyreference(&task_system, SYS_CMD_SHUTDOWN, 0);
 };
 
 /**
@@ -201,6 +260,13 @@ void system_shutdown(void)
 		// Check whether there is no sd card active
 		if (sdio_set_inactive())
 		{
+			//Send infobox
+			txcmd_system.did = did_SYS;
+			txcmd_system.cmd = cmd_gui_set_std_message;
+			txcmd_system.data = data_info_shutting_down;
+			txcmd_system.timestamp = TIM5->CNT;
+			ipc_queue_push(&txcmd_system, 10, did_GUI);
+
 			//Set wait
 			task_system.wait_counter = 5;
 			//goto next sequence
@@ -209,26 +275,18 @@ void system_shutdown(void)
 		break;
 
 	case SYS_SEQUENCE_SAVESOC:
-			//Send infobox
-			txcmd_system.did = did_SYS;
-			txcmd_system.cmd = cmd_gui_set_std_message;
-			txcmd_system.data = data_info_shutting_down;
-			txcmd_system.timestamp = TIM5->CNT;
-			ipc_queue_push(&txcmd_system, 10, did_GUI);
-
 			// when battery gauge is active, save the capacity to the the gauge flash
-			// if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
-			// 	BMS_gauge_send_flash_int(MAC_INFO_BLOCK_addr, (unsigned int)p_ipc_sys_bms_data->discharged_capacity);
+			if (p_ipc_sys_bms_data->charging_state & STATUS_GAUGE_ACTIVE)
+				system_call_task(BMS_CMD_SAVE_SOC, 0, did_BMS);
 
 			//set wait
 			task_system.wait_counter = 5;
+			
 			//Goto next sequence
 			arbiter_set_sequence(&task_system, SYS_SEQUENCE_HALTSYSTEM);
 		break;
 
 	case SYS_SEQUENCE_HALTSYSTEM:
-			// p_ipc_sys_bms_data->crc = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_SUM_addr);
-			// p_ipc_sys_bms_data->len = i2c_read_char(i2c_addr_BMS_GAUGE, MAC_LEN_addr);
 			// Shutdown power and set PC6 low
 			GPIOC->BSRRH = GPIO_BSRR_BS_6;
 
@@ -242,6 +300,26 @@ void system_shutdown(void)
 	default:
 		break;
 	}
+};
+
+/**
+ * @brief Call a other task via the ipc queue.
+ * @param cmd The command the called task should perform
+ * @param data The data for the command
+ * @param did_target The did of the ipc queue of the called task
+ */
+void system_call_task(unsigned char cmd, unsigned long data, unsigned char did_target)
+{
+	//Set the command and data for the target task
+	txcmd_system.did = did_SYS;
+	txcmd_system.cmd = cmd;
+	txcmd_system.data = data;
+
+	//Push the command
+	ipc_queue_push(&txcmd_system, sizeof(T_command), did_target);
+
+	//Set wait counter to wait for called task to finish
+	task_system.halt_task += did_target;
 };
 
 /**

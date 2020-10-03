@@ -18,7 +18,7 @@
 // #include "system.h"
 
 //How many tasks do you want?
-#define NUM_TASKS	3
+#define NUM_TASKS	4
 
 //struct for task information
 typedef struct

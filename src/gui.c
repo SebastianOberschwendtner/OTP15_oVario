@@ -753,7 +753,7 @@ void fkt_set_ipc_command(uint8_t command_number)
 	// stops the igc logging and unmounts the sd-card
 	case gui_cmd_stopigc:
 		GUI_cmd.did 		= did_GUI;
-		GUI_cmd.cmd 		= cmd_igc_stop_logging;
+		GUI_cmd.cmd 		= IGC_CMD_FINISH_LOG;
 		GUI_cmd.timestamp 	= TIM5->CNT;
 		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
 		break;
@@ -796,10 +796,7 @@ void fkt_set_ipc_command(uint8_t command_number)
 		break;
 		// reset the capacity count of the coulomb counter
 	case gui_cmd_resetcapacity:
-		GUI_cmd.did 		= did_GUI;
-		GUI_cmd.cmd 		= cmd_BMS_ResetCapacity;
-		GUI_cmd.timestamp 	= TIM5->CNT;
-		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		p_ipc_gui_bms_data->old_capacity = 0;
 		break;
 	default:
 		break;

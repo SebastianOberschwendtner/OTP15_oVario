@@ -274,7 +274,7 @@ void arbiter_set_sequence(TASK_T* task, unsigned char next_sequence)
 };
 
 /**
- * @brief Reset all sequence states within one task, except the idle state.
+ * @brief Reset all sequence states within one task.
  * @param task Address of the task struct
  */
 void arbiter_reset_sequence(TASK_T* task)

@@ -26,6 +26,7 @@
 #define BMS_CMD_READ_INT_FLASH      7 // call-by-value, nargs = 1
 #define BMS_CMD_WRITE_INT_FLASH     8 // call-by-value, nargs = 2
 #define BMS_CMD_GET_ADC_COULOMB     9 // call-by-reference
+#define BMS_CMD_SAVE_SOC            10// call-by-reference
 
 //Sequences of commands
 // INIT
@@ -60,6 +61,7 @@
 // INIT_COULOMB
 #define BMS_SEQUENCE_SET_MAC        24
 #define BMS_SEQUENCE_READ_CONFIG_A  25
+#define BMS_SEQUENCE_GET_OLD_C      26
 
 
 /*
@@ -258,8 +260,8 @@ void            bms_set_otg             (void);
 void            coulomb_read_int_flash  (void);
 void            coulomb_write_int_flash (void);
 void            coulomb_get_adc         (void);
+void            coulomb_save_soc        (void);
 void            bms_init_peripherals    (void);
 void            bms_call_task           (unsigned char cmd, unsigned long data, unsigned char did_target);
 void            coulomb_call_task       (unsigned char cmd, unsigned long data, unsigned char did_target);
-// void            bms_check_battery       (void);
 #endif /* BMS_H_ */
