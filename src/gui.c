@@ -750,12 +750,12 @@ void fkt_set_ipc_command(uint8_t command_number)
 	case gui_cmd_startmenu:
 		menu = Gui_Vario;
 		break;
-	// stops the igc logging and unmounts the sd-card
+	// stops the igc logging and un-mounts the sd-card
 	case gui_cmd_stopigc:
 		GUI_cmd.did 		= did_GUI;
-		GUI_cmd.cmd 		= IGC_CMD_FINISH_LOG;
+		GUI_cmd.cmd 		= cmd_igc_stop_logging;
 		GUI_cmd.timestamp 	= TIM5->CNT;
-		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+		ipc_queue_push((void*)&GUI_cmd, sizeof(T_command), did_IGC);
 		break;
 	// enables the otg usb port, only if not charging!
 	case gui_cmd_otgon:
@@ -763,7 +763,7 @@ void fkt_set_ipc_command(uint8_t command_number)
 		GUI_cmd.cmd 		= BMS_CMD_SET_OTG;
 		GUI_cmd.data		= ON;
 		GUI_cmd.timestamp 	= TIM5->CNT;
-		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		ipc_queue_push((void*)&GUI_cmd, sizeof(T_command), did_BMS);
 		break;
 	// disables the otg usb port
 	case gui_cmd_otgoff:
@@ -771,14 +771,14 @@ void fkt_set_ipc_command(uint8_t command_number)
 		GUI_cmd.cmd 		= BMS_CMD_SET_OTG;
 		GUI_cmd.data		= OFF;
 		GUI_cmd.timestamp 	= TIM5->CNT;
-		ipc_queue_push((void*)&GUI_cmd, 10, did_BMS);
+		ipc_queue_push((void*)&GUI_cmd, sizeof(T_command), did_BMS);
 		break;
 	// toggles the state of the sinktone, on/off
 	case gui_cmd_togglesinktone:
 		GUI_cmd.did 		= did_GUI;
 		GUI_cmd.cmd 		= cmd_vario_toggle_sinktone;
 		GUI_cmd.timestamp 	= TIM5->CNT;
-		ipc_queue_push((void*)&GUI_cmd, 10, did_VARIO);
+		ipc_queue_push((void*)&GUI_cmd, sizeof(T_command), did_VARIO);
 		break;
 		// toggles the visibility of the bottom bar with the key functions
 	case gui_cmd_togglebottombar:
@@ -792,7 +792,7 @@ void fkt_set_ipc_command(uint8_t command_number)
 		GUI_cmd.did 		= did_GUI;
 		GUI_cmd.cmd 		= cmd_igc_start_logging;
 		GUI_cmd.timestamp 	= TIM5->CNT;
-		ipc_queue_push((void*)&GUI_cmd, 10, did_IGC);
+		ipc_queue_push((void*)&GUI_cmd, sizeof(T_command), did_IGC);
 		break;
 		// reset the capacity count of the coulomb counter
 	case gui_cmd_resetcapacity:

@@ -44,6 +44,14 @@ unsigned long const g_key[16] = {
     0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476,
     0xc8e899e8, 0x9321c28a, 0x438eba12, 0x8cbe0aee};
 
+/*
+ * Get the return value of the last finished ipc task which was called.
+ */
+inline unsigned long igc_get_call_return(void)
+{
+    return rxcmd_igc.data;
+};
+
 //****** Functions ******
 /*
  * register memory for igc
@@ -120,7 +128,7 @@ void igc_task(void)
                 break;
 
             case IGC_CMD_WRITE_LOG:
-                // igc_BRecord();
+                igc_write_log();
                 break;
 
             case IGC_CMD_FINISH_LOG:
@@ -142,7 +150,7 @@ void igc_task(void)
 void igc_check_commands(void)
 {
     //Check commands
-    if (ipc_get_queue_bytes(did_IGC) >= 10) // look for new command in keypad queue
+    if (ipc_get_queue_bytes(did_IGC) >= sizeof(T_command)) // look for new command in keypad queue
     {
         ipc_queue_get(did_IGC, sizeof(T_command), &rxcmd_igc); // get new command
         switch (rxcmd_igc.cmd)                  // switch for command
@@ -154,11 +162,8 @@ void igc_check_commands(void)
 
         case cmd_igc_start_logging: // create logfile and start logging
             //Only when no log is active
-            if(IgcInfo.open == IGC_LOG_CLOSED)
-            {
-                IgcInfo.open = IGC_LOG_BUSY;
-                arbiter_set_command(&task_igc, IGC_CMD_CREATE_LOG);
-            }
+            if(IgcInfo.open == IGC_LOG_FINISHED)
+                IgcInfo.open = IGC_LOG_CLOSED;
             break;
 
         case cmd_igc_stop_logging: // stop logging
@@ -194,10 +199,76 @@ void igc_idle(void)
     //When the log file is created, start logging
     if (IgcInfo.open == IGC_LOG_OPEN)
     {
+        //Send infobox
+        txcmd_igc.did = did_IGC;
+        txcmd_igc.cmd = cmd_gui_set_std_message;
+        txcmd_igc.data = data_info_logging_started;
+        txcmd_igc.timestamp = TIM5->CNT;
+        ipc_queue_push(&txcmd_igc, sizeof(T_command), did_GUI);
+
+        //Set logging command
+        arbiter_callbyreference(&task_igc, IGC_CMD_WRITE_LOG,0);
+    }
+    else if(IgcInfo.open == IGC_LOG_CLOSED)
+    {
+        //log is closed, so start a new log, when the gps has a fix and when sd-card is present
+        if ((GpsData->fix > 0) && (sd->status & SD_CARD_SELECTED))
+            arbiter_callbyreference(&task_igc, IGC_CMD_CREATE_LOG, 0);
+
+    }
+
+    //When gps has a fix, set green led
+    if(GpsData->fix)
+        set_led_green(ON);
+};
+
+/**
+ ***********************************************************
+ * @brief Log the gs track
+ ***********************************************************
+ * 
+ * Argument:    none
+ * Return:      none
+ * 
+ * @details call-by-reference
+ ***********************************************************
+ */
+void igc_write_log(void)
+{
+    //perform the command action
+    switch (arbiter_get_sequence(&task_igc))
+    {
+    case SEQUENCE_ENTRY:
+        set_led_green(ON);
         //Log is now logging
         IgcInfo.open = IGC_LOGGING;
-        //Got logging command
-        arbiter_callbyreference(&task_igc, IGC_CMD_WRITE_LOG,0);
+
+        //Write B-Record
+        igc_BRecord();
+
+        //Reset wait counter and wait for 1000ms or 1s
+        /**
+         * The actual value has to be tweaked because the scheduler timing
+         * is not too precise and it has some jitter.
+         * @todo make timing here more precise
+         */
+        task_igc.local_counter = MS2TASKTICK(780, LOOP_TIME_TASK_IGC);
+
+        //goto wait sequence
+        arbiter_set_sequence(&task_igc, SEQUENCE_FINISHED);
+        break;
+
+    case SEQUENCE_FINISHED:
+        set_led_green(OFF);
+        //decrease the wait counter, when it is not 0
+        if (task_igc.local_counter)
+            task_igc.local_counter--;
+        else
+            arbiter_set_sequence(&task_igc, SEQUENCE_ENTRY);
+        break;
+
+    default:
+        break;
     }
 };
 
@@ -264,14 +335,6 @@ void igc_call_task(unsigned char cmd, unsigned long data, unsigned char did_targ
 
     //Set wait counter to wait for called task to finish
     task_igc.halt_task += did_target;
-};
-
-/*
- * Get the return value of the last finished ipc task which was called.
- */
-inline unsigned long igc_get_call_return(void)
-{
-    return rxcmd_igc.data;
 };
 
 /***********************************************************
@@ -856,8 +919,15 @@ void igc_close(void)
             break;
 
         case SEQUENCE_FINISHED:
+            //Send infobox
+            txcmd_igc.did = did_IGC;
+            txcmd_igc.cmd = cmd_gui_set_std_message;
+            txcmd_igc.data = data_info_logging_stopped;
+            txcmd_igc.timestamp = TIM5->CNT;
+            ipc_queue_push(&txcmd_igc, sizeof(T_command), did_GUI);
+
             //Log is closed
-            IgcInfo.open = IGC_LOG_CLOSED;
+            IgcInfo.open = IGC_LOG_FINISHED;
 
             //Exit command
             arbiter_return(&task_igc,1);

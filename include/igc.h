@@ -34,12 +34,13 @@
 #define IGC_LOG_OPEN            2
 #define IGC_LOGGING             3
 #define IGC_LOG_BUSY            4
+#define IGC_LOG_FINISHED        5
 #define IGC_ERROR			    255
 
 //Commands of the igc task
 #define IGC_CMD_CREATE_LOG      1
 #define IGC_CMD_CREATE_HEADER   2
-#define IGC_CMD_WRITE_LOG       3
+#define IGC_CMD_WRITE_LOG       3   // call-by-reference
 #define IGC_CMD_FINISH_LOG      4
 
 //Sequences for igc commands
@@ -70,10 +71,10 @@ void                    igc_get_ipc                 (void);
 void                    igc_task                    (void);
 void                    igc_check_commands          (void);
 void                    igc_idle                    (void);
+void                    igc_write_log               (void);
 unsigned char           igc_IsValidCharacter        (unsigned char character);
 unsigned char           igc_IncludeInGrecord        (char* in);
 void                    igc_call_task               (unsigned char cmd, unsigned long data, unsigned char did_target);
-// inline unsigned long    igc_get_call_return         (void);
 void                    igc_create_log              (void);
 void                    igc_create_header           (void);
 void                    igc_CommitCharacter         (unsigned char character);

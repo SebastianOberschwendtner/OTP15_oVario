@@ -92,6 +92,7 @@
 #define LOOP_TIME_TASK_SDIO      ((SCHEDULE_1ms)*SYSTICK)
 #define LOOP_TIME_TASK_BMS       ((SCHEDULE_1ms)*SYSTICK)
 #define LOOP_TIME_TASK_I2C       ((SCHEDULE_100us)*SYSTICK)
+#define LOOP_TIME_TASK_IGC       ((SCHEDULE_1ms)*SYSTICK)
 
 //BMS parameters
 #define MAX_BATTERY_VOLTAGE	4200 //[mV]

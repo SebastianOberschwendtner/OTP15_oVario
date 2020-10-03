@@ -209,7 +209,7 @@ void system_run(void)
 		txcmd_system.cmd = cmd_igc_start_logging;
 		txcmd_system.data = 0;
 		txcmd_system.timestamp = TIM5->CNT;
-		ipc_queue_push(&txcmd_system, sizeof(T_command), did_IGC);
+		// ipc_queue_push(&txcmd_system, sizeof(T_command), did_IGC);
 	}
 
 	// When power switch is off, initiate shutdown procedure
@@ -240,7 +240,7 @@ void system_shutdown(void)
 	case SEQUENCE_ENTRY:
 		if (!SHUTDOWN_SENSE) // Check whether the power switch is still in the off position
 		{
-			// When no log is going on, stop logging
+			// When a log is going on, stop logging
 			if (igc_get_state() == IGC_LOGGING)
 			{
 				txcmd_system.did = did_SYS;
@@ -249,28 +249,32 @@ void system_shutdown(void)
 				txcmd_system.timestamp = TIM5->CNT;
 				ipc_queue_push((void *)&txcmd_system, 10, did_IGC);
 			}
-			else if (igc_get_state() == IGC_LOG_CLOSED)
-				arbiter_set_sequence(&task_system, SYS_SEQUENCE_FILECLOSING); //Files are closed
+			//goto next sequence and wait there until files are closed
+			arbiter_set_sequence(&task_system, SYS_SEQUENCE_FILECLOSING);
 		}
 		else // When the power switch just bounced, go back to run state
 			arbiter_return(&task_system, 0);
 		break;
 
 	case SYS_SEQUENCE_FILECLOSING:
-		// Check whether there is no sd card active
-		if (sdio_set_inactive())
+		// Wait until files are closed
+		if ((igc_get_state() == IGC_LOG_CLOSED) || (igc_get_state() == IGC_LOG_FINISHED))
 		{
-			//Send infobox
-			txcmd_system.did = did_SYS;
-			txcmd_system.cmd = cmd_gui_set_std_message;
-			txcmd_system.data = data_info_shutting_down;
-			txcmd_system.timestamp = TIM5->CNT;
-			ipc_queue_push(&txcmd_system, 10, did_GUI);
+			//Wai until sd-card is ejected
+			if (sdio_set_inactive())
+			{
+				//Send infobox
+				txcmd_system.did = did_SYS;
+				txcmd_system.cmd = cmd_gui_set_std_message;
+				txcmd_system.data = data_info_shutting_down;
+				txcmd_system.timestamp = TIM5->CNT;
+				ipc_queue_push(&txcmd_system, 10, did_GUI);
 
-			//Set wait
-			task_system.wait_counter = 5;
-			//goto next sequence
-			arbiter_set_sequence(&task_system, SYS_SEQUENCE_SAVESOC);
+				//Set wait
+				task_system.wait_counter = 5;
+				//goto next sequence
+				arbiter_set_sequence(&task_system, SYS_SEQUENCE_SAVESOC);
+			}
 		}
 		break;
 
@@ -281,7 +285,7 @@ void system_shutdown(void)
 
 			//set wait
 			task_system.wait_counter = 5;
-			
+
 			//Goto next sequence
 			arbiter_set_sequence(&task_system, SYS_SEQUENCE_HALTSYSTEM);
 		break;

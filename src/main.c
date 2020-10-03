@@ -8,23 +8,31 @@
  ******************************************************************************
  */
 
+//****** Includes ******
 #include "oVario_Framework.h" //<--- define your hardware setup here
 
-uint32_t error_var = 0;
-// unsigned long tempcount = 0;
+//****** Variables ******
+uint32_t error_var = 0;		//Global errors variable
+T_command txcmd_main;		//Command struct to send ipc commands
 
-T_command txcmd_main;
-
+//****** Functions ******
+/**
+  * @brief Interrupt handler for Sytick timer. Handles the schedule
+  * @details interrupt handler
+  */
 void SysTick_Handler(void)
 {
 	//***** Run scheduler *****
 	run_scheduler();
 };
 
+/**
+ * @brief main function of the Vario.
+ */
 int main(void)
 {
 	//***** Initialize core ****
-	//TODO Make the following cleaner
+	///@todo Make the following cleaner
 	init_clock();
 	SysTick_Config(SYSTICK_TICKS);
 	init_gpio();
@@ -53,22 +61,19 @@ int main(void)
 	igc_get_ipc();
 	
 	//***** Initialize peripherals *****
-	//TODO Eventually move all the following initalizations to the corresponding tasks
+	///@todo Eventually move all the following initializations to the corresponding tasks
 	init_lcd();
 	gui_bootlogo();
 	exti_init();
 	sound_init();
 	timer_init();
-
 	
 	set_led_red(ON);	
 	wait_systick(10);
 	set_led_red(OFF);
-	// init_BMS();
 
 	gps_init();
 	gui_init();
-
 
 	//***** initialize the scheduler *****
 	init_scheduler();
@@ -118,10 +123,8 @@ int main(void)
 		//***** Background Tasks *****
 		if (run(TASK_GROUP_BACKGROUND))
 		{
-			set_led_red(ON);
 			md5_task();
 			i2c_task();
-			set_led_red(OFF);
 		}
 	}
 	return 0;
