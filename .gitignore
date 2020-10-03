@@ -1,4 +1,4 @@
-Debug/
+/Debug/
 .DS_Store
 .metadata
 bin/
@@ -12,6 +12,23 @@ local.properties
 .loadpath
 .recommenders
 
+# VSCode platformio project file
+.pio
+.vscode
+doc 
+out
+LinkerScript.ld
+
+# STM32 libraries
+CMSIS
+StdPeriph_Driver
+startup
+src/stm32f4xx_it.c
+inc/stm32f4xx_it.h
+src/syscalls.c
+*.cfg
+*.xml
+
 # External tool builders
 .externalToolBuilders/
 
@@ -23,6 +40,7 @@ local.properties
 
 # CDT-specific (C/C++ Development Tooling)
 .cproject
+.project
 
 # CDT- autotools
 .autotools
@@ -56,3 +74,4 @@ local.properties
 .scala_dependencies
 .worksheet
 
+/Default/
