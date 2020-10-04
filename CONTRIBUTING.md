@@ -17,6 +17,7 @@ There are some general rules to keep the code nice and tidy:
   - [Function Header](#function-header)
   - [Header for *Arbiter* Command](#header-for-arbiter-command)
 - [Commits](#commits)
+- [Release Management](#release-management)
 - [License](#license)
 
 # Design Principles
@@ -157,6 +158,12 @@ Symbols for commits:
 - :racehorse: `:racehorse:` Performance Improvement
 - :art: `:art:` Made Code More Readable
 - :memo: `:memo:` Improved Documentation
+
+# Release Management
+*Tags* are used for the release management. The tag number is:
+- **v***Major.Minor.Bugfix*
+
+> A release with release notes is only published on **minor** changes. Bugfixes are just pushed as tags.
 
 # License
 
