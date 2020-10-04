@@ -15,7 +15,7 @@ There are some general rules to keep the code nice and tidy:
 - [Comments](#comments)
   - [File Header](#file-header)
   - [Function Header](#function-header)
-  - [Header for *Arbiter* Command](#header-for-arbiter-command)
+  - [Header of *Arbiter* Command](#header-of-arbiter-command)
 - [Commits](#commits)
 - [Release Management](#release-management)
 - [License](#license)
@@ -162,6 +162,7 @@ Symbols for commits:
 # Release Management
 *Tags* are used for the release management. The tag number is:
 - **v***Major.Minor.Bugfix*
+- Document every change in the [changelog](CHANGELOG.md)
 
 > A release with release notes is only published on **minor** changes. Bugfixes are just pushed as tags.
 
