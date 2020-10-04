@@ -1,5 +1,19 @@
 # Changelog for oVario
 
+## [V1.0.1](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.1) *(2020-10-04)*
+
+> Released by `SO`
+
+**Release Notes:**
+
+- Added the whole release management process in the documentation. This is an example on how to publish *bugfixes*.
+- The release version is now part of the bootlogo.
+- The red LED indicates wether the battery is charging or not.
+
+**Fixed Issues:**
+
+*none*
+
 ## [V1.0.0](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.0) *(2020-10-04)*
 
 > Released by `SO`

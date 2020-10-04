@@ -328,6 +328,12 @@ void bms_idle(void)
 			break;
 		}
 	}
+
+	//Set the red led according the charging state
+	if (pBMS->charging_state & (STATUS_FAST_CHARGE | STATUS_PRE_CHARGE))
+		set_led_red(ON); //Led is on when charging
+	else
+		set_led_red(OFF);//Led is off when not charging
 };
 
 /**
