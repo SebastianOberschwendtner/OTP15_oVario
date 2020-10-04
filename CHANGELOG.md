@@ -1,4 +1,22 @@
 # Changelog for oVario
+
+## [V1.0.0](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.0) *(2020-10-04)*
+
+> Released by `SO`
+
+**Release Notes:**
+
+The first proper release with release management! All the tasks work again and use the arbiter and scheduler. The logging is more robust and so is the I2C driver.
+
+**Fixed Issues:**
+- :white_check_mark: #4 BMS Task for Arbiter
+- :white_check_mark: #5 IGC not Logging
+- :white_check_mark: #6 Faulty Sensors with I2C
+- :white_check_mark: #7 Enable OTG by the User
+- :white_check_mark: #8 Manually Start Log
+- :white_check_mark: #11 Integrate Coulomb Counter to BMS
+
+
 ## [V0.2](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v0.2) *(2020-09-13)*
 
 >Released by `SO`
