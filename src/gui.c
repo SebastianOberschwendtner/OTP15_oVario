@@ -1240,7 +1240,7 @@ void gui_bootlogo(void)
 	lcd_set_cursor(84, 105);
 	lcd_set_fontsize(0);
 	lcd_set_inverted(0);
-	lcd_string2buffer("V 3.00");
+	lcd_string2buffer(RELEASE_VERSION);
 	lcd_send_buffer();
 };
 

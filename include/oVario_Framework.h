@@ -32,6 +32,9 @@
 #ifndef OVARIO_FRAMEWORK_H_
 #define OVARIO_FRAMEWORK_H_
 
+//****** Release Versio ******
+#define RELEASE_VERSION "v1.0.1"
+
 /****** Add SPL-Libs here ********/
 #include "stm32f4xx.h"
 #include "stm32f4xx_exti.h"
