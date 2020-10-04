@@ -157,7 +157,7 @@ Symbols for commits:
 - :art: `:art:` Improvements in the *User Experience*
 - :bug: `:bug:` Bugfixes
 - :racehorse: `:racehorse:` Performance Improvement
-- :eyeglasses: `:eyeglasses:` Made Code More Readable
+- :mag: `:mag:` Made Code More Readable
 - :memo: `:memo:` Improved Documentation
 
 # Release Management
