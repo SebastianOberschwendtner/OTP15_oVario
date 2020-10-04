@@ -154,9 +154,10 @@ The header of an arbiter command is a bit different to distinguish them to norma
 - *Present* tense is **not** required. 
 
 Symbols for commits:
+- :art: `:art:` Improvements in the *User Experience*
 - :bug: `:bug:` Bugfixes
 - :racehorse: `:racehorse:` Performance Improvement
-- :art: `:art:` Made Code More Readable
+- :eyeglasses: `:eyeglasses:` Made Code More Readable
 - :memo: `:memo:` Improved Documentation
 
 # Release Management
