@@ -22,7 +22,7 @@
  ******************************************************************************
  * @file    igc.c
  * @author  SO
- * @version V2.0
+ * @version v1.0.2
  * @date    19-September-2020
  * @brief   The task which handles the IGC logging.
  ******************************************************************************
@@ -236,8 +236,8 @@ void igc_idle(void)
     }
     else if(IgcInfo.open == IGC_LOG_CLOSED)
     {
-        //log is closed, so start a new log, when the gps has a fix and when sd-card is present
-        if ((GpsData->fix > 0) && (sd->status & SD_CARD_SELECTED))
+        //log is closed, so start a new log, when the gps has a 3D(!)-fix and when sd-card is present
+        if ((GpsData->fix > 2) && (sd->status & SD_CARD_SELECTED))
             arbiter_callbyreference(&task_igc, IGC_CMD_CREATE_LOG, 0);
 
     }

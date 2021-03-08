@@ -1,6 +1,18 @@
 # Changelog for oVario
 
-## [V1.0.1](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.1) *(2020-10-04)*
+## [v1.1.0](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.1.0) *(xxxx-xx-xx)*
+
+> Released by `SO`
+
+**Release Notes:**
+
+- [v1.0.2](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.2): Starts logging only when the GPS has a **3D** fix.
+
+**Fixed Issues:**
+
+*none*
+
+## [v1.0.1](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.1) *(2020-10-04)*
 
 > Released by `SO`
 
@@ -14,7 +26,7 @@
 
 *none*
 
-## [V1.0.0](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.0) *(2020-10-04)*
+## [v1.0.0](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.0) *(2020-10-04)*
 
 > Released by `SO`
 
@@ -31,7 +43,7 @@ The first proper release with release management! All the tasks work again and u
 - :white_check_mark: #11 Integrate Coulomb Counter to BMS
 
 
-## [V0.2](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v0.2) *(2020-09-13)*
+## [v0.2](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v0.2) *(2020-09-13)*
 
 >Released by `SO`
 
@@ -73,7 +85,7 @@ The core functionality of the vario works, but the *igc-logging* and *bms_task()
 - *#2* :white_check_mark: [I2C Blocking](https://github.com/knuffel-v2/OTP15_oVario/issues/2)
 - *#3* :white_check_mark: [Main Loop Timing](https://github.com/knuffel-v2/OTP15_oVario/issues/1)
 
-## [V0.1](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v0.1) *(2020-06-26)*
+## [v0.1](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v0.1) *(2020-06-26)*
 
 >Released by `SO`
 
