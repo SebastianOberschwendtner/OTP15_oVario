@@ -166,6 +166,8 @@ void datafusion_task(void)
 	df_data->sub				= sub;
 	df_data->pressure 			= p;
 
+	// df_data->climbrate_filt 	= 5;
+
 
 	if(y < 0)
 	{

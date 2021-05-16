@@ -35,9 +35,14 @@
 #include "oVario_Framework.h"
 
 //*********** Defines **************
+#define sound_mode_mute         0
 #define sound_mode_cont			1
 #define sound_mode_beep			2
 #define sound_mode_beep_short	3
+
+#define sound_mute	1
+#define sound_beep 	2
+#define sound_cont	3
 
 
 //*********** Functions **************
