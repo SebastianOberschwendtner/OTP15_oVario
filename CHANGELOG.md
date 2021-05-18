@@ -6,7 +6,8 @@
 
 **Release Notes:**
 
-- [v1.0.2](https://github.com/knuffel-v2/OTP15_oVario/releases/tag/v1.0.2): Starts logging only when the GPS has a **3D** fix.
+- Starts logging only when the GPS has a **3D** fix.
+- Improves sound generation and the indication of the sound state.
 
 **Fixed Issues:**
 

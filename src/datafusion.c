@@ -22,7 +22,7 @@
  ******************************************************************************
  * @file    datafusion.c
  * @author  JK
- * @version V1.1
+ * @version v1.0.3
  * @date    21-March-2018
  * @brief   Handles the datafusion between the GPS the barometer and the vario
  * 			task.
