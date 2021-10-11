@@ -242,7 +242,7 @@ void vario_tone_sink(float climb)
 
 
 	// Set Frequency
-	freque = (uint16_t)((temp_climb + frequ_base_0climb) * frequ_rate_sink + frequ_base_sink);
+	freque = (uint16_t)((temp_climb + frequ_srate_base_sink) * frequ_rate_sink + frequ_base_sink);
 	//volu = 100;
 
 	vario_command.cmd 	= cmd_sound_set_frequ;
