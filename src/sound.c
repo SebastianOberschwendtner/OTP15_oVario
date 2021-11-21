@@ -304,7 +304,6 @@ void sound_task(void)
 		// ***** MAKE ANNOYING SOUND *****
 	case sound_mode_cont:
 		fastbeep = 1,
-		sound_state.mute = 0;
 		sound_state.beep = 1;
 
 		break;
