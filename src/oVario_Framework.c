@@ -22,7 +22,7 @@
  ******************************************************************************
  * @file    oVario_Framework.c
  * @author  SO
- * @version V1.1
+ * @version v2.0.0
  * @date    25-February-2018
  * @brief   Handles the core system tasks and defines the schedule of the
  * 			other tasks.
@@ -220,7 +220,7 @@ void system_run(void)
 	// Pet the watchdog
 	sys_watchdog(PET);
 	// Keep the system on
-	GPIOC->BSRRL = GPIO_BSRR_BS_6;
+	GPIOA->BSRRL = GPIO_BSRR_BS_10;
 
 	// When no log is going on and a sd-card is inserted, start logging
 	if ((igc_get_state() == IGC_LOG_CLOSED) && (p_ipc_sys_sd_data->status & SD_CMD_FINISHED) && (p_ipc_sys_sd_data->status & SD_CARD_SELECTED))
@@ -311,8 +311,8 @@ void system_shutdown(void)
 		break;
 
 	case SYS_SEQUENCE_HALTSYSTEM:
-			// Shutdown power and set PC6 low
-			GPIOC->BSRRH = GPIO_BSRR_BS_6;
+			// Shutdown power and set PA10 low
+			GPIOA->BSRRH = GPIO_BSRR_BS_10;
 
 			//goto next sequence
 			arbiter_set_sequence(&task_system, SEQUENCE_FINISHED);
@@ -438,19 +438,20 @@ void init_gpio(void)
 {
 	//Enable clock
 	gpio_en(GPIO_B);
-	gpio_en(GPIO_C);
+	gpio_en(GPIO_A);
 
 	//Set output
 	// PB0 and PB1
 	GPIOB->MODER |= GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0;
-	// PC6 and PC7
-	GPIOC->MODER |= GPIO_MODER_MODER6_0;
+	// PA9 and PA10
+	GPIOA->MODER |= GPIO_MODER_MODER10_0;
 
 	//Set Pin configuration
 	//GPIOC->OTYPER |= GPIO_OTYPER_OT_6;
 
 	//Set SHUTDOWN_OUT to high
-	GPIOC->BSRRL = GPIO_BSRR_BS_6;
+	GPIOA->BSRRL = GPIO_BSRR_BS_10;
+
 };
 
 /**

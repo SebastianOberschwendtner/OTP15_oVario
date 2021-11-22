@@ -22,7 +22,7 @@
  ******************************************************************************
  * @file    gps.c
  * @author  JK
- * @version V1.1
+ * @version v2.0.0
  * @date    01-May-2018
  * @brief   Talks to the GPS and module and reads its data.
  ******************************************************************************
@@ -168,25 +168,25 @@ void gps_init(void)
 
 	/* USART IOs configuration ***********************************/
 	/* Enable GPIOC clock */
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
-	/* Connect PC10 to USART3_Tx */
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_USART3);
+	/* Connect PC6 to USART6_Tx */
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
 
-	/* Connect PC11 to USART3_Rx*/
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_USART3);
+	/* Connect PC7 to USART6_Rx*/
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
 
-	/* Configure USART3_Tx and USART3_Rx as alternate function */
-	GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_10 | GPIO_Pin_11;
+	/* Configure USART6_Tx and USART6_Rx as alternate function */
+	GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_7 | GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed 	= GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType 	= GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd 	= GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 
-	/* Enable USART3 clock */
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+	/* Enable USART6 clock */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
 
 	USART_InitTypeDef USART_InitStructure;
 	USART_InitStructure.USART_BaudRate 				= 9600;
@@ -195,18 +195,18 @@ void gps_init(void)
 	USART_InitStructure.USART_Parity 				= USART_Parity_No;
 	USART_InitStructure.USART_HardwareFlowControl 	= USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode 					= USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART3, &USART_InitStructure);
+	USART_Init(USART6, &USART_InitStructure);
 
-	/* Enable USART3 */
-	USART_Cmd(USART3, ENABLE);
+	/* Enable USART6 */
+	USART_Cmd(USART6, ENABLE);
 
 	NVIC_InitTypeDef NVIC_InitStructure;
 
 	// Configure the Priority Group to 2 bits */
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 
-	// Enable the USART3 RX DMA Interrupt */
-	NVIC_InitStructure.NVIC_IRQChannel 						= DMA1_Stream1_IRQn;
+	// Enable the USART6 RX DMA Interrupt */
+	NVIC_InitStructure.NVIC_IRQChannel 						= DMA2_Stream2_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority 	= 0;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority 			= 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd 					= ENABLE;
@@ -214,10 +214,10 @@ void gps_init(void)
 
 
 	// Enable DMA2's AHB1 interface clock */
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
 
 	DMA_InitTypeDef DMA_InitStructure;
-	DMA_DeInit(DMA1_Stream1);
+	DMA_DeInit(DMA2_Stream2);
 	DMA_InitStructure.DMA_BufferSize 			= dma_buf_size;
 	DMA_InitStructure.DMA_FIFOMode 				= DMA_FIFOMode_Enable;//DMA_FIFOMode_Disable;
 	DMA_InitStructure.DMA_FIFOThreshold 		= DMA_FIFOThreshold_1QuarterFull;
@@ -225,25 +225,25 @@ void gps_init(void)
 	DMA_InitStructure.DMA_MemoryDataSize 		= DMA_MemoryDataSize_Byte;
 	DMA_InitStructure.DMA_MemoryInc 			= DMA_MemoryInc_Enable;
 	DMA_InitStructure.DMA_Mode 					= DMA_Mode_Circular;
-	DMA_InitStructure.DMA_PeripheralBaseAddr 	= (uint32_t)&USART3->DR;
+	DMA_InitStructure.DMA_PeripheralBaseAddr 	= (uint32_t)&USART6->DR;
 	DMA_InitStructure.DMA_PeripheralBurst 		= DMA_PeripheralBurst_Single;
 	DMA_InitStructure.DMA_PeripheralDataSize 	= DMA_PeripheralDataSize_Byte;
 	DMA_InitStructure.DMA_PeripheralInc 		= DMA_PeripheralInc_Disable;
 	DMA_InitStructure.DMA_Priority 				= DMA_Priority_High;
-	DMA_InitStructure.DMA_Channel 				= DMA_Channel_4;
+	DMA_InitStructure.DMA_Channel 				= DMA_Channel_5;
 	DMA_InitStructure.DMA_DIR 					= DMA_DIR_PeripheralToMemory;
 	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)pDMABuff;
 	//	DMA_InitStructure.DMA_Memory0BaseAddr 		= (uint32_t)&DMABuff[0];
-	DMA_Init(DMA1_Stream1,&DMA_InitStructure);
+	DMA_Init(DMA2_Stream2,&DMA_InitStructure);
 
 	// Enable DMA Stream Transfer Complete interrupt */
-	DMA_ITConfig(DMA1_Stream1, DMA_IT_TC, ENABLE);
+	DMA_ITConfig(DMA2_Stream2, DMA_IT_TC, ENABLE);
 
 	// Enable the USART Rx DMA request */
-	USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
+	USART_DMACmd(USART6, USART_DMAReq_Rx, ENABLE);
 
 	// Enable the DMA RX Stream */
-	DMA_Cmd(DMA1_Stream1, ENABLE);
+	DMA_Cmd(DMA2_Stream2, ENABLE);
 
 
 	// Initialize p_GPS_data
@@ -291,7 +291,7 @@ void gps_task(void)
 	// Something else
 	volatile uint16_t msg_cnt = 0;
 
-	currentDMA = dma_buf_size - DMA_GetCurrDataCounter(DMA1_Stream1);	// get current pos of dma pointer
+	currentDMA = dma_buf_size - DMA_GetCurrDataCounter(DMA2_Stream2);	// get current pos of dma pointer
 
 	Rd_Cnt += (currentDMA + dma_buf_size - lastDMA) % dma_buf_size;		// Increase Rd_Cnt for additional bytes
 
@@ -517,8 +517,8 @@ void gps_send_bytes(void* ptr, uint8_t no_bytes)
 {
 	for(uint8_t i = 0; i < no_bytes; i++)
 	{
-		while(USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);	// wait for TX Data empty
-		USART_SendData(USART3, *(uint8_t*)(ptr + i));					// send data
+		while(USART_GetFlagStatus(USART6, USART_FLAG_TXE) == RESET);	// wait for TX Data empty
+		USART_SendData(USART6, *(uint8_t*)(ptr + i));					// send data
 	}
 };
 
@@ -526,27 +526,27 @@ void gps_send_bytes(void* ptr, uint8_t no_bytes)
  * @brief DMAInterrupt Handling
  * @details interrupt handler
  */
-void DMA1_Stream1_IRQHandler(void) // USART3_RX
+void DMA2_Stream2_IRQHandler(void) // USART6_RX
 {
-	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_FEIF1))
+	if (DMA_GetITStatus(DMA2_Stream2, DMA_IT_FEIF2))
 	{
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
-		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_FEIF1);
+		DMA_ClearITPendingBit(DMA2_Stream2, DMA_IT_FEIF2);
 	}
 
-	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_HTIF1))
+	if (DMA_GetITStatus(DMA2_Stream2, DMA_IT_HTIF2))
 	{
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
-		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_HTIF1);
+		DMA_ClearITPendingBit(DMA2_Stream2, DMA_IT_HTIF2);
 	}
 
 	/* Test on DMA Stream Transfer Complete interrupt */
-	if (DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
+	if (DMA_GetITStatus(DMA2_Stream2, DMA_IT_TCIF2))
 	{
 		Wr_Idx = (Wr_Idx + dma_buf_size / 4) % dma_buf_size;
 
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
-		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
+		DMA_ClearITPendingBit(DMA2_Stream2, DMA_IT_TCIF2);
 	}
 };
 
@@ -556,9 +556,9 @@ void DMA1_Stream1_IRQHandler(void) // USART3_RX
  */
 void gps_set_baud(unsigned int baud)
 {
-	USART_Cmd(USART3, DISABLE);
+	USART_Cmd(USART6, DISABLE);
 
-	//USART_DeInit(USART3);
+	//USART_DeInit(USART6);
 	USART_InitTypeDef USART_InitStructure;
 	USART_InitStructure.USART_BaudRate 				= baud;
 	USART_InitStructure.USART_WordLength 			= USART_WordLength_8b;
@@ -566,9 +566,9 @@ void gps_set_baud(unsigned int baud)
 	USART_InitStructure.USART_Parity 				= USART_Parity_No;
 	USART_InitStructure.USART_HardwareFlowControl 	= USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode 					= USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART3, &USART_InitStructure);
+	USART_Init(USART6, &USART_InitStructure);
 
-	USART_Cmd(USART3, ENABLE);
+	USART_Cmd(USART6, ENABLE);
 };
 
 /**

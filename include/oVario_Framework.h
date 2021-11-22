@@ -22,7 +22,7 @@
  ******************************************************************************
  * @file    oVario_Framework.h
  * @author  SO
- * @version v1.0.3
+ * @version v2.0.0
  * @date    25-February-2018
  * @brief   Handles the core system tasks and defines the schedule of the
  * 			other tasks.
@@ -33,7 +33,7 @@
 #define OVARIO_FRAMEWORK_H_
 
 //****** Release Versio ******
-#define RELEASE_VERSION "v1.0.3"
+#define RELEASE_VERSION "v2.0.0"
 
 /****** Add SPL-Libs here ********/
 #include "stm32f4xx.h"
@@ -179,7 +179,7 @@
 #define SYS_TIME_SECONDS_pos	0
 
 //defines for pin access
-#define SHUTDOWN_SENSE			(GPIOC->IDR & (GPIO_IDR_IDR_7))
+#define SHUTDOWN_SENSE			(GPIOA->IDR & (GPIO_IDR_IDR_9))
 
 void            sys_register_ipc        (void);
 void            sys_get_ipc             (void);
