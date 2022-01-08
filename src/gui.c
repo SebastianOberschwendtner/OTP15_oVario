@@ -445,10 +445,14 @@ void fkt_BMS(void)
  */
 void fkt_GPS(void)
 {
-	uint8_t y = 9;
+	
 #define ls 10  // Line step width
-#define c1 100 // y Value of Value Column
+#define c1 65 // y Value of Value Column
+#define c2 140
+#define c3 170 // Second column
+#define y_init 9
 
+	uint8_t y = y_init;
 	// Set Fontsize
 	lcd_set_fontsize(1);
 
@@ -463,23 +467,23 @@ void fkt_GPS(void)
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Latitude: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->lat, 3, 7);
+	lcd_float2buffer(p_ipc_gui_gps_data->lat, 3, 4);
 
 	if (p_ipc_gui_gps_data->lat > 0)
-		lcd_string2buffer(" North");
+		lcd_string2buffer(" N");
 	else
-		lcd_string2buffer(" South");
+		lcd_string2buffer(" S");
 
 	y += ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("Longitude: ");
 	lcd_set_cursor(c1, y);
-	lcd_float2buffer(p_ipc_gui_gps_data->lon, 3, 7);
+	lcd_float2buffer(p_ipc_gui_gps_data->lon, 3, 4);
 
 	if (p_ipc_gui_gps_data->lon > 0)
-		lcd_string2buffer(" East");
+		lcd_string2buffer(" E");
 	else
-		lcd_string2buffer(" West");
+		lcd_string2buffer(" W");
 
 	y += ls;
 	lcd_set_cursor(0, y);
@@ -514,6 +518,21 @@ void fkt_GPS(void)
 
 	y += ls;
 	lcd_set_cursor(0, y);
+	lcd_string2buffer("TsSU:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->Startup_ms/1000, 4, 0);
+	lcd_string2buffer(" s");
+
+	y += ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("Baudrate:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->baudrate, 6, 0);
+	lcd_string2buffer(" ");
+
+	/*
+	y += ls;
+	lcd_set_cursor(0, y);
 	lcd_string2buffer("AltRef:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->Altref, 4, 4);
@@ -524,18 +543,34 @@ void fkt_GPS(void)
 	lcd_string2buffer("HDOP:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->HDOP, 4, 4);
-
+*/
+	/*
 	y += ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("HDG:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->heading_deg, 3, 1);
+*/
+	y += ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("dT:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->dT, 5, 0);
+	lcd_string2buffer("ms");
 
+	/*
 	y += ls;
 	lcd_set_cursor(0, y);
 	lcd_string2buffer("MSG RdIdx:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->Rd_Idx, 6, 0);
+*/
+
+	y += ls;
+	lcd_set_cursor(0, y);
+	lcd_string2buffer("MSG CNT:");
+	lcd_set_cursor(c1, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->velned_msg_cnt, 6, 0);
 
 	y += ls;
 	lcd_set_cursor(0, y);
@@ -548,6 +583,30 @@ void fkt_GPS(void)
 	lcd_string2buffer("MSG current DMA:");
 	lcd_set_cursor(c1, y);
 	lcd_float2buffer(p_ipc_gui_gps_data->currentDMA,6,0);*/
+
+	// Second column
+
+	y = y_init;
+
+	// Write Data to Screen
+	y += ls - 1;
+	lcd_set_cursor(c2, y);
+	lcd_string2buffer("Last T: ");
+	lcd_set_cursor(c3, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->t_last, 7, 0);
+
+	y += ls;
+	lcd_set_cursor(c2, y);
+	lcd_string2buffer("Current T: ");
+	lcd_set_cursor(c3, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->t_current, 7, 0);
+
+	y += ls;
+	lcd_set_cursor(c2, y);
+	lcd_string2buffer("Debug: ");
+	lcd_set_cursor(c3, y);
+	lcd_float2buffer((float)p_ipc_gui_gps_data->debug, 7, 0);
+
 };
 
 /**

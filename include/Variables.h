@@ -218,6 +218,14 @@ typedef struct{
 	uint8_t month;
 	uint8_t day;
 	float 	hAcc;	//[m]
+	uint32_t ts_LMessage;
+	uint32_t dT;
+	uint32_t debug;
+	uint32_t Startup_ms;
+	uint32_t velned_msg_cnt;
+	uint32_t t_current;
+	uint32_t t_last;
+	uint32_t baudrate;
 }GPS_T;
 #pragma pack(pop)
 
