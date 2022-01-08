@@ -22,7 +22,7 @@
  ******************************************************************************
  * @file    oVario_Framework.h
  * @author  SO
- * @version v1.0.3
+ * @version v1.0.4
  * @date    25-February-2018
  * @brief   Handles the core system tasks and defines the schedule of the
  * 			other tasks.
@@ -33,7 +33,7 @@
 #define OVARIO_FRAMEWORK_H_
 
 //****** Release Versio ******
-#define RELEASE_VERSION "v1.0.3"
+#define RELEASE_VERSION "v1.0.4"
 
 /****** Add SPL-Libs here ********/
 #include "stm32f4xx.h"
