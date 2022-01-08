@@ -79,12 +79,13 @@
 void    gps_register_ipc    (void);
 void    gps_get_ipc         (void);
 uint8_t gps_init            (void);
+void 	UART_Init			(uint32_t Baudrate);
 void    gps_task            (void);
 
 void    gps_handle_nav      (void);
 uint8_t gps_handle_ack      (void);
 void    gps_config          (uint32_t baudrate);
-void gps_config_rates       (void);
+void 	gps_config_rates    (void);
 
 void    gps_send_bytes      (void* ptr, uint8_t no_bytes);
 void    gps_set_msg_rate    (uint8_t msg_class, uint8_t msg_id, uint8_t rate);

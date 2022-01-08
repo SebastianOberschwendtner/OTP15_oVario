@@ -58,8 +58,6 @@ uint32_t velned_msg_cnt = 0;
 GPS_T *p_GPS_data;
 SYS_T *sys;
 
-//****** Internal Functions ******
-void UART_Init(uint32_t Baudrate);
 
 //****** Functions ******
 
@@ -246,7 +244,7 @@ uint8_t gps_init(void)
 		p_GPS_data->v_max = 0;
 
 		// Config GPS
-		gps_config(gps_baudrates[0]);//baudcnt]);
+		gps_config(gps_baudrates[baudcnt]);
 		state_init++;
 		break;
 	case 1: // gps_wait_for_ack
@@ -261,6 +259,12 @@ uint8_t gps_init(void)
 		else
 		{
 			CFG_ACK++;
+
+			if((CFG_ACK % 5) == 0)
+			{
+				gps_config(gps_baudrates[baudcnt]);
+			}
+
 			if (CFG_ACK > 50)
 			{
 				state_init = 0; // Reinit GPS

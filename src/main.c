@@ -92,8 +92,9 @@ int main(void)
 	wait_systick(10);
 	set_led_red(OFF);
 
-	//gps_init();
+	wait_ms(100);
 	gui_init();
+	
 
 	//***** initialize the scheduler *****
 	init_scheduler();
