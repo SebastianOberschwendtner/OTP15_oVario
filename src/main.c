@@ -92,7 +92,7 @@ int main(void)
 	wait_systick(10);
 	set_led_red(OFF);
 
-	wait_ms(100);
+	wait_ms(300);
 	gui_init();
 	
 
